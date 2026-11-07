@@ -88,27 +88,24 @@ export async function gradeEssayWithGemini({
   }
 
   const prompt = `
-Bạn là một Giám khảo chấm thi chuyên nghiệp, công tâm và thấu hiểu học sinh.
-Nhiệm vụ của bạn là chấm điểm và nhận xét chi tiết câu trả lời Tự luận sau đây.
+Bạn là một Giám khảo chấm thi. Hãy chấm điểm câu trả lời Tự luận dưới đây một cách cực kỳ ngắn gọn, súc tích (đúng 1 câu nhận xét tổng quát) để phản hồi nhanh nhất có thể.
 
 [ĐỀ BÀI]:
 ${question}
 
 [ĐÁP ÁN GỢI Ý / Ý CHÍNH]:
-${sampleAnswer || 'Đánh giá dựa trên kiến thức chuẩn xác, đầy đủ luận điểm, lập luận logic và rõ ràng.'}
+${sampleAnswer || 'Đánh giá dựa trên kiến thức chuẩn xác, đúng trọng tâm.'}
 
 [TIÊU CHÍ CHẤM / RUBRIC]:
-${rubric || `Thang điểm tối đa là ${maxScore} điểm. Điểm số dựa trên: Độ chính xác nội dung (50%), Khả năng lập luận (30%), Diễn đạt và liên hệ (20%).`}
+${rubric || `Thang điểm tối đa là ${maxScore} điểm.`}
 
 [BÀI LÀM CỦA THÍ SINH]:
 ${essayAnswer}
 
-Hãy chấm điểm thật khách quan và trả về định dạng DUY NHẤT là một chuỗi JSON hợp lệ (không kèm markdown \`\`\`json ngoài text):
+Trả về DUY NHẤT một chuỗi JSON hợp lệ với cấu trúc sau (không kèm giải thích hay markdown code block ngoài JSON):
 {
-  "score": <số điểm từ 0 đến ${maxScore}, có thể lẻ 0.5>,
-  "feedback": "<nhận xét tổng quan ngắn gọn, súc tích, mang tính động viên sư phạm bằng tiếng Việt>",
-  "strengths": ["<điểm mạnh 1>", "<điểm mạnh 2>"],
-  "improvements": ["<điểm cần cải thiện 1>", "<điểm cần cải thiện 2>"]
+  "score": <số điểm từ 0 đến ${maxScore}>,
+  "feedback": "<duy nhất 1 câu nhận xét ngắn gọn, đúng trọng tâm>"
 }
 `;
 
