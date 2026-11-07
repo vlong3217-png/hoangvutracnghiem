@@ -60,7 +60,11 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
   // STATE DÀNH CHO DẠNG ĐIỀN CHỖ TRỐNG ĐỤC LỖ (Fill in the Blanks / Cloze)
   const [clozeAnswers, setClozeAnswers] = useState({});
 
-  // STATE DÀNH CHO DẠNG TỰ LUẬN CHẤM BẰNG GEMINI 2.5 FLASH (Essay)
+  // STATE DANH SÁCH CÁC CÂU HỎI ĐÃ BỎ QUA ĐỂ LÀM LẠI
+  const [skippedQuestionIds, setSkippedQuestionIds] = useState([]);
+  const [showSkippedModal, setShowSkippedModal] = useState(false);
+
+  // STATE DÀNH CHO DẠNG TỰ LUẬN CHẤM BẰNG GEMINI (Essay)
   const [essayAnswer, setEssayAnswer] = useState('');
   const [isGradingEssay, setIsGradingEssay] = useState(false);
   const [essayAiResult, setEssayAiResult] = useState(null);
@@ -347,6 +351,8 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
 
     // Tự động chuyển câu sau 2 giây
     setTimeout(() => {
+      // Khi đã làm xong câu này, nếu nó từng nằm trong danh sách bỏ qua thì bỏ nó ra
+      setSkippedQuestionIds(prev => prev.filter(id => id !== currentQ.id));
       handleNext();
     }, 2000);
   };
@@ -378,8 +384,25 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
     }
 
     setTimeout(() => {
+      setSkippedQuestionIds(prev => prev.filter(id => id !== currentQ.id));
       handleNext();
     }, 2000);
+  };
+
+  // -------------------------------------------------------------
+  // XỬ LÝ BỎ QUA CÂU HỎI VÀ ĐƯA VÀO DANH SÁCH BỎ QUA
+  // -------------------------------------------------------------
+  const handleSkipQuestion = () => {
+    if (!skippedQuestionIds.includes(currentQ.id)) {
+      setSkippedQuestionIds(prev => [...prev, currentQ.id]);
+    }
+    handleNext();
+  };
+
+  // Nhảy trực tiếp tới câu đã bỏ qua để làm lại
+  const handleJumpToQuestion = (targetIdx) => {
+    setCurrentIdx(targetIdx);
+    setShowSkippedModal(false);
   };
 
   // -------------------------------------------------------------
@@ -445,6 +468,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
     }
 
     setTimeout(() => {
+      setSkippedQuestionIds(prev => prev.filter(id => id !== currentQ.id));
       handleNext();
     }, 2000);
   };
@@ -564,6 +588,18 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* NÚT DANH SÁCH CÂU HỎI ĐÃ BỎ QUA NỔI BẬT */}
+          {skippedQuestionIds.length > 0 && (
+            <button
+              onClick={() => setShowSkippedModal(true)}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 rounded-xl text-amber-300 text-[11px] sm:text-xs font-bold transition-all cursor-pointer animate-pulse"
+              title="Xem danh sách các câu đã bỏ qua để làm lại"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+              <span>Đã bỏ qua ({skippedQuestionIds.length})</span>
+            </button>
+          )}
+
           <div className="hidden md:flex items-center bg-[#240a20] p-1 rounded-xl border border-white/15 text-xs font-semibold">
             <button
               onClick={() => setPlayMode('practice')}
@@ -1170,15 +1206,27 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
         </footer>
       ) : (
         <footer className="h-14 sm:h-16 px-4 sm:px-8 bg-black/40 backdrop-blur-md border-t border-white/10 flex items-center justify-between shrink-0 z-20">
-          <div>
+          <div className="flex items-center gap-2">
             {/* Nút BỎ QUA câu hỏi ở góc trái */}
             <button
-              onClick={handleNext}
+              onClick={handleSkipQuestion}
               className="px-3.5 py-2 sm:px-5 sm:py-2.5 bg-white/10 hover:bg-white/20 text-slate-200 text-xs sm:text-sm font-bold rounded-xl transition-colors cursor-pointer"
               title="Bỏ qua câu hỏi này để làm sau"
             >
               Bỏ qua câu này
             </button>
+
+            {/* Nút mở danh sách các câu đã bỏ qua ở ngay cạnh nút Bỏ qua */}
+            {skippedQuestionIds.length > 0 && (
+              <button
+                onClick={() => setShowSkippedModal(true)}
+                className="px-3 py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-300 text-xs font-bold rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
+                title="Xem danh sách các câu đã bỏ qua"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Câu đã bỏ qua ({skippedQuestionIds.length})</span>
+              </button>
+            )}
           </div>
 
           <div>
@@ -1229,6 +1277,70 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
             )}
           </div>
         </footer>
+      )}
+
+      {/* MODAL DANH SÁCH CÁC CÂU HỎI ĐÃ BỎ QUA ĐỂ LÀM LẠI */}
+      {showSkippedModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-[#240520] border border-white/20 rounded-3xl max-w-lg w-full p-6 text-left shadow-2xl animate-in fade-in zoom-in-95 max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10 shrink-0 mb-4">
+              <div className="flex items-center gap-2">
+                <RotateCcw className="w-5 h-5 text-amber-400" />
+                <h3 className="text-base sm:text-lg font-bold text-white">
+                  Danh sách câu hỏi đã bỏ qua ({skippedQuestionIds.length})
+                </h3>
+              </div>
+              <button 
+                onClick={() => setShowSkippedModal(false)}
+                className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300 hover:text-white cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-300 mb-3 shrink-0">
+              Bấm vào câu hỏi bất kỳ dưới đây để nhảy tới và làm lại:
+            </p>
+
+            <div className="overflow-y-auto space-y-2.5 flex-1 pr-1">
+              {skippedQuestionIds.map((qId) => {
+                const targetIdx = questions.findIndex(q => q.id === qId);
+                const qObj = questions[targetIdx];
+                if (!qObj) return null;
+
+                return (
+                  <div
+                    key={qId}
+                    onClick={() => handleJumpToQuestion(targetIdx)}
+                    className="p-3.5 rounded-2xl bg-white/5 hover:bg-white/15 border border-white/10 hover:border-amber-400/60 transition-all cursor-pointer flex items-center justify-between gap-3 group"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 font-bold text-xs flex items-center justify-center shrink-0 border border-amber-400/40">
+                        {targetIdx + 1}
+                      </span>
+                      <p className="text-xs sm:text-sm text-slate-200 line-clamp-2 font-normal group-hover:text-white">
+                        {qObj.question}
+                      </p>
+                    </div>
+
+                    <button className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shrink-0 shadow-md transition-all">
+                      Làm lại
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="pt-4 border-t border-white/10 mt-3 flex justify-end shrink-0">
+              <button
+                onClick={() => setShowSkippedModal(false)}
+                className="px-5 py-2 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/20 text-white"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* MODAL THOÁT KHỎI PHÒNG THI */}
