@@ -33,3 +33,9 @@ Thumbs.db
 *.sln
 *.sw?
 
+# Raw document files
+*.docx
+*.doc
+Môn Lịch sử Đảng Cộng Sản Việt Nam/
+Môn Công nghệ mạng LAN/
+
