@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Maximize2, 
-  Menu, 
-  ArrowLeft, 
+import {
+  Maximize2,
+  Menu,
+  ArrowLeft,
   ArrowRight,
   ArrowUp,
-  Check, 
-  X, 
-  Volume2, 
-  VolumeX, 
+  Check,
+  X,
+  Volume2,
+  VolumeX,
   RotateCcw,
   Sparkles,
   Send,
@@ -141,7 +141,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
         osc.start(ctx.currentTime);
         osc.stop(ctx.currentTime + 0.35);
       }
-    } catch (e) {}
+    } catch (e) { }
   };
 
   // -------------------------------------------------------------
@@ -174,7 +174,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
       setScore(prev => prev + 150);
       try {
         confetti({ particleCount: 35, spread: 50, origin: { y: 0.7 } });
-      } catch (e) {}
+      } catch (e) { }
     } else {
       playSound(false);
     }
@@ -230,7 +230,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
         setScore(prev => prev + 600);
         try {
           confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
-        } catch (e) {}
+        } catch (e) { }
       } else {
         playSound(false);
       }
@@ -282,7 +282,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
         setScore(prev => prev + 600);
         try {
           confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
-        } catch (e) {}
+        } catch (e) { }
       } else {
         playSound(false);
       }
@@ -321,7 +321,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
       const nextList = isAlready
         ? multiSelectedOpts.filter(id => id !== optId)
         : [...multiSelectedOpts, optId];
-      
+
       setMultiSelectedOpts(nextList);
       setSelectedAnswers(prev => ({ ...prev, [currentQ.id]: nextList }));
       return;
@@ -344,7 +344,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
           spread: 60,
           origin: { y: 0.7 }
         });
-      } catch (e) {}
+      } catch (e) { }
     } else {
       playSound(false);
     }
@@ -378,7 +378,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
       setScore(prev => prev + 600);
       try {
         confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
-      } catch (e) {}
+      } catch (e) { }
     } else {
       playSound(false);
     }
@@ -433,7 +433,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
         setScore(prev => prev + 600);
         try {
           confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
-        } catch (err) {}
+        } catch (err) { }
       } else {
         playSound(false);
       }
@@ -462,7 +462,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
       setScore(prev => prev + 600);
       try {
         confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
-      } catch (err) {}
+      } catch (err) { }
     } else {
       playSound(false);
     }
@@ -512,7 +512,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
         setScore(prev => prev + Math.round((result.score / (currentQ.maxScore || 10)) * 600));
         try {
           confetti({ particleCount: 60, spread: 70, origin: { y: 0.7 } });
-        } catch (err) {}
+        } catch (err) { }
       } else {
         playSound(false);
       }
@@ -564,26 +564,26 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-[#160413] text-white flex flex-col justify-between select-none overflow-hidden font-sans">
-      
-      {/* 1. THANH TOPBAR (TRONG SUỐT, MỜ NHẸ THOÁNG ĐÃNG - TỐI ƯU MOBILE) */}
-      <header className="h-12 sm:h-14 px-3 sm:px-4 bg-black/25 backdrop-blur-md border-b border-white/10 flex items-center justify-between shrink-0 z-20">
+
+      {/* 1. THANH TOPBAR (HOÀN TOÀN TRONG SUỐT, KHÔNG GÂY TỐI NỀN - TỐI ƯU MOBILE) */}
+      <header className="h-12 sm:h-14 px-3 sm:px-4 bg-transparent border-b border-white/10 flex items-center justify-between shrink-0 z-20">
         <div className="flex items-center gap-1.5 sm:gap-2">
-          <div className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-lg bg-black text-xs font-bold text-slate-200 border border-white/10 font-mono">
+          <div className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-lg bg-black/40 text-xs font-bold text-slate-200 border border-white/10 font-mono">
             {currentIdx + 1}/{questions.length}
           </div>
 
           <span className="flex items-center gap-1 px-2 py-0.5 sm:px-3 sm:py-1 bg-teal-500 text-slate-900 font-bold text-[11px] sm:text-xs rounded-lg shadow-sm">
-            {currentQ.type === 'true_false_multi' 
-              ? 'Đúng / Sai' 
-              : currentQ.type === 'categorize' 
-              ? 'Phân loại' 
-              : currentQ.type === 'drag_drop' 
-              ? 'Kéo thả' 
-              : currentQ.type === 'essay'
-              ? 'Tự luận (AI)'
-              : (currentQ.type === 'short_answer' || currentQ.type === 'fill_blank')
-              ? 'Điền từ'
-              : 'Trắc nghiệm'}
+            {currentQ.type === 'true_false_multi'
+              ? 'Đúng / Sai'
+              : currentQ.type === 'categorize'
+                ? 'Phân loại'
+                : currentQ.type === 'drag_drop'
+                  ? 'Kéo thả'
+                  : currentQ.type === 'essay'
+                    ? 'Tự luận (AI)'
+                    : (currentQ.type === 'short_answer' || currentQ.type === 'fill_blank')
+                      ? 'Điền từ'
+                      : 'Trắc nghiệm'}
           </span>
         </div>
 
@@ -600,28 +600,26 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
             </button>
           )}
 
-          <div className="hidden md:flex items-center bg-[#240a20] p-1 rounded-xl border border-white/15 text-xs font-semibold">
+          <div className="hidden md:flex items-center bg-black/20 p-1 rounded-xl border border-white/10 text-xs font-semibold backdrop-blur-xs">
             <button
               onClick={() => setPlayMode('practice')}
-              className={`px-3 py-1 rounded-lg transition-all ${
-                playMode === 'practice' ? 'bg-[#3b1235] text-white shadow-xs font-bold' : 'text-slate-400 hover:text-white'
-              }`}
+              className={`px-3 py-1 rounded-lg transition-all ${playMode === 'practice' ? 'bg-[#58174f]/70 text-white shadow-xs font-bold' : 'text-slate-400 hover:text-white'
+                }`}
             >
               Chế độ chơi theo cá nhân
             </button>
             <button
               onClick={() => setPlayMode('test')}
-              className={`px-3 py-1 rounded-lg transition-all ${
-                playMode === 'test' ? 'bg-[#3b1235] text-white shadow-xs font-bold' : 'text-slate-400 hover:text-white'
-              }`}
+              className={`px-3 py-1 rounded-lg transition-all ${playMode === 'test' ? 'bg-[#58174f]/70 text-white shadow-xs font-bold' : 'text-slate-400 hover:text-white'
+                }`}
             >
               Chế độ kiểm tra
             </button>
           </div>
 
-          <button 
+          <button
             onClick={() => setShowExitConfirm(true)}
-            className="w-8 h-8 rounded-lg bg-[#2c0e27] hover:bg-rose-900/60 border border-white/15 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-lg bg-black/20 hover:bg-rose-900/60 border border-white/15 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer"
             title="Thoát phòng thi"
           >
             <X className="w-4 h-4" />
@@ -630,19 +628,18 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
       </header>
 
       {/* 2. BODY KHÔNG GIAN BÀI THI CHÍNH (CÓ HIỆU ỨNG CHUYỂN CÂU HỎI TRƯỢT MƯỢT MÀ) */}
-      <main 
+      <main
         key={currentIdx}
-        className={`flex-1 p-3 sm:p-5 lg:p-6 flex flex-col justify-start items-center overflow-y-auto relative bg-[#340b2e] bg-[radial-gradient(#4d1245_1px,transparent_1px)] [background-size:16px_16px] pb-28 pt-4 sm:pt-6 ${
-          slideDirection === 'next' ? 'anim-question-enter' : 'anim-question-prev'
-        }`}
+        className={`flex-1 p-3 sm:p-5 lg:p-6 flex flex-col justify-start items-center overflow-y-auto relative bg-[#340b2e] bg-[radial-gradient(#4d1245_1px,transparent_1px)] [background-size:16px_16px] pb-28 pt-4 sm:pt-6 ${slideDirection === 'next' ? 'anim-question-enter' : 'anim-question-prev'
+          }`}
       >
-        
+
         {/* ============================================================== */}
         {/* TRƯỜNG HỢP A: DẠNG ĐÚNG/SAI NHIỀU PHẦN (RỘNG RÃI TOÀN MÀN HÌNH) */}
         {/* ============================================================== */}
         {currentQ.type === 'true_false_multi' && (
           <div className="w-full max-w-7xl px-2 sm:px-6 flex gap-5 h-full max-h-[84vh]">
-            
+
             {/* CỘT SUB-SIDEBAR BÊN TRÁI: DÃY NÚT A, B, C, D VUÔNG */}
             <div className="w-14 flex flex-col gap-2.5 shrink-0">
               {(currentQ.parts || []).map((part) => {
@@ -650,31 +647,30 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
                 const isAnswered = multiTfAnswers[part.id] !== undefined;
 
                 // Kiểm tra xem câu hiện tại đã hoàn thành hay chưa
-  const hasAnsweredCurrent = Boolean(
-    answeredState ||
-    selectedAnswers[currentQ.id] ||
-    (currentQ.type === 'true_false_multi' && Object.keys(multiTfAnswers).length >= (currentQ.parts || []).length) ||
-    (currentQ.type === 'categorize' && unassignedItems.length === 0) ||
-    (currentQ.type === 'drag_drop' && Object.keys(sentenceSlots).length >= (currentQ.sentences || []).length) ||
-    (currentQ.type === 'essay' && essayAnswer.trim().length > 0) ||
-    ((currentQ.type === 'short_answer' || currentQ.type === 'fill_blank') && (
-      currentQ.blanks
-        ? currentQ.blanks.every(b => (clozeAnswers[b.id] || '').trim().length > 0)
-        : shortInputText.trim().length > 0
-    ))
-  );
+                const hasAnsweredCurrent = Boolean(
+                  answeredState ||
+                  selectedAnswers[currentQ.id] ||
+                  (currentQ.type === 'true_false_multi' && Object.keys(multiTfAnswers).length >= (currentQ.parts || []).length) ||
+                  (currentQ.type === 'categorize' && unassignedItems.length === 0) ||
+                  (currentQ.type === 'drag_drop' && Object.keys(sentenceSlots).length >= (currentQ.sentences || []).length) ||
+                  (currentQ.type === 'essay' && essayAnswer.trim().length > 0) ||
+                  ((currentQ.type === 'short_answer' || currentQ.type === 'fill_blank') && (
+                    currentQ.blanks
+                      ? currentQ.blanks.every(b => (clozeAnswers[b.id] || '').trim().length > 0)
+                      : shortInputText.trim().length > 0
+                  ))
+                );
 
-  return (
+                return (
                   <button
                     key={part.id}
                     onClick={() => setActivePartId(part.id)}
-                    className={`w-12 h-12 rounded-xl font-black text-base flex items-center justify-center border-2 transition-all cursor-pointer ${
-                      isActive 
-                        ? 'bg-white text-slate-900 border-white shadow-xl ring-4 ring-white/40 scale-105' 
+                    className={`w-12 h-12 rounded-xl font-black text-base flex items-center justify-center border-2 transition-all cursor-pointer ${isActive
+                        ? 'bg-white text-slate-900 border-white shadow-xl ring-4 ring-white/40 scale-105'
                         : isAnswered
-                        ? 'bg-[#43143c] text-white border-white/40 hover:border-white'
-                        : 'bg-[#240520] text-slate-400 border-white/10 hover:text-white'
-                    }`}
+                          ? 'bg-[#43143c] text-white border-white/40 hover:border-white'
+                          : 'bg-[#240520] text-slate-400 border-white/10 hover:text-white'
+                      }`}
                   >
                     {part.id}
                   </button>
@@ -682,7 +678,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
               })}
 
               {/* Nút mũi tên cuộn lên */}
-              <button 
+              <button
                 onClick={() => setActivePartId((currentQ.parts || [])[0]?.id || 'A')}
                 title="Lên phần đầu tiên"
                 className="w-12 h-12 mt-auto rounded-xl bg-[#240520] hover:bg-[#3d0f36] border border-white/15 flex items-center justify-center text-slate-300 cursor-pointer"
@@ -693,7 +689,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
 
             {/* KHU VỰC NỘI DUNG CHÍNH BÊN PHẢI (MỞ RỘNG) */}
             <div className="flex-1 flex flex-col justify-between gap-5 overflow-y-auto pr-1">
-              
+
               {/* Box 1: ĐỀ BÀI CÂU HỎI CHÍNH Ở TRÊN (TRONG SUỐT MỜ NHẸ) */}
               <div className="bg-black/35 backdrop-blur-md border border-white/15 rounded-3xl p-6 sm:p-7 text-center shadow-2xl relative shrink-0">
                 <span className="text-xs text-slate-400 block font-mono mb-1.5">
@@ -722,11 +718,10 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
               <div className="grid grid-cols-2 gap-5 shrink-0">
                 <button
                   onClick={() => handleSelectTrueFalsePart(activePartId, true)}
-                  className={`h-24 sm:h-28 md:h-32 rounded-3xl text-white font-black text-2xl sm:text-3xl shadow-2xl border-2 transition-all active:scale-[0.98] flex items-center justify-center gap-3 cursor-pointer ${
-                    multiTfAnswers[activePartId] === true
+                  className={`h-24 sm:h-28 md:h-32 rounded-3xl text-white font-black text-2xl sm:text-3xl shadow-2xl border-2 transition-all active:scale-[0.98] flex items-center justify-center gap-3 cursor-pointer ${multiTfAnswers[activePartId] === true
                       ? 'bg-[#9cb800] border-white ring-4 ring-white/50'
                       : 'bg-[#9cb800] hover:bg-[#8ca500] border-[#819900]'
-                  }`}
+                    }`}
                 >
                   <span>ĐÚNG</span>
                   {multiTfAnswers[activePartId] === true && <Check className="w-8 h-8 stroke-[3]" />}
@@ -734,11 +729,10 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
 
                 <button
                   onClick={() => handleSelectTrueFalsePart(activePartId, false)}
-                  className={`h-24 sm:h-28 md:h-32 rounded-3xl text-white font-black text-2xl sm:text-3xl shadow-2xl border-2 transition-all active:scale-[0.98] flex items-center justify-center gap-3 cursor-pointer ${
-                    multiTfAnswers[activePartId] === false
+                  className={`h-24 sm:h-28 md:h-32 rounded-3xl text-white font-black text-2xl sm:text-3xl shadow-2xl border-2 transition-all active:scale-[0.98] flex items-center justify-center gap-3 cursor-pointer ${multiTfAnswers[activePartId] === false
                       ? 'bg-[#9b51e0] border-white ring-4 ring-white/50'
                       : 'bg-[#9b51e0] hover:bg-[#8c40d1] border-[#7d32c3]'
-                  }`}
+                    }`}
                 >
                   <span>SAI</span>
                   {multiTfAnswers[activePartId] === false && <Check className="w-8 h-8 stroke-[3]" />}
@@ -795,30 +789,29 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
                   const isHeaderTeal = cIdx % 2 === 1;
 
                   // Kiểm tra xem câu hiện tại đã hoàn thành hay chưa
-  const hasAnsweredCurrent = Boolean(
-    answeredState ||
-    selectedAnswers[currentQ.id] ||
-    (currentQ.type === 'true_false_multi' && Object.keys(multiTfAnswers).length >= (currentQ.parts || []).length) ||
-    (currentQ.type === 'categorize' && unassignedItems.length === 0) ||
-    (currentQ.type === 'drag_drop' && Object.keys(sentenceSlots).length >= (currentQ.sentences || []).length) ||
-    (currentQ.type === 'essay' && essayAnswer.trim().length > 0) ||
-    ((currentQ.type === 'short_answer' || currentQ.type === 'fill_blank') && (
-      currentQ.blanks
-        ? currentQ.blanks.every(b => (clozeAnswers[b.id] || '').trim().length > 0)
-        : shortInputText.trim().length > 0
-    ))
-  );
+                  const hasAnsweredCurrent = Boolean(
+                    answeredState ||
+                    selectedAnswers[currentQ.id] ||
+                    (currentQ.type === 'true_false_multi' && Object.keys(multiTfAnswers).length >= (currentQ.parts || []).length) ||
+                    (currentQ.type === 'categorize' && unassignedItems.length === 0) ||
+                    (currentQ.type === 'drag_drop' && Object.keys(sentenceSlots).length >= (currentQ.sentences || []).length) ||
+                    (currentQ.type === 'essay' && essayAnswer.trim().length > 0) ||
+                    ((currentQ.type === 'short_answer' || currentQ.type === 'fill_blank') && (
+                      currentQ.blanks
+                        ? currentQ.blanks.every(b => (clozeAnswers[b.id] || '').trim().length > 0)
+                        : shortInputText.trim().length > 0
+                    ))
+                  );
 
-  return (
+                  return (
                     <div
                       key={cat.id}
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={() => handleDropIntoCategory(cat.id, draggedItem)}
                       className="bg-[#240520] border-2 border-white/15 rounded-3xl flex flex-col overflow-hidden shadow-2xl min-h-[220px]"
                     >
-                      <div className={`px-5 py-3.5 text-sm sm:text-base font-black text-white shadow-md truncate ${
-                        isHeaderTeal ? 'bg-[#149184]' : 'bg-[#1e6f9f]'
-                      }`}>
+                      <div className={`px-5 py-3.5 text-sm sm:text-base font-black text-white shadow-md truncate ${isHeaderTeal ? 'bg-[#149184]' : 'bg-[#1e6f9f]'
+                        }`}>
                         {cat.title}
                       </div>
 
@@ -864,7 +857,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
                   const droppedItemObj = currentQ.draggableItems?.find(d => d.id === droppedItemId);
 
                   return (
-                    <div 
+                    <div
                       key={sent.id}
                       className="flex items-center justify-center flex-wrap gap-3 text-sm sm:text-lg md:text-xl font-semibold text-slate-200 leading-relaxed text-center"
                     >
@@ -875,11 +868,10 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
                         onClick={() => {
                           if (droppedItemId) handleRemoveFromSlot(sent.id);
                         }}
-                        className={`min-w-[240px] md:min-w-[280px] h-12 px-5 rounded-2xl border-2 border-dashed flex items-center justify-center transition-all cursor-pointer ${
-                          droppedItemObj 
-                            ? 'bg-white text-slate-900 border-white font-bold shadow-xl' 
+                        className={`min-w-[240px] md:min-w-[280px] h-12 px-5 rounded-2xl border-2 border-dashed flex items-center justify-center transition-all cursor-pointer ${droppedItemObj
+                            ? 'bg-white text-slate-900 border-white font-bold shadow-xl'
                             : 'bg-black/30 border-white/40 text-white/40 hover:border-white/70'
-                        }`}
+                          }`}
                       >
                         {droppedItemObj ? (
                           <div className="flex items-center gap-2">
@@ -941,7 +933,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
 
                 // Trạng thái khi đã bấm hoặc đang chọn
                 const isMulti = currentQ.type === 'multiple';
-                const isSelected = isMulti 
+                const isSelected = isMulti
                   ? multiSelectedOpts.includes(opt.id)
                   : answeredState?.selectedOptId === opt.id;
 
@@ -974,9 +966,8 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
                     <button
                       onClick={() => handleSelectOption(opt.id)}
                       disabled={Boolean(answeredState)}
-                      className={`${cardBg} ${animClass} ${extraStyles} w-full min-h-[90px] sm:min-h-[190px] md:min-h-[240px] rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-white border-2 border-white/20 flex items-center justify-center text-center font-normal text-sm sm:text-lg md:text-xl lg:text-2xl shadow-xl transition-all duration-300 cursor-pointer relative ${
-                        !answeredState ? 'active:scale-[0.98] hover:brightness-105 hover:-translate-y-1' : ''
-                      }`}
+                      className={`${cardBg} ${animClass} ${extraStyles} w-full min-h-[90px] sm:min-h-[190px] md:min-h-[240px] rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-white border-2 border-white/20 flex items-center justify-center text-center font-normal text-sm sm:text-lg md:text-xl lg:text-2xl shadow-xl transition-all duration-300 cursor-pointer relative ${!answeredState ? 'active:scale-[0.98] hover:brightness-105 hover:-translate-y-1' : ''
+                        }`}
                     >
                       <span className="leading-snug">{opt.text}</span>
 
@@ -1009,7 +1000,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
               <span className="text-[11px] sm:text-xs text-slate-400 block font-mono mb-2">
                 {currentIdx + 1}/{questions.length}
               </span>
-              
+
               {/* Nếu là dạng Đục lỗ (có mảng blanks và template) */}
               {currentQ.blanks && currentQ.template ? (
                 <div className="text-sm sm:text-xl md:text-2xl font-normal text-white leading-loose max-w-4xl mx-auto flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
@@ -1019,7 +1010,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
                       const blankIndex = currentQ.template.split(/(\[\.\.\.\])/g).slice(0, pIdx).filter(x => x === '[...]').length;
                       const blankObj = currentQ.blanks[blankIndex] || { id: blankIndex + 1 };
                       const isFilled = (clozeAnswers[blankObj.id] || '').trim().length > 0;
-                      
+
                       return (
                         <span key={pIdx} className="inline-flex items-center mx-1 my-0.5 sm:mx-1.5 sm:my-1">
                           <input
@@ -1031,15 +1022,14 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
                               setClozeAnswers(prev => ({ ...prev, [blankObj.id]: val }));
                             }}
                             placeholder={`[chỗ trống ${blankIndex + 1}]`}
-                            className={`px-2.5 sm:px-4 py-1.5 sm:py-2 min-w-[110px] sm:min-w-[180px] text-center font-normal text-sm sm:text-lg rounded-xl sm:rounded-2xl border-2 transition-all outline-none ${
-                              answeredState
+                            className={`px-2.5 sm:px-4 py-1.5 sm:py-2 min-w-[110px] sm:min-w-[180px] text-center font-normal text-sm sm:text-lg rounded-xl sm:rounded-2xl border-2 transition-all outline-none ${answeredState
                                 ? answeredState.isCorrect
                                   ? 'bg-emerald-600/80 border-emerald-400 text-white'
                                   : 'bg-rose-600/80 border-rose-400 text-white'
                                 : isFilled
-                                ? 'bg-black/60 border-amber-400 text-amber-200 ring-2 ring-amber-400/30'
-                                : 'bg-black/40 border-white/30 text-white placeholder:text-slate-400 focus:border-cyan-400 focus:bg-black/70'
-                            }`}
+                                  ? 'bg-black/60 border-amber-400 text-amber-200 ring-2 ring-amber-400/30'
+                                  : 'bg-black/40 border-white/30 text-white placeholder:text-slate-400 focus:border-cyan-400 focus:bg-black/70'
+                              }`}
                           />
                         </span>
                       );
@@ -1197,20 +1187,20 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
             <span>
               {currentQ.type === 'true_false_multi'
                 ? ((currentQ.parts || []).findIndex(p => p.id === activePartId) < (currentQ.parts || []).length - 1
-                    ? 'Phần tiếp theo'
-                    : (currentIdx < questions.length - 1 ? 'Câu tiếp theo' : 'Xem kết quả'))
+                  ? 'Phần tiếp theo'
+                  : (currentIdx < questions.length - 1 ? 'Câu tiếp theo' : 'Xem kết quả'))
                 : (currentIdx < questions.length - 1 ? 'Câu tiếp theo' : 'Xem kết quả')}
             </span>
             <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" />
           </button>
         </footer>
       ) : (
-        <footer className="h-14 sm:h-16 px-4 sm:px-8 bg-black/40 backdrop-blur-md border-t border-white/10 flex items-center justify-between shrink-0 z-20">
+        <footer className="h-14 sm:h-16 px-4 sm:px-8 bg-transparent border-t border-white/10 flex items-center justify-between shrink-0 z-20">
           <div className="flex items-center gap-2">
             {/* Nút BỎ QUA câu hỏi ở góc trái */}
             <button
               onClick={handleSkipQuestion}
-              className="px-3.5 py-2 sm:px-5 sm:py-2.5 bg-white/10 hover:bg-white/20 text-slate-200 text-xs sm:text-sm font-bold rounded-xl transition-colors cursor-pointer"
+              className="px-3.5 py-2 sm:px-5 sm:py-2.5 bg-black/30 hover:bg-black/50 text-slate-200 text-xs sm:text-sm font-bold rounded-xl transition-colors cursor-pointer border border-white/10 backdrop-blur-xs"
               title="Bỏ qua câu hỏi này để làm sau"
             >
               Bỏ qua câu này
@@ -1220,7 +1210,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
             {skippedQuestionIds.length > 0 && (
               <button
                 onClick={() => setShowSkippedModal(true)}
-                className="px-3 py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-300 text-xs font-bold rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
+                className="px-3 py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-300 text-xs font-bold rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 backdrop-blur-xs"
                 title="Xem danh sách các câu đã bỏ qua"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
@@ -1290,7 +1280,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
                   Danh sách câu hỏi đã bỏ qua ({skippedQuestionIds.length})
                 </h3>
               </div>
-              <button 
+              <button
                 onClick={() => setShowSkippedModal(false)}
                 className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300 hover:text-white cursor-pointer"
               >
