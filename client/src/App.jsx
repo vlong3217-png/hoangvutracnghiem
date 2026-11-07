@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { mockUsers, initialExams } from './data/mockExams';
 import ExamList from './components/ExamList';
 import ExamRoom from './components/ExamRoom';
@@ -19,13 +19,48 @@ import {
 
 export default function App() {
   const [users, setUsers] = useState(mockUsers);
-  const [currentUser, setCurrentUser] = useState(null);
+  
+  // Lưu trạng thái đăng nhập vào localStorage để khi F5 / load lại trang KHÔNG bị đẩy ra màn hình đăng nhập
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('WAYGROUND_CURRENT_USER');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
   const [exams, setExams] = useState(initialExams);
 
   const [currentTab, setCurrentTab] = useState('exams'); // 'exams' | 'teacher' | 'admin' | 'reports' | 'students'
   const [currentView, setCurrentView] = useState('list'); // 'list' | 'room' | 'result'
   const [activeExam, setActiveExam] = useState(null);
   const [examResult, setExamResult] = useState(null);
+
+  // Lưu thông tin người dùng mỗi khi đăng nhập thành công
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('WAYGROUND_CURRENT_USER', JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem('WAYGROUND_CURRENT_USER');
+    }
+  }, [currentUser]);
+
+  // KHI ĐANG THI HOẶC Ở TRANG KẾT QUẢ: NẾU BẤM F5 / LOAD LẠI TRANG
+  // -> HIỆN POPUP CẢNH BÁO CỦA TRÌNH DUYỆT "Bạn có muốn rời khỏi trang này không?"
+  // -> NẾU RỜI ĐI THÌ TỰ ĐỘNG CHUYỂN VỀ TRANG CHỦ (LIST)
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (currentView === 'room' || currentView === 'result') {
+        e.preventDefault();
+        e.returnValue = 'Bạn có muốn thoát khỏi phòng thi? Mọi tiến trình bài làm có thể bị gián đoạn.';
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [currentView]);
 
   const handleLogin = (user) => {
     setCurrentUser(user);
