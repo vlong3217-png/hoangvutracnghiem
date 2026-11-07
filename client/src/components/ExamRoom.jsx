@@ -54,6 +54,9 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
   const [sentenceSlots, setSentenceSlots] = useState({});
   const [availableDropItems, setAvailableDropItems] = useState([]);
 
+  // STATE DÀNH CHO DẠNG TRẮC NGHIỆM CHỌN NHIỀU ĐÁP ÁN (Multiple choice)
+  const [multiSelectedOpts, setMultiSelectedOpts] = useState([]);
+
   // STATE DÀNH CHO DẠNG ĐIỀN CHỖ TRỐNG ĐỤC LỖ (Fill in the Blanks / Cloze)
   const [clozeAnswers, setClozeAnswers] = useState({});
 
@@ -82,6 +85,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
   useEffect(() => {
     setShowInstantAnswer(false);
     setAnsweredState(null);
+    setMultiSelectedOpts(Array.isArray(selectedAnswers[currentQ.id]) ? selectedAnswers[currentQ.id] : []);
 
     if (currentQ.type === 'true_false_multi') {
       setActivePartId(currentQ.parts?.[0]?.id || 'A');
@@ -302,11 +306,24 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
   };
 
   // -------------------------------------------------------------
-  // XỬ LÝ TRẮC NGHIỆM 4 ĐÁP ÁN
+  // XỬ LÝ TRẮC NGHIỆM 4 ĐÁP ÁN (HỖ TRỢ CẢ 1 ĐÁP ÁN VÀ NHIỀU ĐÁP ÁN)
   // -------------------------------------------------------------
   const handleSelectOption = (optId) => {
     if (answeredState) return;
 
+    // NẾU LÀ CÂU TRẮC NGHIỆM NHIỀU ĐÁP ÁN (currentQ.type === 'multiple')
+    if (currentQ.type === 'multiple') {
+      const isAlready = multiSelectedOpts.includes(optId);
+      const nextList = isAlready
+        ? multiSelectedOpts.filter(id => id !== optId)
+        : [...multiSelectedOpts, optId];
+      
+      setMultiSelectedOpts(nextList);
+      setSelectedAnswers(prev => ({ ...prev, [currentQ.id]: nextList }));
+      return;
+    }
+
+    // CÂU TRẮC NGHIỆM ĐƠN (1 ĐÁP ÁN ĐÚNG)
     const isCorrect = Array.isArray(currentQ.correctAnswer)
       ? currentQ.correctAnswer.includes(optId)
       : currentQ.correctAnswer === optId;
@@ -329,6 +346,37 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
     }
 
     // Tự động chuyển câu sau 2 giây
+    setTimeout(() => {
+      handleNext();
+    }, 2000);
+  };
+
+  // Nộp câu trắc nghiệm nhiều đáp án
+  const handleSubmitMultipleChoice = () => {
+    if (multiSelectedOpts.length === 0 || answeredState) return;
+
+    const correctList = [...(currentQ.correctAnswer || [])].sort();
+    const userList = [...multiSelectedOpts].sort();
+    const isAllMatch = JSON.stringify(correctList) === JSON.stringify(userList);
+
+    setSelectedAnswers(prev => ({ ...prev, [currentQ.id]: multiSelectedOpts }));
+    setAnsweredState({
+      isCorrect: isAllMatch,
+      isMultiple: true,
+      selectedList: multiSelectedOpts,
+      correctList
+    });
+
+    if (isAllMatch) {
+      playSound(true);
+      setScore(prev => prev + 600);
+      try {
+        confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
+      } catch (e) {}
+    } else {
+      playSound(false);
+    }
+
     setTimeout(() => {
       handleNext();
     }, 2000);
@@ -855,26 +903,34 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
                 const defaultColor = cardColors[idx % 4];
                 const animClass = !answeredState ? `anim-card-${(idx % 4) + 1}` : '';
 
-                // Trạng thái khi đã bấm
-                const isSelected = answeredState?.selectedOptId === opt.id;
-                const isCorrect = opt.id === currentQ.correctAnswer;
+                // Trạng thái khi đã bấm hoặc đang chọn
+                const isMulti = currentQ.type === 'multiple';
+                const isSelected = isMulti 
+                  ? multiSelectedOpts.includes(opt.id)
+                  : answeredState?.selectedOptId === opt.id;
+
+                const isCorrect = Array.isArray(currentQ.correctAnswer)
+                  ? currentQ.correctAnswer.includes(opt.id)
+                  : opt.id === currentQ.correctAnswer;
 
                 let cardBg = defaultColor;
                 let extraStyles = '';
 
                 if (answeredState) {
                   if (isSelected) {
-                    // Ô vừa bấm: nếu đúng thì xanh lá, sai thì đỏ
+                    // Ô người dùng chọn: nếu nằm trong tập đúng thì xanh lá, không thì đỏ
                     cardBg = isCorrect ? 'bg-[#1cb059]' : 'bg-[#e53e3e]';
                     extraStyles = 'ring-4 ring-white shadow-2xl scale-[1.01] sm:scale-[1.02] z-10';
                   } else if (isCorrect) {
-                    // Nếu trả lời sai thì ô đáp án đúng tự động hiện màu xanh lá
+                    // Đáp án đúng mà chưa chọn: hiện xanh lá để người học biết
                     cardBg = 'bg-[#1cb059]';
                     extraStyles = 'ring-4 ring-emerald-400/80 shadow-2xl scale-[1.01] sm:scale-[1.02] z-10';
                   } else {
-                    // Các ô còn lại làm mờ nhẹ
                     extraStyles = 'opacity-35 scale-[0.98]';
                   }
+                } else if (isMulti && isSelected) {
+                  // Đang trong lúc chọn nhiều đáp án: viền sáng nổi bật
+                  extraStyles = 'ring-4 ring-white shadow-2xl scale-[1.02] brightness-110';
                 }
 
                 return (
@@ -1127,7 +1183,15 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
 
           <div>
             {/* NÚT GỬI CÂU TRẢ LỜI Ở GÓC PHẢI THAY CHO NÚT MŨI TÊN (Áp dụng cho dạng điền từ và các dạng tự gửi) */}
-            {(currentQ.type === 'short_answer' || currentQ.type === 'fill_blank') ? (
+            {currentQ.type === 'multiple' ? (
+              <button
+                onClick={handleSubmitMultipleChoice}
+                disabled={multiSelectedOpts.length === 0 || Boolean(answeredState)}
+                className="px-4 py-2 sm:px-6 sm:py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-lg transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2"
+              >
+                Gửi câu trả lời ({multiSelectedOpts.length})
+              </button>
+            ) : (currentQ.type === 'short_answer' || currentQ.type === 'fill_blank') ? (
               <button
                 onClick={handleShortAnswerSubmit}
                 disabled={
