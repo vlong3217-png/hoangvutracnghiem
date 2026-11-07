@@ -919,9 +919,9 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
         {/* TRƯỜNG HỢP D: DẠNG TRẮC NGHIỆM 4 ĐÁP ÁN (RỘNG RÃI TOÀN MÀN HÌNH) */}
         {/* ============================================================== */}
         {(!currentQ.type || currentQ.type === 'single' || currentQ.type === 'multiple') && (
-          <div className="w-full max-w-full px-2 sm:px-4 md:px-6 flex flex-col items-center flex-1 justify-between relative">
+          <div className="w-full max-w-full px-2 sm:px-4 md:px-6 flex flex-col items-center relative">
             {/* Box Đề bài: Rộng rãi toàn màn hình, trong suốt mờ nhẹ nhàng */}
-            <div className="w-full bg-black/35 backdrop-blur-md border border-white/15 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 text-center shadow-2xl mb-3 sm:mb-5 relative shrink-0">
+            <div className="w-full bg-black/35 backdrop-blur-md border border-white/15 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 text-center shadow-2xl mb-4 sm:mb-6 relative shrink-0">
               <span className="text-[11px] sm:text-xs text-slate-400 block font-mono mb-1.5 sm:mb-2">
                 {currentIdx + 1}/{questions.length}
               </span>
@@ -930,8 +930,8 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
               </h2>
             </div>
 
-            {/* LƯỚI 4 CARD ĐÁP ÁN: FULL CHIỀU NGANG VÀ CHIỀU CAO TỐI ĐA */}
-            <div className="w-full flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5 min-h-[220px] sm:min-h-[280px] md:min-h-[320px]">
+            {/* LƯỚI 4 CARD ĐÁP ÁN: FULL CHIỀU NGANG, CHIỀU CAO VỪA VẶN THANH THOÁT */}
+            <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
               {currentQ.options.map((opt, idx) => {
                 const cardColors = ['bg-[#98b809]', 'bg-[#a359ea]', 'bg-[#f46f1b]', 'bg-[#18baa5]'];
                 const defaultColor = cardColors[idx % 4];
@@ -968,11 +968,11 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
                 }
 
                 return (
-                  <div key={opt.id} className="relative w-full h-full flex">
+                  <div key={opt.id} className="relative w-full">
                     <button
                       onClick={() => handleSelectOption(opt.id)}
                       disabled={Boolean(answeredState)}
-                      className={`${cardBg} ${animClass} ${extraStyles} w-full h-full min-h-[100px] sm:min-h-[220px] md:min-h-[280px] rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 text-white border-2 border-white/20 flex items-center justify-center text-center font-normal text-sm sm:text-lg md:text-xl lg:text-2xl shadow-xl transition-all duration-300 cursor-pointer relative ${!answeredState ? 'active:scale-[0.98] hover:brightness-105 hover:-translate-y-1' : ''
+                      className={`${cardBg} ${animClass} ${extraStyles} w-full min-h-[90px] sm:min-h-[170px] md:min-h-[210px] lg:h-[220px] rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-white border-2 border-white/20 flex items-center justify-center text-center font-normal text-sm sm:text-lg md:text-xl lg:text-2xl shadow-xl transition-all duration-300 cursor-pointer relative ${!answeredState ? 'active:scale-[0.98] hover:brightness-105 hover:-translate-y-1' : ''
                         }`}
                     >
                       <span className="leading-snug">{opt.text}</span>
