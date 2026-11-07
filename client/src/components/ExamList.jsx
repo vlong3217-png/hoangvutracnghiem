@@ -51,101 +51,101 @@ export default function ExamList({ exams, onSelectExam, onOpenTeacherManage, onL
 
   return (
     <div className="min-h-screen bg-[#fcfcfd] flex flex-col font-sans text-slate-800">
-      {/* 1. TOPBAR CHUẨN WAYGROUND / QUIZIZZ */}
-      <header className="bg-white border-b border-slate-200 px-6 py-2.5 flex items-center justify-between sticky top-0 z-30">
-        <div className="flex items-center gap-6">
+      {/* 1. TOPBAR CHUẨN WAYGROUND / QUIZIZZ - TỐI ƯU RESPONSIVE */}
+      <header className="bg-white border-b border-slate-200 px-3 sm:px-6 py-2.5 flex items-center justify-between sticky top-0 z-30">
+        <div className="flex items-center gap-3 sm:gap-6 flex-1 min-w-0">
           {/* Logo WAYGROUND (formerly Quizizz) */}
-          <div className="flex items-baseline gap-1.5 cursor-pointer">
-            <span className="text-[#d82a7a] font-black text-xl tracking-tighter">
+          <div className="flex items-baseline gap-1 cursor-pointer shrink-0">
+            <span className="text-[#d82a7a] font-black text-lg sm:text-xl tracking-tighter">
               WAYGROUND
             </span>
-            <span className="text-[10px] text-slate-400 font-medium italic">
+            <span className="text-[9px] sm:text-[10px] text-slate-400 font-medium italic hidden xs:inline">
               formerly Quizizz
             </span>
           </div>
 
           {/* Ô tìm kiếm "Tìm quiz" */}
-          <div className="relative w-64 md:w-80">
+          <div className="relative w-full max-w-[200px] sm:max-w-xs md:max-w-sm">
             <input 
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm quiz"
-              className="w-full pl-4 pr-9 py-1.5 bg-slate-50 hover:bg-slate-100 focus:bg-white text-xs text-slate-800 border border-slate-200 rounded-full focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all"
+              placeholder="Tìm quiz..."
+              className="w-full pl-3 sm:pl-4 pr-8 sm:pr-9 py-1 sm:py-1.5 bg-slate-50 hover:bg-slate-100 focus:bg-white text-xs text-slate-800 border border-slate-200 rounded-full focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all"
             />
-            <Search className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer" />
+            <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 cursor-pointer" />
           </div>
         </div>
 
-        {/* Navigation links giữa/phải: Giữ Trang chủ, Hoạt động và thêm Đăng xuất */}
-        <div className="flex items-center gap-1 md:gap-3 text-xs font-semibold text-slate-600">
-          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors">
+        {/* Navigation links giữa/phải: Giữ Trang chủ, Hoạt động và Đăng xuất */}
+        <div className="flex items-center gap-1 sm:gap-2 text-xs font-semibold text-slate-600 shrink-0">
+          <button className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors">
             <Home className="w-4 h-4 text-slate-500" />
             <span>Trang chủ</span>
           </button>
 
-          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[#883494] font-bold border-b-2 border-[#883494] transition-colors">
-            <RotateCcw className="w-4 h-4" />
-            <span>Hoạt động</span>
+          <button className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg text-[#883494] font-bold border-b-2 border-[#883494] transition-colors">
+            <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">Hoạt động</span>
           </button>
 
-          <div className="h-4 w-px bg-slate-200 mx-1"></div>
+          <div className="h-4 w-px bg-slate-200 mx-0.5 sm:mx-1"></div>
 
           {/* Nút Đăng xuất tiện lợi */}
           <button 
             onClick={onLogout}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 transition-colors text-xs font-bold cursor-pointer"
+            className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 transition-colors text-xs font-bold cursor-pointer"
             title="Đăng xuất khỏi tài khoản"
           >
             <LogOut className="w-3.5 h-3.5" />
-            <span>Đăng xuất</span>
+            <span className="hidden sm:inline">Đăng xuất</span>
           </button>
         </div>
       </header>
 
       {/* 2. TAB SUB-NAV (Đang chạy, Hoàn thành, Tạo) */}
-      <div className="bg-white border-b border-slate-200 px-8 pt-4">
-        <div className="flex items-center gap-8 text-sm font-semibold text-slate-600">
+      <div className="bg-white border-b border-slate-200 px-4 sm:px-8 pt-3 sm:pt-4 overflow-x-auto scrollbar-none">
+        <div className="flex items-center gap-6 sm:gap-8 text-xs sm:text-sm font-semibold text-slate-600 min-w-max">
           <button 
             onClick={() => setActiveTab('running')}
-            className={`pb-3.5 flex items-center gap-2 relative transition-colors ${
+            className={`pb-3 flex items-center gap-1.5 sm:gap-2 relative transition-colors ${
               activeTab === 'running' 
                 ? 'text-slate-900 font-bold border-b-2 border-amber-500' 
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             <span>Đang chạy</span>
-            <Hourglass className="w-4 h-4 text-slate-700" />
+            <Hourglass className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-700" />
           </button>
 
           <button 
             onClick={() => setActiveTab('completed')}
-            className={`pb-3.5 flex items-center gap-2 relative transition-colors ${
+            className={`pb-3 flex items-center gap-1.5 sm:gap-2 relative transition-colors ${
               activeTab === 'completed' 
                 ? 'text-slate-900 font-bold border-b-2 border-amber-500' 
                 : 'text-slate-400 hover:text-slate-700'
             }`}
           >
             <span>Hoàn thành</span>
-            <Hourglass className="w-4 h-4 text-slate-400 rotate-180" />
+            <Hourglass className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 rotate-180" />
           </button>
 
           <button 
             onClick={() => setActiveTab('created')}
-            className={`pb-3.5 flex items-center gap-2 relative transition-colors ${
+            className={`pb-3 flex items-center gap-1.5 sm:gap-2 relative transition-colors ${
               activeTab === 'created' 
                 ? 'text-slate-900 font-bold border-b-2 border-amber-500' 
                 : 'text-slate-400 hover:text-slate-700'
             }`}
           >
             <span>Tạo</span>
-            <Edit3 className="w-4 h-4 text-slate-400" />
+            <Edit3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400" />
           </button>
         </div>
       </div>
 
-      {/* 3. LƯỚI THẺ BÀI THI CHUẨN QUIZIZZ (5 CỘT RESPONSIVE) */}
-      <main className="flex-1 px-8 py-6">
+      {/* 3. LƯỚI THẺ BÀI THI CHUẨN QUIZIZZ (RESPONSIVE TOÀN DIỆN CHO MOBILE) */}
+      <main className="flex-1 px-4 sm:px-8 py-4 sm:py-6">
         {filteredExams.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="w-20 h-20 rounded-full bg-pink-50 flex items-center justify-center text-4xl mb-4 text-[#d82a7a] shadow-xs">

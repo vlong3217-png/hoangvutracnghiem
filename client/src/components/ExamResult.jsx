@@ -128,10 +128,10 @@ export default function ExamResult({ exam, result, onRetry, onGoHome }) {
                     </span>
                   </div>
 
-                  {/* Thứ hạng & Điểm số & Độ chính xác % */}
-                  <div className="flex flex-wrap items-center gap-6 sm:gap-8 mb-6">
+                  {/* Thứ hạng & Điểm số & Độ chính xác % (TỐI ƯU MOBILE GRID) */}
+                  <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-3 sm:gap-6 md:gap-8 mb-6">
                     {/* Ô ĐỘ CHÍNH XÁC PHẦN TRĂM NỔI BẬT */}
-                    <div className="px-4 py-2 rounded-2xl bg-[#18baa5]/20 border border-[#18baa5]/40 flex flex-col">
+                    <div className="col-span-2 sm:col-span-1 px-3.5 py-2 rounded-2xl bg-[#18baa5]/20 border border-[#18baa5]/40 flex flex-col">
                       <div className="text-2xl sm:text-3xl font-black text-[#2fe59e]">
                         {accuracyPercent}%
                       </div>
@@ -142,12 +142,12 @@ export default function ExamResult({ exam, result, onRetry, onGoHome }) {
 
                     <div className="h-10 w-px bg-white/10 hidden sm:block"></div>
 
-                    <div>
-                      <div className="text-2xl sm:text-3xl font-black text-white flex items-baseline gap-1">
+                    <div className="px-3 py-1.5 rounded-xl bg-black/20 sm:bg-transparent">
+                      <div className="text-xl sm:text-3xl font-black text-white flex items-baseline gap-1">
                         <span>{correctCount > 0 ? (totalQuestions - correctCount + 1) : totalQuestions}</span>
-                        <span className="text-sm font-semibold text-slate-400">/{totalQuestions}</span>
+                        <span className="text-xs sm:text-sm font-semibold text-slate-400">/{totalQuestions}</span>
                       </div>
-                      <div className="text-[11px] font-semibold text-slate-400 flex items-center gap-1 mt-0.5">
+                      <div className="text-[10px] sm:text-[11px] font-semibold text-slate-400 flex items-center gap-1 mt-0.5">
                         <span>Thứ hạng</span>
                         <RotateCcw className="w-2.5 h-2.5 text-slate-400" />
                       </div>
@@ -155,11 +155,11 @@ export default function ExamResult({ exam, result, onRetry, onGoHome }) {
 
                     <div className="h-10 w-px bg-white/10 hidden sm:block"></div>
 
-                    <div>
-                      <div className="text-2xl sm:text-3xl font-black text-white">
+                    <div className="px-3 py-1.5 rounded-xl bg-black/20 sm:bg-transparent">
+                      <div className="text-xl sm:text-3xl font-black text-white">
                         {score > 0 ? score.toLocaleString() : '0'}
                       </div>
-                      <div className="text-[11px] font-semibold text-slate-400 mt-0.5">
+                      <div className="text-[10px] sm:text-[11px] font-semibold text-slate-400 mt-0.5">
                         Điểm số
                       </div>
                     </div>
