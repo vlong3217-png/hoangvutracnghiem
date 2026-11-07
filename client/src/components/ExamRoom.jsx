@@ -632,7 +632,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
       {/* 2. BODY KHÔNG GIAN BÀI THI CHÍNH (CÓ HIỆU ỨNG CHUYỂN CÂU HỎI TRƯỢT MƯỢT MÀ) */}
       <main 
         key={currentIdx}
-        className={`flex-1 p-3 sm:p-4 lg:p-6 flex flex-col justify-start sm:justify-center items-center overflow-y-auto relative bg-[#340b2e] bg-[radial-gradient(#4d1245_1px,transparent_1px)] [background-size:16px_16px] pb-24 sm:pb-6 ${
+        className={`flex-1 p-3 sm:p-5 lg:p-6 flex flex-col justify-start items-center overflow-y-auto relative bg-[#340b2e] bg-[radial-gradient(#4d1245_1px,transparent_1px)] [background-size:16px_16px] pb-28 pt-4 sm:pt-6 ${
           slideDirection === 'next' ? 'anim-question-enter' : 'anim-question-prev'
         }`}
       >
@@ -1091,9 +1091,9 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
         {/* ============================================================== */}
         {currentQ.type === 'essay' && (
           <div className="w-full max-w-5xl px-2 sm:px-6 flex flex-col items-center">
-            {/* Box Đề bài tự luận */}
-            <div className="w-full bg-black/35 backdrop-blur-md border border-white/15 rounded-2xl sm:rounded-3xl p-4 sm:p-8 text-center shadow-2xl mb-3 sm:mb-5 relative">
-              <span className="text-[11px] sm:text-xs text-slate-400 block font-mono mb-1.5 sm:mb-2">
+            {/* Box Đề bài tự luận - Thêm padding và margin an toàn */}
+            <div className="w-full bg-black/35 backdrop-blur-md border border-white/15 rounded-2xl sm:rounded-3xl p-5 sm:p-8 text-center shadow-2xl mb-4 sm:mb-6 relative mt-1">
+              <span className="text-[11px] sm:text-xs text-slate-400 block font-mono mb-2">
                 {currentIdx + 1}/{questions.length}
               </span>
               <h2 className="text-sm sm:text-xl md:text-2xl font-normal text-white leading-relaxed max-w-4xl mx-auto">
