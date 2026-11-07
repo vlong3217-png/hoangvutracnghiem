@@ -636,7 +636,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
       {/* 2. BODY KHÔNG GIAN BÀI THI CHÍNH (CÓ HIỆU ỨNG CHUYỂN CÂU HỎI TRƯỢT MƯỢT MÀ) */}
       <main
         key={currentIdx}
-        className={`flex-1 p-3 sm:p-5 lg:p-6 flex flex-col justify-start items-center overflow-y-auto relative bg-[#340b2e] bg-[radial-gradient(#4d1245_1px,transparent_1px)] [background-size:16px_16px] pb-28 pt-4 sm:pt-6 ${slideDirection === 'next' ? 'anim-question-enter' : 'anim-question-prev'
+        className={`flex-1 p-3 sm:p-5 lg:px-8 lg:py-6 flex flex-col justify-start items-center overflow-y-auto relative bg-[#340b2e] bg-[radial-gradient(#4d1245_1px,transparent_1px)] [background-size:16px_16px] pb-24 pt-3 sm:pt-5 ${slideDirection === 'next' ? 'anim-question-enter' : 'anim-question-prev'
           }`}
       >
 
@@ -919,19 +919,19 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
         {/* TRƯỜNG HỢP D: DẠNG TRẮC NGHIỆM 4 ĐÁP ÁN (RỘNG RÃI TOÀN MÀN HÌNH) */}
         {/* ============================================================== */}
         {(!currentQ.type || currentQ.type === 'single' || currentQ.type === 'multiple') && (
-          <div className="w-full max-w-7xl px-2 sm:px-6 flex flex-col items-center relative">
-            {/* Box Đề bài: Rộng rãi, trong suốt mờ nhẹ nhàng */}
-            <div className="w-full bg-black/35 backdrop-blur-md border border-white/15 rounded-2xl sm:rounded-3xl p-4 sm:p-8 md:p-10 text-center shadow-2xl mb-4 sm:mb-8 relative">
+          <div className="w-full max-w-full px-2 sm:px-4 md:px-6 flex flex-col items-center flex-1 justify-between relative">
+            {/* Box Đề bài: Rộng rãi toàn màn hình, trong suốt mờ nhẹ nhàng */}
+            <div className="w-full bg-black/35 backdrop-blur-md border border-white/15 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 text-center shadow-2xl mb-3 sm:mb-5 relative shrink-0">
               <span className="text-[11px] sm:text-xs text-slate-400 block font-mono mb-1.5 sm:mb-2">
                 {currentIdx + 1}/{questions.length}
               </span>
-              <h2 className="text-base sm:text-2xl md:text-3xl font-normal text-white leading-relaxed max-w-5xl mx-auto">
+              <h2 className="text-base sm:text-2xl md:text-3xl font-normal text-white leading-relaxed max-w-6xl mx-auto">
                 {currentQ.question}
               </h2>
             </div>
 
-            {/* LƯỚI 4 CARD ĐÁP ÁN: 1 CỘT TRÊN MOBILE, 2 CỘT TABLET, 4 CỘT DESKTOP */}
-            <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 md:gap-6">
+            {/* LƯỚI 4 CARD ĐÁP ÁN: FULL CHIỀU NGANG VÀ CHIỀU CAO TỐI ĐA */}
+            <div className="w-full flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5 min-h-[220px] sm:min-h-[280px] md:min-h-[320px]">
               {currentQ.options.map((opt, idx) => {
                 const cardColors = ['bg-[#98b809]', 'bg-[#a359ea]', 'bg-[#f46f1b]', 'bg-[#18baa5]'];
                 const defaultColor = cardColors[idx % 4];
@@ -968,11 +968,11 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
                 }
 
                 return (
-                  <div key={opt.id} className="relative w-full">
+                  <div key={opt.id} className="relative w-full h-full flex">
                     <button
                       onClick={() => handleSelectOption(opt.id)}
                       disabled={Boolean(answeredState)}
-                      className={`${cardBg} ${animClass} ${extraStyles} w-full min-h-[90px] sm:min-h-[190px] md:min-h-[240px] rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-white border-2 border-white/20 flex items-center justify-center text-center font-normal text-sm sm:text-lg md:text-xl lg:text-2xl shadow-xl transition-all duration-300 cursor-pointer relative ${!answeredState ? 'active:scale-[0.98] hover:brightness-105 hover:-translate-y-1' : ''
+                      className={`${cardBg} ${animClass} ${extraStyles} w-full h-full min-h-[100px] sm:min-h-[220px] md:min-h-[280px] rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 text-white border-2 border-white/20 flex items-center justify-center text-center font-normal text-sm sm:text-lg md:text-xl lg:text-2xl shadow-xl transition-all duration-300 cursor-pointer relative ${!answeredState ? 'active:scale-[0.98] hover:brightness-105 hover:-translate-y-1' : ''
                         }`}
                     >
                       <span className="leading-snug">{opt.text}</span>
