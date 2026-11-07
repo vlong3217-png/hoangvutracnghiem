@@ -24,13 +24,13 @@ export const initialExams = [
   "subject": "Công nghệ mạng LAN",
   "level": "Đại học",
   "duration": 30,
-  "totalQuestions": 29,
+  "totalQuestions": 30,
   "author": "Bộ môn Mạng máy tính",
   "className": "Lớp học phần Công nghệ mạng LAN",
-  "statusBadge": "29 Qs",
+  "statusBadge": "30 Qs",
   "cardTheme": "blue",
   "assigned": true,
-  "bottomText": "29 câu hỏi bài 1",
+  "bottomText": "30 câu hỏi bài 1",
   "bottomType": "purple_pill",
   "questions": [
     {
@@ -757,6 +757,31 @@ export const initialExams = [
       ],
       "correctAnswer": "C",
       "explanation": "Đáp án đúng là C."
+    },
+    {
+      "id": 30,
+      "type": "single",
+      "question": "Câu 30: Điều gì xảy ra khi có đụng độ xảy ra trong mạng Ethernet?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Các thiết bị tiếp tục truyền dữ liệu"
+        },
+        {
+          "id": "B",
+          "text": "Giao thông trong mạng bị ngưng lại"
+        },
+        {
+          "id": "C",
+          "text": "Không ảnh hưởng đến quá trình tuyền tin"
+        },
+        {
+          "id": "D",
+          "text": "Tín hiệu được khuếch đại để truyền tiếp"
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "Đáp án đúng là B."
     }
   ]
 },
