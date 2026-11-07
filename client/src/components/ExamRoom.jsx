@@ -1159,8 +1159,9 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
 
       {/* 3. THANH FOOTER (TỐI ƯU RESPONSIVE CHO MOBILE) */}
       {answeredState ? (
-        <footer className={`h-14 sm:h-16 px-4 sm:px-8 ${answeredState.isCorrect ? 'bg-[#1cb059]' : 'bg-[#e53e3e]'} flex items-center justify-between shrink-0 z-30 transition-colors shadow-2xl`}>
-          <div className="flex items-center gap-2 sm:gap-3 text-white font-black text-lg sm:text-2xl tracking-wide">
+        <footer className={`h-14 sm:h-16 px-4 sm:px-8 ${answeredState.isCorrect ? 'bg-[#1cb059]' : 'bg-[#e53e3e]'} relative flex items-center justify-between shrink-0 z-30 transition-colors shadow-2xl`}>
+          {/* Cụm "Câu đúng" / "Câu sai" được căn giữa tuyệt đối toàn màn hình */}
+          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 sm:gap-3 text-white font-black text-lg sm:text-2xl tracking-wide pointer-events-none">
             {answeredState.isCorrect ? (
               <>
                 <Check className="w-5 h-5 sm:w-7 sm:h-7 stroke-[3.5]" />
@@ -1174,6 +1175,9 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
             )}
           </div>
 
+          {/* Spacer trống bên trái để giữ nút bên phải cố định */}
+          <div className="w-8"></div>
+
           <button
             onClick={() => {
               if (currentQ.type === 'true_false_multi') {
@@ -1182,7 +1186,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
                 handleNext();
               }
             }}
-            className="px-4 py-2 sm:px-6 sm:py-2.5 bg-white text-slate-900 hover:bg-slate-100 font-extrabold text-xs sm:text-base rounded-xl sm:rounded-2xl flex items-center gap-1.5 sm:gap-2 shadow-xl cursor-pointer active:scale-95 transition-all"
+            className="px-4 py-2 sm:px-6 sm:py-2.5 bg-white text-slate-900 hover:bg-slate-100 font-extrabold text-xs sm:text-base rounded-xl sm:rounded-2xl flex items-center gap-1.5 sm:gap-2 shadow-xl cursor-pointer active:scale-95 transition-all z-10"
           >
             <span>
               {currentQ.type === 'true_false_multi'
