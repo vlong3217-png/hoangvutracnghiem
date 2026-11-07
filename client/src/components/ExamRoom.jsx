@@ -1224,7 +1224,10 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
           </div>
 
           <div>
-            {/* NÚT GỬI CÂU TRẢ LỜI Ở GÓC PHẢI THAY CHO NÚT MŨI TÊN (Áp dụng cho dạng điền từ và các dạng tự gửi) */}
+            {/* NÚT GỬI CÂU TRẢ LỜI Ở GÓC PHẢI:
+                - Đối với trắc nghiệm 1 đáp án (type === 'single' hoặc không set type): KHÔNG hiển thị nút này (người dùng bấm chọn đáp án là chấm ngay).
+                - Đối với tất cả các dạng khác (multiple, short_answer, fill_blank, essay, categorize, drag_drop, true_false_multi): hiển thị nút Gửi câu trả lời.
+            */}
             {currentQ.type === 'multiple' ? (
               <button
                 onClick={handleSubmitMultipleChoice}
@@ -1260,6 +1263,9 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
                   <span>Gửi câu trả lời</span>
                 )}
               </button>
+            ) : (!currentQ.type || currentQ.type === 'single') ? (
+              /* Trắc nghiệm 1 đáp án: KHÔNG hiển thị nút Gửi câu trả lời */
+              null
             ) : (
               <button
                 onClick={handleNext}
