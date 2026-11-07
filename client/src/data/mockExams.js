@@ -19,6 +19,749 @@ export const mockUsers = [
 
 export const initialExams = [
 {
+  "id": "exam-lan-bai1",
+  "title": "CÔNG NGHỆ MẠNG LAN - BÀI 1",
+  "subject": "Công nghệ mạng LAN",
+  "level": "Đại học",
+  "duration": 30,
+  "totalQuestions": 29,
+  "author": "Bộ môn Mạng máy tính",
+  "className": "Lớp học phần Công nghệ mạng LAN",
+  "statusBadge": "29 Qs",
+  "cardTheme": "blue",
+  "assigned": true,
+  "bottomText": "29 câu hỏi bài 1",
+  "bottomType": "purple_pill",
+  "questions": [
+    {
+      "id": 1,
+      "type": "single",
+      "question": "Câu 1: Hub được coi là thiết bị ở tầng (layer) nào trong mô hình OSI?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Layer 2"
+        },
+        {
+          "id": "B",
+          "text": "Layer 1"
+        },
+        {
+          "id": "C",
+          "text": "Layer 4"
+        },
+        {
+          "id": "D",
+          "text": "Layer 3"
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "Đáp án đúng là B."
+    },
+    {
+      "id": 2,
+      "type": "single",
+      "question": "Câu 2: Để giảm thiểu tình trạng đụng độ (Collission) trong mạng Ethernet, thiết bị nào thường được sử dụng?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Bridge"
+        },
+        {
+          "id": "B",
+          "text": "Firewall"
+        },
+        {
+          "id": "C",
+          "text": "Repeater"
+        },
+        {
+          "id": "D",
+          "text": "Hub"
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "Đáp án đúng là A."
+    },
+    {
+      "id": 3,
+      "type": "single",
+      "question": "Câu 3: Công nghệ CSMA/CD được sử dụng để làm gì trong mạng LAN?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Ngăn chặn quảng bá"
+        },
+        {
+          "id": "B",
+          "text": "Tăng tốc độ truyền"
+        },
+        {
+          "id": "C",
+          "text": "Phát hiện đụng độ"
+        },
+        {
+          "id": "D",
+          "text": "Chuyển gói dữ liệu"
+        }
+      ],
+      "correctAnswer": "C",
+      "explanation": "Đáp án đúng là C."
+    },
+    {
+      "id": 4,
+      "type": "single",
+      "question": "Câu 4: Loại băng thông nào được đề cập đến trong Ethernet 10BASE-T?",
+      "options": [
+        {
+          "id": "A",
+          "text": "1 Mbps"
+        },
+        {
+          "id": "B",
+          "text": "100 Mbps"
+        },
+        {
+          "id": "C",
+          "text": "10 Mbps"
+        },
+        {
+          "id": "D",
+          "text": "1 Gbps"
+        }
+      ],
+      "correctAnswer": "C",
+      "explanation": "Đáp án đúng là C."
+    },
+    {
+      "id": 5,
+      "type": "single",
+      "question": "Câu 5: Repeater hoạt động ở lớp nào trong mô hình OSI?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Lớp 1"
+        },
+        {
+          "id": "B",
+          "text": "Lớp 3"
+        },
+        {
+          "id": "C",
+          "text": "Lớp 4"
+        },
+        {
+          "id": "D",
+          "text": "Lớp 2"
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "Đáp án đúng là A."
+    },
+    {
+      "id": 6,
+      "type": "single",
+      "question": "Câu 6: Tại sao đụng độ (Collission) thường xảy ra trong mạng Ethernet?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Thiếu băng thông"
+        },
+        {
+          "id": "B",
+          "text": "Thiết bị hoạt động không đồng thời"
+        },
+        {
+          "id": "C",
+          "text": "Tài nguyên mạng"
+        },
+        {
+          "id": "D",
+          "text": "Nhiều thiết bị truyền đồng thời"
+        }
+      ],
+      "correctAnswer": "D",
+      "explanation": "Đáp án đúng là D."
+    },
+    {
+      "id": 7,
+      "type": "single",
+      "question": "Câu 7: Tại sao việc sử dụng Repeater có thể gây ra vấn đề về quảng bá trong mạng LAN?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Tăng độ tin cậy"
+        },
+        {
+          "id": "B",
+          "text": "Giảm băng thông"
+        },
+        {
+          "id": "C",
+          "text": "Làm giảm tốc độ"
+        },
+        {
+          "id": "D",
+          "text": "Tăng kích thước miền quảng bá"
+        }
+      ],
+      "correctAnswer": "D",
+      "explanation": "Đáp án đúng là D."
+    },
+    {
+      "id": 8,
+      "type": "single",
+      "question": "Câu 8: Thiết bị nào được sử dụng để phân đoạn mạng LAN?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Repeater"
+        },
+        {
+          "id": "B",
+          "text": "Firewall"
+        },
+        {
+          "id": "C",
+          "text": "Switch"
+        },
+        {
+          "id": "D",
+          "text": "Hub"
+        }
+      ],
+      "correctAnswer": "C",
+      "explanation": "Đáp án đúng là C."
+    },
+    {
+      "id": 9,
+      "type": "single",
+      "question": "Câu 9: Thời gian trễ khi sử dụng Bridge là khoảng bao nhiêu phần trăm?",
+      "options": [
+        {
+          "id": "A",
+          "text": "5% đến 10%"
+        },
+        {
+          "id": "B",
+          "text": "10% đến 30%"
+        },
+        {
+          "id": "C",
+          "text": "30% đến 50%"
+        },
+        {
+          "id": "D",
+          "text": "50% đến 70%"
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "Đáp án đúng là B."
+    },
+    {
+      "id": 10,
+      "type": "single",
+      "question": "Câu 10: Khi một thiết bị gửi gói quảng bá lớp 2, địa chỉ MAC đích sẽ là gì?",
+      "options": [
+        {
+          "id": "A",
+          "text": "11:11:11:11:11:11"
+        },
+        {
+          "id": "B",
+          "text": "FF:FF:FF:FF:FF:FF"
+        },
+        {
+          "id": "C",
+          "text": "00:00:00:00:00:00"
+        },
+        {
+          "id": "D",
+          "text": "12:34:56:78:9A"
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "Đáp án đúng là B."
+    },
+    {
+      "id": 11,
+      "type": "single",
+      "question": "Câu 11: Bridge và Switch có thể thu hẹp miền gì trong mạng?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Miền liên mạng"
+        },
+        {
+          "id": "B",
+          "text": "Miền đụng độ"
+        },
+        {
+          "id": "C",
+          "text": "Miền giao thức"
+        },
+        {
+          "id": "D",
+          "text": "Miền dịch vụ"
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "Đáp án đúng là B."
+    },
+    {
+      "id": 12,
+      "type": "single",
+      "question": "Câu 12: Khác biệt chính giữa Bridge và Router là gì?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Bridge không chuyển gói quảng bá, Router chuyển gói quảng bá"
+        },
+        {
+          "id": "B",
+          "text": "Bridge không phân đoạn mạng, Router phân đoạn mạng"
+        },
+        {
+          "id": "C",
+          "text": "Bridge hoạt động ở lớp 3, Router ở lớp 2"
+        },
+        {
+          "id": "D",
+          "text": "Bridge phân đoạn trong một mạng, Router kết nối nhiều mạng khác nhau"
+        }
+      ],
+      "correctAnswer": "D",
+      "explanation": "Đáp án đúng là D."
+    },
+    {
+      "id": 13,
+      "type": "single",
+      "question": "Câu 13: Khi một gói quảng bá được gửi từ một thiết bị trong mạng, điều gì xảy ra với các thiết bị khác?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Gói bị chặn lại"
+        },
+        {
+          "id": "B",
+          "text": "Tất cả thiết bị trong miền quảng bá đều nhận gói"
+        },
+        {
+          "id": "C",
+          "text": "Không thiết bị nào nhận gói quảng bá"
+        },
+        {
+          "id": "D",
+          "text": "Chỉ thiết bị đích nhận gói"
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "Đáp án đúng là B."
+    },
+    {
+      "id": 14,
+      "type": "single",
+      "question": "Câu 14: Ta có thể sử dụng thiết nào sau đây để phân đoạn mạng?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Hub và Repeater"
+        },
+        {
+          "id": "B",
+          "text": "Switch và Repeater"
+        },
+        {
+          "id": "C",
+          "text": "Switch và Router"
+        },
+        {
+          "id": "D",
+          "text": "Switch và Hub"
+        }
+      ],
+      "correctAnswer": "C",
+      "explanation": "Đáp án đúng là C."
+    },
+    {
+      "id": 15,
+      "type": "single",
+      "question": "Câu 15: Tiêu chuẩn của mạng Ethernet có dây là?",
+      "options": [
+        {
+          "id": "A",
+          "text": "802.15"
+        },
+        {
+          "id": "B",
+          "text": "802.3"
+        },
+        {
+          "id": "C",
+          "text": "802.11b"
+        },
+        {
+          "id": "D",
+          "text": "802.11a"
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "Đáp án đúng là B."
+    },
+    {
+      "id": 16,
+      "type": "single",
+      "question": "Câu 16: Switch trong mạng LAN là thiết bị thuộc lớp mấy?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Thiết bị lớp 2"
+        },
+        {
+          "id": "B",
+          "text": "Thiết bị lớp 7"
+        },
+        {
+          "id": "C",
+          "text": "Thiết bị lớp 4"
+        },
+        {
+          "id": "D",
+          "text": "Thiết bị lớp 1"
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "Đáp án đúng là A."
+    },
+    {
+      "id": 17,
+      "type": "single",
+      "question": "Câu 17: Thời gian trễ trong mạng Ethernet không phụ thuộc vào yếu tố nào?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Loại cáp"
+        },
+        {
+          "id": "B",
+          "text": "Loại giao thức"
+        },
+        {
+          "id": "C",
+          "text": "Số lượng thiết bị"
+        },
+        {
+          "id": "D",
+          "text": "Khoảng cách giữa các thiết bị"
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "Đáp án đúng là B."
+    },
+    {
+      "id": 18,
+      "type": "single",
+      "question": "Câu 18: Đặc điểm nào của Bridge giúp cải thiện hiệu suất mạng?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Phân đoạn mạng"
+        },
+        {
+          "id": "B",
+          "text": "Chặn gói quảng bá"
+        },
+        {
+          "id": "C",
+          "text": "Tăng khả năng giảm nhiễu"
+        },
+        {
+          "id": "D",
+          "text": "Khuếch đại tín hiệu"
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "Đáp án đúng là A."
+    },
+    {
+      "id": 19,
+      "type": "single",
+      "question": "Câu 19: Mạng bán song công (Half Duplex) có gì khác với mạng song công (Full Duplex)?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Không cần địa chỉ MAC"
+        },
+        {
+          "id": "B",
+          "text": "Sử dụng cáp quang"
+        },
+        {
+          "id": "C",
+          "text": "Không thể truyền đồng thời"
+        },
+        {
+          "id": "D",
+          "text": "Tốc độ thấp hơn"
+        }
+      ],
+      "correctAnswer": "C",
+      "explanation": "Đáp án đúng là C."
+    },
+    {
+      "id": 20,
+      "type": "single",
+      "question": "Câu 20: Phương pháp truy cập nào được sử dụng trong mỗi Segment của mạng LAN?",
+      "options": [
+        {
+          "id": "A",
+          "text": "FDMA"
+        },
+        {
+          "id": "B",
+          "text": "Token Ring"
+        },
+        {
+          "id": "C",
+          "text": "CSMA/CD"
+        },
+        {
+          "id": "D",
+          "text": "TDMA"
+        }
+      ],
+      "correctAnswer": "C",
+      "explanation": "Đáp án đúng là C."
+    },
+    {
+      "id": 21,
+      "type": "single",
+      "question": "Câu 21: Bridge hoạt động ở lớp nào trong mô hình OSI?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Lớp 1"
+        },
+        {
+          "id": "B",
+          "text": "Lớp 3"
+        },
+        {
+          "id": "C",
+          "text": "Lớp 4"
+        },
+        {
+          "id": "D",
+          "text": "Lớp 2"
+        }
+      ],
+      "correctAnswer": "D",
+      "explanation": "Đáp án đúng là D."
+    },
+    {
+      "id": 22,
+      "type": "single",
+      "question": "Câu 22: Tại sao việc phân đoạn mạng LAN lại quan trọng?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Để tăng cường bảo mật cho mạng"
+        },
+        {
+          "id": "B",
+          "text": "Để giảm thiểu nghẽn mạch và tăng băng thông cho mỗi user"
+        },
+        {
+          "id": "C",
+          "text": "Để tăng mật độ giao thông trong mạng"
+        },
+        {
+          "id": "D",
+          "text": "Để giảm số lượng thiết bị kết nối"
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "Đáp án đúng là B."
+    },
+    {
+      "id": 23,
+      "type": "single",
+      "question": "Câu 23: Tại sao khi sử dụng Switch lại giảm được xung đột trong mạng?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Vì Switch chỉ chuyển tiếp Frame khi biết giao thức mạng"
+        },
+        {
+          "id": "B",
+          "text": "Vì Switch chỉ chuyển tiếp Frame khi biết địa chỉ IP"
+        },
+        {
+          "id": "C",
+          "text": "Vì Switch chỉ chuyển tiếp Frame khi biết địa chỉ MAC"
+        },
+        {
+          "id": "D",
+          "text": "Vì Switch chỉ chuyển tiếp Frame khi biết địa chỉ NumberPort"
+        }
+      ],
+      "correctAnswer": "C",
+      "explanation": "Đáp án đúng là C."
+    },
+    {
+      "id": 24,
+      "type": "single",
+      "question": "Câu 24: Một Switch có 24 cổng FastEthernet, ta có thể phân chia thành bao nhiêu đoạn mạng?",
+      "options": [
+        {
+          "id": "A",
+          "text": "24"
+        },
+        {
+          "id": "B",
+          "text": "48"
+        },
+        {
+          "id": "C",
+          "text": "1"
+        },
+        {
+          "id": "D",
+          "text": "12"
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "Đáp án đúng là A."
+    },
+    {
+      "id": 25,
+      "type": "single",
+      "question": "Câu 25: Thiết bị Router hoạt động ở lớp nào trong mô hình OSI?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Lớp 1"
+        },
+        {
+          "id": "B",
+          "text": "Lớp 2"
+        },
+        {
+          "id": "C",
+          "text": "Lớp 4"
+        },
+        {
+          "id": "D",
+          "text": "Lớp 3"
+        }
+      ],
+      "correctAnswer": "D",
+      "explanation": "Đáp án đúng là D."
+    },
+    {
+      "id": 26,
+      "type": "single",
+      "question": "Câu 26: Chuyển mạch LAN giúp giảm tình trạng gì trong mạng?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Lưu lượng"
+        },
+        {
+          "id": "B",
+          "text": "Chi phí"
+        },
+        {
+          "id": "C",
+          "text": "Độ trễ"
+        },
+        {
+          "id": "D",
+          "text": "Thiếu hụt băng thông"
+        }
+      ],
+      "correctAnswer": "C",
+      "explanation": "Đáp án đúng là C."
+    },
+    {
+      "id": 27,
+      "type": "single",
+      "question": "Câu 27: Khi một máy kết nối vào Switch, nó tạo ra?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Một miền giao thức"
+        },
+        {
+          "id": "B",
+          "text": "Một miền đụng độ riêng"
+        },
+        {
+          "id": "C",
+          "text": "Một thiết bị lưu trữ"
+        },
+        {
+          "id": "D",
+          "text": "Một kết nối internet"
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "Đáp án đúng là B."
+    },
+    {
+      "id": 28,
+      "type": "single",
+      "question": "Câu 28: Cấu trúc Ethernet đầu tiên được gọi là gì?",
+      "options": [
+        {
+          "id": "A",
+          "text": "LAN Ethernet"
+        },
+        {
+          "id": "B",
+          "text": "Fast Ethernet"
+        },
+        {
+          "id": "C",
+          "text": "Thick Ethernet"
+        },
+        {
+          "id": "D",
+          "text": "Gigabit Ethernet"
+        }
+      ],
+      "correctAnswer": "C",
+      "explanation": "Đáp án đúng là C."
+    },
+    {
+      "id": 29,
+      "type": "single",
+      "question": "Câu 29: MicroSegment là gì?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Một loại dịch vụ"
+        },
+        {
+          "id": "B",
+          "text": "Một loại thiết bị"
+        },
+        {
+          "id": "C",
+          "text": "Một miền đụng độ nhỏ"
+        },
+        {
+          "id": "D",
+          "text": "Một loại giao thức"
+        }
+      ],
+      "correctAnswer": "C",
+      "explanation": "Đáp án đúng là C."
+    }
+  ]
+},
+
+{
   "id": "exam-demo-cloze-essay",
   "title": "BÀI THI MẪU: ĐỤC LỖ & TỰ LUẬN (AI CHẤM)",
   "subject": "Lịch sử & Triết học",
