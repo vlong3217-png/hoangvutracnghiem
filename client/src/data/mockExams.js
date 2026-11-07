@@ -19,6 +19,732 @@ export const mockUsers = [
 
 export const initialExams = [
 {
+  "id": "exam-ptudpt-bai1",
+  "title": "PHÁT TRIỂN ỨNG DỤNG PHÂN TÁN - BÀI 1",
+  "subject": "Phát triển ứng dụng phân tán",
+  "level": "Đại học",
+  "duration": 60,
+  "totalQuestions": 51,
+  "author": "Bộ môn Công nghệ phần mềm",
+  "className": "Lớp học phần Ứng dụng phân tán",
+  "statusBadge": "51 Qs",
+  "cardTheme": "purple",
+  "assigned": true,
+  "bottomText": "15 trắc nghiệm + 36 tự luận AI",
+  "bottomType": "purple_pill",
+  "questions": [
+    {
+      "id": 1,
+      "type": "single",
+      "question": "Câu 1: Điểm khác biệt quan trọng về giao tiếp giữa ứng dụng đơn khối và ứng dụng phân tán là gì?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Ứng dụng phân tán không cần quan tâm đến định dạng dữ liệu"
+        },
+        {
+          "id": "B",
+          "text": "Ứng dụng đơn khối luôn dùng HTTP còn ứng dụng phân tán không dùng HTTP"
+        },
+        {
+          "id": "C",
+          "text": "Ứng dụng đơn khối không có xử lý nghiệp vụ"
+        },
+        {
+          "id": "D",
+          "text": "Ứng dụng đơn khối thường gọi trực tiếp trong cùng tiến trình, còn ứng dụng phân tán trao đổi qua mạng"
+        }
+      ],
+      "explanation": "Đáp án đúng là D.",
+      "correctAnswer": "D"
+    },
+    {
+      "id": 2,
+      "type": "single",
+      "question": "Câu 2: Trong mô hình máy khách-máy chủ, thành phần nào được xem là máy khách trong một tương tác cụ thể?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Thành phần có giao diện người dùng"
+        },
+        {
+          "id": "B",
+          "text": "Thành phần lưu cơ sở dữ liệu"
+        },
+        {
+          "id": "C",
+          "text": "Thành phần khởi tạo yêu cầu"
+        },
+        {
+          "id": "D",
+          "text": "Thành phần có tên chứa từ \"Client\""
+        }
+      ],
+      "explanation": "Đáp án đúng là C.",
+      "correctAnswer": "C"
+    },
+    {
+      "id": 3,
+      "type": "multiple",
+      "question": "Câu 3: Hai đặc điểm nào đúng với truyền thông qua hàng đợi?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Bên gửi có thể không cần chờ bên xử lý hoàn tất"
+        },
+        {
+          "id": "B",
+          "text": "Mỗi thông điệp luôn phải được gửi đồng thời tới mọi bên đăng ký"
+        },
+        {
+          "id": "C",
+          "text": "Bên gửi bắt buộc phải gọi trực tiếp dịch vụ xử lý nền"
+        },
+        {
+          "id": "D",
+          "text": "Hàng đợi giúp tách bên gửi công việc khỏi bên xử lý công việc"
+        }
+      ],
+      "explanation": "Các đáp án đúng là: A, D.",
+      "correctAnswer": [
+        "A",
+        "D"
+      ]
+    },
+    {
+      "id": 4,
+      "type": "single",
+      "question": "Câu 4: Trong publish-subscribe, bên phát sự kiện có đặc điểm nào?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Phải chờ tất cả bên nhận phản hồi trước khi tiếp tục"
+        },
+        {
+          "id": "B",
+          "text": "Phải biết chính xác từng bên đăng ký và gọi trực tiếp từng bên"
+        },
+        {
+          "id": "C",
+          "text": "Chỉ được phép có một bên nhận sự kiện"
+        },
+        {
+          "id": "D",
+          "text": "Không nhất thiết phải biết có bao nhiêu bên nhận hoặc mỗi bên sẽ xử lý thế nào"
+        }
+      ],
+      "explanation": "Đáp án đúng là D.",
+      "correctAnswer": "D"
+    },
+    {
+      "id": 5,
+      "type": "single",
+      "question": "Câu 5: Khi lựa chọn công nghệ cho một luồng giao tiếp phân tán, bước hợp lý trước tiên là gì?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Chọn công nghệ phổ biến nhất rồi thiết kế tương tác theo công nghệ đó"
+        },
+        {
+          "id": "B",
+          "text": "Luôn chọn hàng đợi nếu hệ thống có từ hai thành phần trở lên"
+        },
+        {
+          "id": "C",
+          "text": "Luôn chọn REST API cho mọi loại tương tác"
+        },
+        {
+          "id": "D",
+          "text": "Xác định trước kiểu trao đổi thông điệp mà các thành phần cần sử dụng"
+        }
+      ],
+      "explanation": "Đáp án đúng là D.",
+      "correctAnswer": "D"
+    },
+    {
+      "id": 6,
+      "type": "single",
+      "question": "Câu 6: Trong .NET, project được hiểu đúng nhất là gì?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Đơn vị biên dịch được mô tả bởi file .csproj"
+        },
+        {
+          "id": "B",
+          "text": "Nhóm nhiều máy chủ cùng triển khai một ứng dụng"
+        },
+        {
+          "id": "C",
+          "text": "Một endpoint HTTP hoàn chỉnh"
+        },
+        {
+          "id": "D",
+          "text": "Một tiến trình đang chạy trên hệ điều hành"
+        }
+      ],
+      "explanation": "Đáp án đúng là A.",
+      "correctAnswer": "A"
+    },
+    {
+      "id": 7,
+      "type": "multiple",
+      "question": "Câu 7: Hai phát biểu nào đúng về file project ASP.NET Core Web API trong ví dụ?",
+      "options": [
+        {
+          "id": "A",
+          "text": "ImplicitUsings dùng để khởi động máy chủ HTTP"
+        },
+        {
+          "id": "B",
+          "text": "Microsoft.NET.Sdk.Web xác định project web"
+        },
+        {
+          "id": "C",
+          "text": "TargetFramework chỉ ra phiên bản .NET mục tiêu"
+        },
+        {
+          "id": "D",
+          "text": "Nullable dùng để ánh xạ route tới handler"
+        }
+      ],
+      "explanation": "Các đáp án đúng là: B, C.",
+      "correctAnswer": [
+        "B",
+        "C"
+      ]
+    },
+    {
+      "id": 8,
+      "type": "single",
+      "question": "Câu 8: builder.Services được dùng chủ yếu để làm gì?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Biên dịch solution thành file thực thi"
+        },
+        {
+          "id": "B",
+          "text": "Gửi HTTP response về máy khách"
+        },
+        {
+          "id": "C",
+          "text": "Khai báo status code cho endpoint"
+        },
+        {
+          "id": "D",
+          "text": "Đăng ký các dịch vụ để ứng dụng có thể sử dụng qua dependency injection"
+        }
+      ],
+      "explanation": "Đáp án đúng là D.",
+      "correctAnswer": "D"
+    },
+    {
+      "id": 9,
+      "type": "single",
+      "question": "Câu 9: builder.Build() có vai trò gì trong luồng khởi tạo ứng dụng?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Tự động tạo tất cả endpoint CRUD"
+        },
+        {
+          "id": "B",
+          "text": "Gửi request đầu tiên tới API"
+        },
+        {
+          "id": "C",
+          "text": "Dừng máy chủ HTTP"
+        },
+        {
+          "id": "D",
+          "text": "Tạo đối tượng ứng dụng từ cấu hình đã khai báo"
+        }
+      ],
+      "explanation": "Đáp án đúng là D.",
+      "correctAnswer": "D"
+    },
+    {
+      "id": 10,
+      "type": "single",
+      "question": "Câu 10: Trong Minimal API, một endpoint thường được xác định bởi tổ hợp nào?",
+      "options": [
+        {
+          "id": "A",
+          "text": "HTTP method và route pattern"
+        },
+        {
+          "id": "B",
+          "text": "Tên project và tên solution"
+        },
+        {
+          "id": "C",
+          "text": "Status code và kiểu dữ liệu trả về"
+        },
+        {
+          "id": "D",
+          "text": "Tên service và target framework"
+        }
+      ],
+      "explanation": "Đáp án đúng là A.",
+      "correctAnswer": "A"
+    },
+    {
+      "id": 11,
+      "type": "single",
+      "question": "Câu 11: Khi nghiệp vụ của một endpoint trở nên lớn, cách tổ chức nào phù hợp hơn?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Chuyển mọi xử lý sang file .csproj"
+        },
+        {
+          "id": "B",
+          "text": "Chuyển logic chuyên trách sang service và để route handler điều phối ngắn gọn"
+        },
+        {
+          "id": "C",
+          "text": "Bỏ dependency injection để giảm số đối tượng"
+        },
+        {
+          "id": "D",
+          "text": "Đưa toàn bộ logic vào một biểu thức duy nhất trong Program.cs"
+        }
+      ],
+      "explanation": "Đáp án đúng là B.",
+      "correctAnswer": "B"
+    },
+    {
+      "id": 12,
+      "type": "multiple",
+      "question": "Câu 12: Hai nguồn dữ liệu nào có thể được model binding trực tiếp vào tham số route handler?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Query string"
+        },
+        {
+          "id": "B",
+          "text": "Chỉ file cấu hình project"
+        },
+        {
+          "id": "C",
+          "text": "Chỉ mã nguồn của solution"
+        },
+        {
+          "id": "D",
+          "text": "Route parameter"
+        }
+      ],
+      "explanation": "Các đáp án đúng là: A, D.",
+      "correctAnswer": [
+        "A",
+        "D"
+      ]
+    },
+    {
+      "id": 13,
+      "type": "single",
+      "question": "Câu 13: Một tham số kiểu service đã đăng ký trong builder.Services có thể được cung cấp cho handler thông qua cơ chế nào?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Route rewriting"
+        },
+        {
+          "id": "B",
+          "text": "HTTP redirect"
+        },
+        {
+          "id": "C",
+          "text": "JSON serialization"
+        },
+        {
+          "id": "D",
+          "text": "Dependency injection"
+        }
+      ],
+      "explanation": "Đáp án đúng là D.",
+      "correctAnswer": "D"
+    },
+    {
+      "id": 14,
+      "type": "single",
+      "question": "Câu 14: Results.Created(uri, value) biểu diễn phản hồi nào?",
+      "options": [
+        {
+          "id": "A",
+          "text": "200 OK và không có dữ liệu trả về"
+        },
+        {
+          "id": "B",
+          "text": "400 Bad Request do dữ liệu không hợp lệ"
+        },
+        {
+          "id": "C",
+          "text": "201 Created và có thể kèm địa chỉ tài nguyên qua header Location"
+        },
+        {
+          "id": "D",
+          "text": "500 Internal Server Error do lỗi máy chủ"
+        }
+      ],
+      "explanation": "Đáp án đúng là C.",
+      "correctAnswer": "C"
+    },
+    {
+      "id": 15,
+      "type": "single",
+      "question": "Câu 15: Lỗi nào có thể làm API không khởi động được trên địa chỉ đã chọn?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Project dùng Microsoft.NET.Sdk.Web"
+        },
+        {
+          "id": "B",
+          "text": "Route handler trả JSON"
+        },
+        {
+          "id": "C",
+          "text": "Có sử dụng dependency injection"
+        },
+        {
+          "id": "D",
+          "text": "Cổng đã bị tiến trình khác sử dụng"
+        }
+      ],
+      "explanation": "Đáp án đúng là D.",
+      "correctAnswer": "D"
+    },
+    {
+      "id": 16,
+      "type": "essay",
+      "question": "Câu 16 (Tự luận): 1. Trình bày khái niệm hệ thống phân tán và nêu hai đặc điểm cốt lõi của hệ thống này.",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: -  Khái niệm: Là tập hợp các phần tử tính toán tự trị phối hợp với nhau.\n- Đặc điểm 1: Gồm nhiều thành phần hoạt động độ... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "-  Khái niệm: Là tập hợp các phần tử tính toán tự trị phối hợp với nhau.\n- Đặc điểm 1: Gồm nhiều thành phần hoạt động độc lập (tự trị).\n- Đặc điểm 2: Xuất hiện trước người dùng như một hệ thống thống nhất duy nhất.",
+      "explanation": "-  Khái niệm: Là tập hợp các phần tử tính toán tự trị phối hợp với nhau.\n- Đặc điểm 1: Gồm nhiều thành phần hoạt động độc lập (tự trị).\n- Đặc điểm 2: Xuất hiện trước người dùng như một hệ thống thống nhất duy nhất."
+    },
+    {
+      "id": 17,
+      "type": "essay",
+      "question": "Câu 17 (Tự luận): 2. Trình bày khái niệm ứng dụng phân tán dưới góc nhìn phát triển phần mềm.",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Là ứng dụng có các thành phần xử lý không nhất thiết nằm trong cùng một tiến trình hoặc cùng một máy tính.\n- Các thành... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Là ứng dụng có các thành phần xử lý không nhất thiết nằm trong cùng một tiến trình hoặc cùng một máy tính.\n- Các thành phần này phối hợp với nhau qua mạng để thực hiện một mục tiêu chung.",
+      "explanation": "- Là ứng dụng có các thành phần xử lý không nhất thiết nằm trong cùng một tiến trình hoặc cùng một máy tính.\n- Các thành phần này phối hợp với nhau qua mạng để thực hiện một mục tiêu chung."
+    },
+    {
+      "id": 18,
+      "type": "essay",
+      "question": "Câu 18 (Tự luận): 3. Giải thích vì sao một ứng dụng có nhiều thành phần độc lập vẫn có thể xuất hiện trước người dùng như một hệ thống thống nhất.",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Hệ thống phân tán che bớt sự độc lập của các thành phần bên trong.\n- Việc ẩn đi độ phức tạp này giúp người dùng hoặc c... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Hệ thống phân tán che bớt sự độc lập của các thành phần bên trong.\n- Việc ẩn đi độ phức tạp này giúp người dùng hoặc chương trình bên ngoài tương tác với nó như một chỉnh thể.",
+      "explanation": "- Hệ thống phân tán che bớt sự độc lập của các thành phần bên trong.\n- Việc ẩn đi độ phức tạp này giúp người dùng hoặc chương trình bên ngoài tương tác với nó như một chỉnh thể."
+    },
+    {
+      "id": 19,
+      "type": "essay",
+      "question": "Câu 19 (Tự luận): 4. Nêu khái niệm ứng dụng đơn khối (monolithic application).",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Là kiểu ứng dụng mà phần lớn chức năng được đóng gói, biên dịch, triển khai và vận hành như một đơn vị thống nhất.\n- M... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Là kiểu ứng dụng mà phần lớn chức năng được đóng gói, biên dịch, triển khai và vận hành như một đơn vị thống nhất.\n- Mọi thay đổi ở một phần thường kéo theo việc phải kiểm thử và triển khai lại toàn bộ ứng dụng.",
+      "explanation": "- Là kiểu ứng dụng mà phần lớn chức năng được đóng gói, biên dịch, triển khai và vận hành như một đơn vị thống nhất.\n- Mọi thay đổi ở một phần thường kéo theo việc phải kiểm thử và triển khai lại toàn bộ ứng dụng."
+    },
+    {
+      "id": 20,
+      "type": "essay",
+      "question": "Câu 20 (Tự luận): 5. Phân biệt cách giao tiếp giữa các thành phần trong ứng dụng đơn khối và ứng dụng phân tán.",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Ứng dụng đơn khối: Các mô-đun gọi hàm trực tiếp trong cùng một tiến trình (đồng bộ, tốc độ nhanh).\n- Ứng dụng phân tán... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Ứng dụng đơn khối: Các mô-đun gọi hàm trực tiếp trong cùng một tiến trình (đồng bộ, tốc độ nhanh).\n- Ứng dụng phân tán: Các thành phần giao tiếp bằng cách gửi thông điệp qua mạng (có độ trễ, chịu ảnh hưởng của đường truyền).",
+      "explanation": "- Ứng dụng đơn khối: Các mô-đun gọi hàm trực tiếp trong cùng một tiến trình (đồng bộ, tốc độ nhanh).\n- Ứng dụng phân tán: Các thành phần giao tiếp bằng cách gửi thông điệp qua mạng (có độ trễ, chịu ảnh hưởng của đường truyền)."
+    },
+    {
+      "id": 21,
+      "type": "essay",
+      "question": "Câu 21 (Tự luận): 6. Giải thích vì sao giao tiếp qua mạng làm phát sinh thêm những vấn đề cần xử lý so với lời gọi hàm trong cùng tiến trình.",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Lời gọi chịu ảnh hưởng của mạng, phát sinh độ trễ và rủi ro lỗi kết nối.\n- Lập trình viên phải xử lý thêm các yếu tố: ... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Lời gọi chịu ảnh hưởng của mạng, phát sinh độ trễ và rủi ro lỗi kết nối.\n- Lập trình viên phải xử lý thêm các yếu tố: quá thời gian chờ (timeout), gửi lại, định dạng dữ liệu, xác thực, bảo mật và khả năng quan sát hệ thống.",
+      "explanation": "- Lời gọi chịu ảnh hưởng của mạng, phát sinh độ trễ và rủi ro lỗi kết nối.\n- Lập trình viên phải xử lý thêm các yếu tố: quá thời gian chờ (timeout), gửi lại, định dạng dữ liệu, xác thực, bảo mật và khả năng quan sát hệ thống."
+    },
+    {
+      "id": 22,
+      "type": "essay",
+      "question": "Câu 22 (Tự luận): 7. Giải thích vì sao một ứng dụng có các tiến trình độc lập giao tiếp qua mạng vẫn có thể là ứng dụng phân tán khi các tiến trình chạy trên cùng một máy tính.",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Vì các thành phần đã được tách thành những tiến trình độc lập.\n- Ranh giới giao tiếp giữa chúng vẫn diễn ra qua giao t... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Vì các thành phần đã được tách thành những tiến trình độc lập.\n- Ranh giới giao tiếp giữa chúng vẫn diễn ra qua giao thức mạng hoặc cơ chế truyền thông điệp, thay vì gọi hàm nội bộ.",
+      "explanation": "- Vì các thành phần đã được tách thành những tiến trình độc lập.\n- Ranh giới giao tiếp giữa chúng vẫn diễn ra qua giao thức mạng hoặc cơ chế truyền thông điệp, thay vì gọi hàm nội bộ."
+    },
+    {
+      "id": 23,
+      "type": "essay",
+      "question": "Câu 23 (Tự luận): 8. Trình bày khái niệm và vai trò của máy khách và máy chủ trong kiến trúc client–server.",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Máy khách (Client): Là thành phần khởi tạo yêu cầu.\n- Máy chủ (Server): Là thành phần tiếp nhận yêu cầu, xử lý nghiệp ... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Máy khách (Client): Là thành phần khởi tạo yêu cầu.\n- Máy chủ (Server): Là thành phần tiếp nhận yêu cầu, xử lý nghiệp vụ và trả kết quả.",
+      "explanation": "- Máy khách (Client): Là thành phần khởi tạo yêu cầu.\n- Máy chủ (Server): Là thành phần tiếp nhận yêu cầu, xử lý nghiệp vụ và trả kết quả."
+    },
+    {
+      "id": 24,
+      "type": "essay",
+      "question": "Câu 24 (Tự luận): 9. Giải thích vì sao vai trò máy khách và máy chủ phụ thuộc vào từng tương tác, thay vì cố định cho một thành phần phần mềm.",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Vai trò được xác định theo chiều của lời gọi tại thời điểm đó, không phụ thuộc vào tên gọi cố định của thành phần.\n- M... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Vai trò được xác định theo chiều của lời gọi tại thời điểm đó, không phụ thuộc vào tên gọi cố định của thành phần.\n- Một dịch vụ có thể đóng vai trò máy chủ khi nhận yêu cầu, nhưng lại là máy khách khi nó tiếp tục gọi sang một dịch vụ khác.",
+      "explanation": "- Vai trò được xác định theo chiều của lời gọi tại thời điểm đó, không phụ thuộc vào tên gọi cố định của thành phần.\n- Một dịch vụ có thể đóng vai trò máy chủ khi nhận yêu cầu, nhưng lại là máy khách khi nó tiếp tục gọi sang một dịch vụ khác."
+    },
+    {
+      "id": 25,
+      "type": "essay",
+      "question": "Câu 25 (Tự luận): 10. Mô tả các bước cơ bản của một tương tác yêu cầu–phản hồi giữa máy khách và máy chủ.",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Bước 1: Máy khách tạo yêu cầu (gồm địa chỉ, thao tác, dữ liệu, xác thực).\n- Bước 2: Yêu cầu được truyền qua mạng tới m... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Bước 1: Máy khách tạo yêu cầu (gồm địa chỉ, thao tác, dữ liệu, xác thực).\n- Bước 2: Yêu cầu được truyền qua mạng tới máy chủ.\n- Bước 3: Máy chủ kiểm tra, thực thi nghiệp vụ và truy xuất dữ liệu.\n- Bước 4: Máy chủ trả phản hồi để máy khách hiển thị hoặc xử lý tiếp.",
+      "explanation": "- Bước 1: Máy khách tạo yêu cầu (gồm địa chỉ, thao tác, dữ liệu, xác thực).\n- Bước 2: Yêu cầu được truyền qua mạng tới máy chủ.\n- Bước 3: Máy chủ kiểm tra, thực thi nghiệp vụ và truy xuất dữ liệu.\n- Bước 4: Máy chủ trả phản hồi để máy khách hiển thị hoặc xử lý tiếp."
+    },
+    {
+      "id": 26,
+      "type": "essay",
+      "question": "Câu 26 (Tự luận): 11. Trình bày khái niệm mô hình trao đổi thông điệp (Message Exchange Pattern — MEP).",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Mô hình trao đổi thông điệp (Message Exchange Pattern) mô tả cách các thành phần gửi, nhận và phản hồi thông điệp.\n- M... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Mô hình trao đổi thông điệp (Message Exchange Pattern) mô tả cách các thành phần gửi, nhận và phản hồi thông điệp.\n- MEP không bị gắn cứng với bất kỳ một công nghệ cụ thể nào.",
+      "explanation": "- Mô hình trao đổi thông điệp (Message Exchange Pattern) mô tả cách các thành phần gửi, nhận và phản hồi thông điệp.\n- MEP không bị gắn cứng với bất kỳ một công nghệ cụ thể nào."
+    },
+    {
+      "id": 27,
+      "type": "essay",
+      "question": "Câu 27 (Tự luận): 12. Giải thích vì sao cần xác định kiểu trao đổi thông điệp trước khi lựa chọn công nghệ giao tiếp.",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Để hiểu rõ các thành phần cần \"kiểu trao đổi\" nào (cần phản hồi ngay hay xử lý nền, gửi một lần hay liên tục).\n- Khi x... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Để hiểu rõ các thành phần cần \"kiểu trao đổi\" nào (cần phản hồi ngay hay xử lý nền, gửi một lần hay liên tục).\n- Khi xác định được kiểu trao đổi, người thiết kế mới có thể chọn chính xác giao thức, framework và hạ tầng phù hợp.",
+      "explanation": "- Để hiểu rõ các thành phần cần \"kiểu trao đổi\" nào (cần phản hồi ngay hay xử lý nền, gửi một lần hay liên tục).\n- Khi xác định được kiểu trao đổi, người thiết kế mới có thể chọn chính xác giao thức, framework và hạ tầng phù hợp."
+    },
+    {
+      "id": 28,
+      "type": "essay",
+      "question": "Câu 28 (Tự luận): 13. Trình bày đặc điểm của mô hình yêu cầu–phản hồi (request–response).",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Một bên gửi yêu cầu, bên còn lại xử lý và trả phản hồi.\n- Máy khách thường bị ràng buộc thời gian và phải chờ phản hồi... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Một bên gửi yêu cầu, bên còn lại xử lý và trả phản hồi.\n- Máy khách thường bị ràng buộc thời gian và phải chờ phản hồi trước khi tiếp tục luồng xử lý.",
+      "explanation": "- Một bên gửi yêu cầu, bên còn lại xử lý và trả phản hồi.\n- Máy khách thường bị ràng buộc thời gian và phải chờ phản hồi trước khi tiếp tục luồng xử lý."
+    },
+    {
+      "id": 29,
+      "type": "essay",
+      "question": "Câu 29 (Tự luận): 14. Giải thích ưu điểm và hạn chế của mô hình yêu cầu–phản hồi đối với các tác vụ xử lý lâu.",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Ưu điểm: Dễ hiểu, dễ gỡ lỗi, phù hợp với thao tác cần kết quả ngay.\n- Nhược điểm (khi xử lý lâu): Máy khách phải chờ đ... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Ưu điểm: Dễ hiểu, dễ gỡ lỗi, phù hợp với thao tác cần kết quả ngay.\n- Nhược điểm (khi xử lý lâu): Máy khách phải chờ đợi (hoặc quá thời gian chờ); nên giới hạn dùng để ghi nhận yêu cầu ban đầu rồi chuyển xử lý chính sang chạy nền.",
+      "explanation": "- Ưu điểm: Dễ hiểu, dễ gỡ lỗi, phù hợp với thao tác cần kết quả ngay.\n- Nhược điểm (khi xử lý lâu): Máy khách phải chờ đợi (hoặc quá thời gian chờ); nên giới hạn dùng để ghi nhận yêu cầu ban đầu rồi chuyển xử lý chính sang chạy nền."
+    },
+    {
+      "id": 30,
+      "type": "essay",
+      "question": "Câu 30 (Tự luận): 15. Trình bày đặc điểm của mô hình thông điệp một chiều (one-way message).",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Một thành phần gửi thông điệp đi mà không chờ bên kia phản hồi nghiệp vụ.\n- Bên gửi chỉ cần xác nhận thông điệp đã đượ... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Một thành phần gửi thông điệp đi mà không chờ bên kia phản hồi nghiệp vụ.\n- Bên gửi chỉ cần xác nhận thông điệp đã được chấp nhận gửi hoặc đưa vào kênh truyền.",
+      "explanation": "- Một thành phần gửi thông điệp đi mà không chờ bên kia phản hồi nghiệp vụ.\n- Bên gửi chỉ cần xác nhận thông điệp đã được chấp nhận gửi hoặc đưa vào kênh truyền."
+    },
+    {
+      "id": 31,
+      "type": "essay",
+      "question": "Câu 31 (Tự luận): 16. Giải thích vì sao việc không chờ phản hồi nghiệp vụ trong mô hình thông điệp một chiều làm tăng nhu cầu theo dõi và xử lý lỗi.",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Vì bên gửi không nhận được kết quả xử lý trực tiếp, lỗi ở phía nhận có thể bị che khuất.\n- Hệ thống bắt buộc phải có c... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Vì bên gửi không nhận được kết quả xử lý trực tiếp, lỗi ở phía nhận có thể bị che khuất.\n- Hệ thống bắt buộc phải có cơ chế theo dõi trạng thái và ghi nhật ký để truy vết khi thất bại.",
+      "explanation": "- Vì bên gửi không nhận được kết quả xử lý trực tiếp, lỗi ở phía nhận có thể bị che khuất.\n- Hệ thống bắt buộc phải có cơ chế theo dõi trạng thái và ghi nhật ký để truy vết khi thất bại."
+    },
+    {
+      "id": 32,
+      "type": "essay",
+      "question": "Câu 32 (Tự luận): 17. Trình bày nguyên lý trao đổi thông điệp qua hàng đợi (queue-based messaging).",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Sử dụng hàng đợi trung gian để tách rời bên gửi công việc và bên xử lý công việc.\n- Bên gửi đưa thông điệp vào hàng đợ... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Sử dụng hàng đợi trung gian để tách rời bên gửi công việc và bên xử lý công việc.\n- Bên gửi đưa thông điệp vào hàng đợi, dịch vụ xử lý nền (worker) tự lấy ra và xử lý mà bên gửi không cần chờ đợi hoàn tất.",
+      "explanation": "- Sử dụng hàng đợi trung gian để tách rời bên gửi công việc và bên xử lý công việc.\n- Bên gửi đưa thông điệp vào hàng đợi, dịch vụ xử lý nền (worker) tự lấy ra và xử lý mà bên gửi không cần chờ đợi hoàn tất."
+    },
+    {
+      "id": 33,
+      "type": "essay",
+      "question": "Câu 33 (Tự luận): 18. Giải thích vì sao hàng đợi giúp giảm sự phụ thuộc về thời gian giữa bên gửi và bên xử lý.",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Công việc không bắt buộc phải hoàn thành ngay; worker có thể xử lý sau giúp hệ thống tự điều tiết tải.\n- Cho phép API ... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Công việc không bắt buộc phải hoàn thành ngay; worker có thể xử lý sau giúp hệ thống tự điều tiết tải.\n- Cho phép API phản hồi trạng thái nhanh (ví dụ: đang xử lý) để người dùng không phải chờ đợi toàn bộ quá trình.",
+      "explanation": "- Công việc không bắt buộc phải hoàn thành ngay; worker có thể xử lý sau giúp hệ thống tự điều tiết tải.\n- Cho phép API phản hồi trạng thái nhanh (ví dụ: đang xử lý) để người dùng không phải chờ đợi toàn bộ quá trình."
+    },
+    {
+      "id": 34,
+      "type": "essay",
+      "question": "Câu 34 (Tự luận): 19. Trình bày nguyên lý của mô hình phát hành–đăng ký (publish–subscribe).",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Một thành phần phát ra sự kiện (publisher).\n- Nhiều thành phần độc lập khác đăng ký (subscriber) để nhận và tự quyết đ... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Một thành phần phát ra sự kiện (publisher).\n- Nhiều thành phần độc lập khác đăng ký (subscriber) để nhận và tự quyết định cách xử lý sự kiện đó mà bên phát không cần quan tâm chi tiết.",
+      "explanation": "- Một thành phần phát ra sự kiện (publisher).\n- Nhiều thành phần độc lập khác đăng ký (subscriber) để nhận và tự quyết định cách xử lý sự kiện đó mà bên phát không cần quan tâm chi tiết."
+    },
+    {
+      "id": 35,
+      "type": "essay",
+      "question": "Câu 35 (Tự luận): 20. Phân biệt mục đích và cách phân phối thông điệp trong mô hình hàng đợi và mô hình phát hành–đăng ký.",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Qua hàng đợi: Một thông điệp đại diện cho một công việc và chỉ phân phối cho một dịch vụ xử lý nền trong nhóm xử lý.\n-... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Qua hàng đợi: Một thông điệp đại diện cho một công việc và chỉ phân phối cho một dịch vụ xử lý nền trong nhóm xử lý.\n- Phát hành-đăng ký: Một thông điệp đại diện cho một sự kiện đã xảy ra và được phát cho nhiều bên đăng ký độc lập cùng lúc.",
+      "explanation": "- Qua hàng đợi: Một thông điệp đại diện cho một công việc và chỉ phân phối cho một dịch vụ xử lý nền trong nhóm xử lý.\n- Phát hành-đăng ký: Một thông điệp đại diện cho một sự kiện đã xảy ra và được phát cho nhiều bên đăng ký độc lập cùng lúc."
+    },
+    {
+      "id": 36,
+      "type": "essay",
+      "question": "Câu 36 (Tự luận): 21. Trình bày đặc điểm chung của truyền luồng (streaming) và đẩy dữ liệu (push).",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Dữ liệu được gửi liên tục hoặc máy chủ chủ động đẩy thông điệp về máy khách ngay khi có thay đổi.\n- Hai bên thường duy... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Dữ liệu được gửi liên tục hoặc máy chủ chủ động đẩy thông điệp về máy khách ngay khi có thay đổi.\n- Hai bên thường duy trì một kết nối dài (long-lived connection).",
+      "explanation": "- Dữ liệu được gửi liên tục hoặc máy chủ chủ động đẩy thông điệp về máy khách ngay khi có thay đổi.\n- Hai bên thường duy trì một kết nối dài (long-lived connection)."
+    },
+    {
+      "id": 37,
+      "type": "essay",
+      "question": "Câu 37 (Tự luận): 22. Giải thích sự khác biệt giữa việc máy chủ chủ động đẩy dữ liệu và mô hình yêu cầu–phản hồi thông thường.",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Máy khách không nhất thiết phải gửi một yêu cầu mới mỗi lần muốn lấy bản cập nhật. Máy chủ sẽ tự động đẩy dữ liệu khi ... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Máy khách không nhất thiết phải gửi một yêu cầu mới mỗi lần muốn lấy bản cập nhật. Máy chủ sẽ tự động đẩy dữ liệu khi cần.",
+      "explanation": "- Máy khách không nhất thiết phải gửi một yêu cầu mới mỗi lần muốn lấy bản cập nhật. Máy chủ sẽ tự động đẩy dữ liệu khi cần."
+    },
+    {
+      "id": 38,
+      "type": "essay",
+      "question": "Câu 38 (Tự luận): 23. Nêu vai trò khái quát của REST API, GraphQL, gRPC, bộ môi giới thông điệp và SignalR trong giao tiếp của ứng dụng phân tán.",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - REST API / GraphQL: Phục vụ tương tác yêu cầu-phản hồi (giao tiếp API phía máy khách).\n- gRPC: Phục vụ giao tiếp dịch ... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- REST API / GraphQL: Phục vụ tương tác yêu cầu-phản hồi (giao tiếp API phía máy khách).\n- gRPC: Phục vụ giao tiếp dịch vụ-dịch vụ nội bộ với hiệu năng cao.\n- Bộ môi giới thông điệp (RabbitMQ): Phục vụ truyền thông qua hàng đợi (xử lý nền) và phát hành-đăng ký.\n- SignalR: Phục vụ truyền luồng và đẩy dữ liệu cập nhật thời gian thực.",
+      "explanation": "- REST API / GraphQL: Phục vụ tương tác yêu cầu-phản hồi (giao tiếp API phía máy khách).\n- gRPC: Phục vụ giao tiếp dịch vụ-dịch vụ nội bộ với hiệu năng cao.\n- Bộ môi giới thông điệp (RabbitMQ): Phục vụ truyền thông qua hàng đợi (xử lý nền) và phát hành-đăng ký.\n- SignalR: Phục vụ truyền luồng và đẩy dữ liệu cập nhật thời gian thực."
+    },
+    {
+      "id": 39,
+      "type": "essay",
+      "question": "Câu 39 (Tự luận): 24. Giải thích vì sao một ứng dụng phân tán có thể cần phối hợp nhiều mô hình trao đổi thông điệp.",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Vì một quy trình nghiệp vụ thực tế chứa nhiều dạng tương tác khác nhau.\n- Ví dụ: Luồng nộp bài dùng yêu cầu-phản hồi k... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Vì một quy trình nghiệp vụ thực tế chứa nhiều dạng tương tác khác nhau.\n- Ví dụ: Luồng nộp bài dùng yêu cầu-phản hồi khi nhận lệnh, dùng hàng đợi để chấm bài chạy nền, dùng pub/sub khi chấm xong để phát sự kiện, và dùng đẩy dữ liệu để thông báo trạng thái về máy khách.",
+      "explanation": "- Vì một quy trình nghiệp vụ thực tế chứa nhiều dạng tương tác khác nhau.\n- Ví dụ: Luồng nộp bài dùng yêu cầu-phản hồi khi nhận lệnh, dùng hàng đợi để chấm bài chạy nền, dùng pub/sub khi chấm xong để phát sự kiện, và dùng đẩy dữ liệu để thông báo trạng thái về máy khách."
+    },
+    {
+      "id": 40,
+      "type": "essay",
+      "question": "Câu 40 (Tự luận): 1. Trình bày khái niệm project và solution trong hệ sinh thái .NET.",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Project: Là đơn vị biên dịch, chứa mã nguồn và file .csproj khai báo SDK, framework và các tùy chọn biên dịch.\n- Solut... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Project: Là đơn vị biên dịch, chứa mã nguồn và file .csproj khai báo SDK, framework và các tùy chọn biên dịch.\n- Solution: Là cấu trúc tổ chức dùng để nhóm một hoặc nhiều project có liên quan và hỗ trợ build chúng bằng một lệnh.",
+      "explanation": "- Project: Là đơn vị biên dịch, chứa mã nguồn và file .csproj khai báo SDK, framework và các tùy chọn biên dịch.\n- Solution: Là cấu trúc tổ chức dùng để nhóm một hoặc nhiều project có liên quan và hỗ trợ build chúng bằng một lệnh."
+    },
+    {
+      "id": 41,
+      "type": "essay",
+      "question": "Câu 41 (Tự luận): 2. Phân biệt vai trò của project và solution trong việc tổ chức một hệ thống phần mềm.",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Project: Chứa mã nguồn của một ứng dụng hoặc thư viện, có thể được biên dịch và thực thi.\n- Solution: Dùng để quản lý,... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Project: Chứa mã nguồn của một ứng dụng hoặc thư viện, có thể được biên dịch và thực thi.\n- Solution: Dùng để quản lý, tổ chức nhiều project liên quan trong cùng một hệ thống.\n- Solution không phải là một tiến trình chạy mà chỉ phục vụ tổ chức và build.",
+      "explanation": "- Project: Chứa mã nguồn của một ứng dụng hoặc thư viện, có thể được biên dịch và thực thi.\n- Solution: Dùng để quản lý, tổ chức nhiều project liên quan trong cùng một hệ thống.\n- Solution không phải là một tiến trình chạy mà chỉ phục vụ tổ chức và build."
+    },
+    {
+      "id": 42,
+      "type": "essay",
+      "question": "Câu 42 (Tự luận): 3. Nêu các trách nhiệm cơ bản của môi trường hosting trong một ứng dụng ASP.NET Core Web API.",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Quản lý vòng đời ứng dụng.\n- Quản lý cấu hình và ghi nhật ký (logging).\n- Cung cấp cơ chế tiêm phụ thuộc (Dependency I... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Quản lý vòng đời ứng dụng.\n- Quản lý cấu hình và ghi nhật ký (logging).\n- Cung cấp cơ chế tiêm phụ thuộc (Dependency Injection).\n- Quản lý máy chủ HTTP.",
+      "explanation": "- Quản lý vòng đời ứng dụng.\n- Quản lý cấu hình và ghi nhật ký (logging).\n- Cung cấp cơ chế tiêm phụ thuộc (Dependency Injection).\n- Quản lý máy chủ HTTP."
+    },
+    {
+      "id": 43,
+      "type": "essay",
+      "question": "Câu 43 (Tự luận): 4. Giải thích sự khác nhau giữa giai đoạn cấu hình ứng dụng và giai đoạn ứng dụng được tạo để chạy trong hosting model của ASP.NET Core.",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Giai đoạn cấu hình: Sử dụng WebApplicationBuilder để đọc cấu hình và đăng ký các dịch vụ thông qua builder.Services.\n-... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Giai đoạn cấu hình: Sử dụng WebApplicationBuilder để đọc cấu hình và đăng ký các dịch vụ thông qua builder.Services.\n- Giai đoạn tạo và chạy: Gọi builder.Build() để tạo WebApplication, ánh xạ endpoint và gọi app.Run() để khởi động máy chủ HTTP.",
+      "explanation": "- Giai đoạn cấu hình: Sử dụng WebApplicationBuilder để đọc cấu hình và đăng ký các dịch vụ thông qua builder.Services.\n- Giai đoạn tạo và chạy: Gọi builder.Build() để tạo WebApplication, ánh xạ endpoint và gọi app.Run() để khởi động máy chủ HTTP."
+    },
+    {
+      "id": 44,
+      "type": "essay",
+      "question": "Câu 44 (Tự luận): 5. Trình bày khái niệm endpoint trong Web API.",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Endpoint là điểm mà một yêu cầu HTTP được nối với mã xử lý trong ứng dụng.\n- Đây là điểm vào để máy khách gọi và sử dụ... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Endpoint là điểm mà một yêu cầu HTTP được nối với mã xử lý trong ứng dụng.\n- Đây là điểm vào để máy khách gọi và sử dụng chức năng của máy chủ.",
+      "explanation": "- Endpoint là điểm mà một yêu cầu HTTP được nối với mã xử lý trong ứng dụng.\n- Đây là điểm vào để máy khách gọi và sử dụng chức năng của máy chủ."
+    },
+    {
+      "id": 45,
+      "type": "essay",
+      "question": "Câu 45 (Tự luận): 6. Giải thích mối quan hệ giữa phương thức HTTP, mẫu đường dẫn (route pattern) và hàm xử lý (route handler) khi xác định một endpoint.",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Phương thức HTTP: Xác định loại thao tác như GET, POST, PUT, DELETE.\n- Route pattern: Xác định đường dẫn mà máy khách ... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Phương thức HTTP: Xác định loại thao tác như GET, POST, PUT, DELETE.\n- Route pattern: Xác định đường dẫn mà máy khách gọi.\n- Route handler: Là hàm thực hiện xử lý yêu cầu và trả kết quả.\n- Phương thức HTTP kết hợp với route pattern xác định endpoint và endpoint sẽ gọi route handler tương ứng.",
+      "explanation": "- Phương thức HTTP: Xác định loại thao tác như GET, POST, PUT, DELETE.\n- Route pattern: Xác định đường dẫn mà máy khách gọi.\n- Route handler: Là hàm thực hiện xử lý yêu cầu và trả kết quả.\n- Phương thức HTTP kết hợp với route pattern xác định endpoint và endpoint sẽ gọi route handler tương ứng."
+    },
+    {
+      "id": 46,
+      "type": "essay",
+      "question": "Câu 46 (Tự luận): 7. Trình bày đặc điểm cơ bản của mô hình lập trình Minimal API.",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Khai báo endpoint trực tiếp bằng các phương thức như MapGet, MapPost, MapPut, MapDelete.\n- Giảm số lượng file và lớp c... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Khai báo endpoint trực tiếp bằng các phương thức như MapGet, MapPost, MapPut, MapDelete.\n- Giảm số lượng file và lớp cần tạo.\n- Cú pháp ngắn gọn, dễ đọc và dễ triển khai.\n- Vẫn hỗ trợ Dependency Injection và Middleware.",
+      "explanation": "- Khai báo endpoint trực tiếp bằng các phương thức như MapGet, MapPost, MapPut, MapDelete.\n- Giảm số lượng file và lớp cần tạo.\n- Cú pháp ngắn gọn, dễ đọc và dễ triển khai.\n- Vẫn hỗ trợ Dependency Injection và Middleware."
+    },
+    {
+      "id": 47,
+      "type": "essay",
+      "question": "Câu 47 (Tự luận): 8. Giải thích vì sao Minimal API phù hợp với việc xây dựng API có cấu trúc gọn và vì sao logic nghiệp vụ vẫn có thể cần tách khỏi route handler.",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Minimal API phù hợp vì giảm số lượng file, lớp và mã nguồn cần viết, thích hợp cho ví dụ nhập môn, microservice nhỏ ho... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Minimal API phù hợp vì giảm số lượng file, lớp và mã nguồn cần viết, thích hợp cho ví dụ nhập môn, microservice nhỏ hoặc prototype.\n- Khi nghiệp vụ lớn hơn, nên tách logic nghiệp vụ thành các service chuyên trách để route handler không chứa quá nhiều xử lý, giúp mã nguồn dễ quản lý hơn.",
+      "explanation": "- Minimal API phù hợp vì giảm số lượng file, lớp và mã nguồn cần viết, thích hợp cho ví dụ nhập môn, microservice nhỏ hoặc prototype.\n- Khi nghiệp vụ lớn hơn, nên tách logic nghiệp vụ thành các service chuyên trách để route handler không chứa quá nhiều xử lý, giúp mã nguồn dễ quản lý hơn."
+    },
+    {
+      "id": 48,
+      "type": "essay",
+      "question": "Câu 48 (Tự luận): 9. Trình bày khái niệm model binding trong quá trình tiếp nhận yêu cầu HTTP.",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Model binding là cơ chế ASP.NET Core tự động lấy dữ liệu từ request hoặc Dependency Injection dựa trên khai báo tham s... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Model binding là cơ chế ASP.NET Core tự động lấy dữ liệu từ request hoặc Dependency Injection dựa trên khai báo tham số của route handler.\n- Sau đó ánh xạ dữ liệu thành các tham số C# có kiểu tương ứng.",
+      "explanation": "- Model binding là cơ chế ASP.NET Core tự động lấy dữ liệu từ request hoặc Dependency Injection dựa trên khai báo tham số của route handler.\n- Sau đó ánh xạ dữ liệu thành các tham số C# có kiểu tương ứng."
+    },
+    {
+      "id": 49,
+      "type": "essay",
+      "question": "Câu 49 (Tự luận): 10. Giải thích ý nghĩa của việc ánh xạ dữ liệu từ route, query string và request body thành các tham số có kiểu của hàm xử lý.",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Giúp tự động chuyển dữ liệu HTTP thành các tham số C# có kiểu rõ ràng.\n- Route: Lấy dữ liệu từ đường dẫn URL.\n- Query ... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Giúp tự động chuyển dữ liệu HTTP thành các tham số C# có kiểu rõ ràng.\n- Route: Lấy dữ liệu từ đường dẫn URL.\n- Query string: Lấy dữ liệu từ chuỗi truy vấn trên URL.\n- Request body: Lấy dữ liệu JSON trong thân request và chuyển thành đối tượng C#.\n- Giúp lập trình viên không phải tự tách chuỗi URL hoặc phân tích JSON.",
+      "explanation": "- Giúp tự động chuyển dữ liệu HTTP thành các tham số C# có kiểu rõ ràng.\n- Route: Lấy dữ liệu từ đường dẫn URL.\n- Query string: Lấy dữ liệu từ chuỗi truy vấn trên URL.\n- Request body: Lấy dữ liệu JSON trong thân request và chuyển thành đối tượng C#.\n- Giúp lập trình viên không phải tự tách chuỗi URL hoặc phân tích JSON."
+    },
+    {
+      "id": 50,
+      "type": "essay",
+      "question": "Câu 50 (Tự luận): 11. Nêu vai trò của dependency injection trong việc cung cấp dịch vụ cho thành phần xử lý yêu cầu.",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Dependency Injection giúp cung cấp các dịch vụ đã đăng ký trong builder.Services cho route handler.\n- Giúp tách biệt x... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Dependency Injection giúp cung cấp các dịch vụ đã đăng ký trong builder.Services cho route handler.\n- Giúp tách biệt xử lý nghiệp vụ khỏi route handler và dễ quản lý các thành phần của ứng dụng.",
+      "explanation": "- Dependency Injection giúp cung cấp các dịch vụ đã đăng ký trong builder.Services cho route handler.\n- Giúp tách biệt xử lý nghiệp vụ khỏi route handler và dễ quản lý các thành phần của ứng dụng."
+    },
+    {
+      "id": 51,
+      "type": "essay",
+      "question": "Câu 51 (Tự luận): 12. Giải thích vì sao API cần sử dụng các mã trạng thái HTTP khác nhau để biểu thị kết quả xử lý yêu cầu.",
+      "maxScore": 10,
+      "rubric": "Chấm thang điểm 10. Trả lời đúng trọng tâm các luận điểm: - Giúp máy khách nhận biết chính xác kết quả xử lý yêu cầu từ máy chủ.\n- Một số mã trạng thái thường gặp:\n- 200 OK: Yêu ... Diễn đạt mạch lạc, chính xác.",
+      "sampleAnswer": "- Giúp máy khách nhận biết chính xác kết quả xử lý yêu cầu từ máy chủ.\n- Một số mã trạng thái thường gặp:\n- 200 OK: Yêu cầu thành công.\n- 201 Created: Đã tạo tài nguyên mới.\n- 400 Bad Request: Dữ liệu đầu vào không hợp lệ.\n- Giúp máy khách biết yêu cầu thành công hay thất bại để xử lý phù hợp.",
+      "explanation": "- Giúp máy khách nhận biết chính xác kết quả xử lý yêu cầu từ máy chủ.\n- Một số mã trạng thái thường gặp:\n- 200 OK: Yêu cầu thành công.\n- 201 Created: Đã tạo tài nguyên mới.\n- 400 Bad Request: Dữ liệu đầu vào không hợp lệ.\n- Giúp máy khách biết yêu cầu thành công hay thất bại để xử lý phù hợp."
+    }
+  ]
+},
+
+{
   "id": "exam-lan-bai1",
   "title": "CÔNG NGHỆ MẠNG LAN - BÀI 1",
   "subject": "Công nghệ mạng LAN",
