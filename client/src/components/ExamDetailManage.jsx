@@ -1,19 +1,8 @@
 import React, { useState } from 'react';
 import { 
   Play, 
-  Share2, 
-  MoreVertical, 
-  Search, 
-  ChevronDown, 
   Edit3, 
-  Bookmark, 
-  FileSpreadsheet, 
-  Eye, 
-  Clock, 
-  Plus, 
-  Trash2, 
-  Sparkles, 
-  Lock, 
+  Copy, 
   CheckCircle2, 
   Radio, 
   HelpCircle, 
@@ -23,10 +12,28 @@ import {
 } from 'lucide-react';
 import QuestionEditor from './QuestionEditor';
 
-export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExam }) {
+export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExam, onAddExam }) {
   const [showAnswer, setShowAnswer] = useState(true);
   const [editingQuestion, setEditingQuestion] = useState(null); // Câu hỏi đang được chỉnh sửa
   const [showAddModal, setShowAddModal] = useState(false);
+  const [copiedSuccess, setCopiedSuccess] = useState(false);
+
+  // Xử lý sao chép tạo đề thi mới từ đề hiện tại
+  const handleDuplicateExam = () => {
+    const timestamp = Date.now();
+    const duplicatedExam = {
+      ...exam,
+      id: `exam-${timestamp}`,
+      title: `${exam.title} (Bản sao)`,
+      createdAt: new Date().toISOString()
+    };
+    if (onAddExam) {
+      onAddExam(duplicatedExam);
+      setCopiedSuccess(true);
+      setTimeout(() => setCopiedSuccess(false), 2500);
+      alert(`Đã sao chép thành công thành đề thi mới: "${duplicatedExam.title}"! Bạn có thể xem trong danh sách đề thi.`);
+    }
+  };
 
   // Form thêm câu hỏi mới
   const [newQuestionText, setNewQuestionText] = useState('');
@@ -164,27 +171,11 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
           </div>
         </div>
 
-        {/* Nút hành động góc phải */}
+        {/* Nút hành động góc phải: Chỉ giữ Bắt đầu ngay (Đã bỏ Xem trước và Giao bài) */}
         <div className="flex items-center gap-3 shrink-0">
           <button 
             onClick={() => onPlayExam(exam)}
-            className="px-3.5 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors"
-          >
-            <Eye className="w-3.5 h-3.5 text-slate-500" />
-            <span>Xem trước</span>
-          </button>
-
-          <button 
-            onClick={() => alert("Tính năng Giao bài tập cho học sinh!")}
-            className="px-4 py-2 border-2 border-[#d82a7a] text-[#d82a7a] hover:bg-pink-50 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-colors"
-          >
-            <Clock className="w-3.5 h-3.5" />
-            <span>Giao bài</span>
-          </button>
-
-          <button 
-            onClick={() => onPlayExam(exam)}
-            className="px-5 py-2 bg-[#d82a7a] hover:bg-[#c2226b] text-white text-xs font-bold rounded-lg flex items-center gap-1.5 shadow-xs transition-colors"
+            className="px-5 py-2.5 bg-[#d82a7a] hover:bg-[#c2226b] text-white text-xs font-bold rounded-lg flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
           >
             <Play className="w-3.5 h-3.5 fill-white" />
             <span>Bắt đầu ngay</span>
@@ -192,9 +183,9 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
         </div>
       </div>
 
-      {/* TOOLBAR */}
+      {/* TOOLBAR: Chỉ giữ Chỉnh sửa, thay Lưu/Chia sẻ/Bảng tính/3 chấm bằng nút Sao chép */}
       <div className="flex items-center justify-between py-4 border-b border-slate-100 flex-wrap gap-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <button 
             onClick={() => {
               if (questions.length > 0) {
@@ -203,42 +194,20 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
                 setShowAddModal(true);
               }
             }}
-            className="px-3 py-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors"
+            className="px-3.5 py-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
           >
             <Edit3 className="w-3.5 h-3.5 text-slate-500" />
             <span>Chỉnh sửa</span>
           </button>
 
+          {/* Nút Sao chép đề thi mới */}
           <button 
-            onClick={() => alert("Đã lưu hoạt động thành công!")}
-            className="px-3 py-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors"
+            onClick={handleDuplicateExam}
+            className="px-3.5 py-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+            title="Tạo đề thi mới bằng cách sao chép từ đề thi này"
           >
-            <Bookmark className="w-3.5 h-3.5 text-slate-500" />
-            <span>Lưu</span>
-          </button>
-
-          <button 
-            onClick={() => {
-              navigator.clipboard?.writeText(window.location.href);
-              alert("Đã sao chép liên kết chia sẻ!");
-            }}
-            className="px-3 py-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors"
-          >
-            <Share2 className="w-3.5 h-3.5 text-slate-500" />
-            <span>Chia sẻ</span>
-            <ChevronDown className="w-3 h-3 text-slate-400" />
-          </button>
-
-          <button 
-            onClick={() => alert("Xuất dữ liệu câu hỏi ra Excel / Bảng tính")}
-            className="px-3 py-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors"
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-slate-500" />
-            <span>Bảng tính</span>
-          </button>
-
-          <button className="p-1.5 border border-slate-300 hover:bg-slate-50 text-slate-500 rounded-lg transition-colors">
-            <MoreVertical className="w-3.5 h-3.5" />
+            <Copy className="w-3.5 h-3.5 text-slate-500" />
+            <span>{copiedSuccess ? 'Đã sao chép!' : 'Sao chép'}</span>
           </button>
         </div>
 
@@ -260,65 +229,9 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
         </div>
       </div>
 
-      {/* BODY CHÍNH */}
-      <div className="grid grid-cols-12 gap-8 pt-6">
-        
-        {/* CỘT TRÁI (AI) */}
-        <div className="col-span-12 lg:col-span-3 space-y-4">
-          <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wide">
-            Cải thiện hoạt động của bạn
-          </h2>
-
-          <div className="border border-slate-200 rounded-2xl p-4 bg-white shadow-2xs space-y-3">
-            <div className="flex items-center gap-2 text-xs font-bold text-teal-600 pb-3 border-b border-slate-100">
-              <Sparkles className="w-4 h-4" />
-              <span>Hành động AI</span>
-            </div>
-
-            <div className="flex items-center justify-between text-xs text-slate-700 hover:text-slate-900 py-1.5 cursor-pointer">
-              <div className="flex items-center gap-2">
-                <span className="text-slate-400">🪄</span>
-                <span>Tạo thẻ ghi nhớ</span>
-              </div>
-              <Lock className="w-3.5 h-3.5 text-amber-500" />
-            </div>
-
-            <div className="flex items-center justify-between text-xs text-slate-700 hover:text-slate-900 py-1.5 cursor-pointer">
-              <div className="flex items-center gap-2">
-                <span className="text-slate-400">🪄</span>
-                <span>Thêm câu hỏi tương tự</span>
-              </div>
-              <Lock className="w-3.5 h-3.5 text-amber-500" />
-            </div>
-
-            <div className="flex items-center justify-between text-xs text-slate-700 hover:text-slate-900 py-1.5 cursor-pointer">
-              <div className="flex items-center gap-2">
-                <span className="text-slate-400">🪄</span>
-                <span>Dịch bài kiểm tra</span>
-              </div>
-              <Lock className="w-3.5 h-3.5 text-amber-500" />
-            </div>
-
-            <div className="flex items-center justify-between text-xs text-slate-700 hover:text-slate-900 py-1.5 cursor-pointer">
-              <div className="flex items-center gap-2">
-                <span className="text-slate-400">•••</span>
-                <span>Lựa chọn khác</span>
-              </div>
-              <Lock className="w-3.5 h-3.5 text-amber-500" />
-            </div>
-
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-              <div className="flex items-center gap-1.5">
-                <div className="w-3.5 h-3.5 rounded-full border border-slate-300" />
-                <span>Giới hạn AI 0/10 mỗi tháng</span>
-              </div>
-              <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
-            </div>
-          </div>
-        </div>
-
-        {/* CỘT PHẢI: DANH SÁCH CÂU HỎI */}
-        <div className="col-span-12 lg:col-span-9 space-y-6">
+      {/* BODY CHÍNH: Đã bỏ bảng Hành động AI và chữ Cải thiện hoạt động của bạn, mở rộng danh sách câu hỏi toàn màn hình */}
+      <div className="pt-6">
+        <div className="space-y-6">
           <div className="flex items-center justify-between text-xs text-slate-500 font-semibold pb-2">
             <span>{totalQuestions} câu hỏi • {totalPoints} Điểm</span>
             

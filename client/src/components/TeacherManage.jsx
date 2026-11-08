@@ -109,6 +109,7 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
           setSelectedExamDetail(updated);
           if (onUpdateExam) onUpdateExam(updated);
         }}
+        onAddExam={onAddExam}
       />
     );
   }
