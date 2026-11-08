@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { mockUsers, initialExams } from './data/mockExams';
+import { fetchExams, fetchExamById, submitExamResult } from './services/api';
 import ExamList from './components/ExamList';
 import ExamRoom from './components/ExamRoom';
 import ExamResult from './components/ExamResult';
@@ -31,6 +32,17 @@ export default function App() {
   });
 
   const [exams, setExams] = useState(initialExams);
+
+  // Tải danh sách đề thi thời gian thực từ Neon PostgreSQL Backend
+  useEffect(() => {
+    async function loadExamsFromDatabase() {
+      const dbExams = await fetchExams();
+      if (dbExams && dbExams.length > 0) {
+        setExams(dbExams);
+      }
+    }
+    loadExamsFromDatabase();
+  }, []);
 
   const [currentTab, setCurrentTab] = useState('exams'); // 'exams' | 'teacher' | 'admin' | 'reports' | 'students'
   const [currentView, setCurrentView] = useState('list'); // 'list' | 'room' | 'result'
@@ -134,14 +146,35 @@ export default function App() {
     setUsers([...users, newUser]);
   };
 
-  const handleSelectExam = (exam) => {
+  const handleSelectExam = async (exam) => {
+    // Nếu exam chưa có questions (chỉ có metadata từ list), lấy đầy đủ từ Backend
+    if (!exam.questions || exam.questions.length === 0) {
+      const fullExam = await fetchExamById(exam.id);
+      if (fullExam && fullExam.questions && fullExam.questions.length > 0) {
+        setActiveExam(fullExam);
+        setCurrentView('room');
+        return;
+      }
+    }
     setActiveExam(exam);
     setCurrentView('room');
   };
 
-  const handleSubmitExam = (resultData) => {
+  const handleSubmitExam = async (resultData) => {
     setExamResult(resultData);
     setCurrentView('result');
+
+    // Tự động đồng bộ và lưu kết quả bài thi lên Neon PostgreSQL
+    if (activeExam) {
+      await submitExamResult({
+        examId: activeExam.id,
+        username: currentUser?.name || currentUser?.email || 'Thí sinh',
+        score: resultData.score || 0,
+        accuracyPercent: resultData.accuracyPercent || 0,
+        timeSpentSeconds: resultData.timeSpent || 0,
+        answers: resultData.selectedAnswers || {}
+      });
+    }
   };
 
   const handleRetry = () => {
