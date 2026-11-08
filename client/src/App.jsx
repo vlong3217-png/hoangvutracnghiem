@@ -76,14 +76,23 @@ export default function App() {
 
   const handleLogin = (user) => {
     setCurrentUser(user);
-    setCurrentTab('exams');
+    // Nếu là admin thì vào thẳng màn hình quản lý hoạt động/đề thi
+    if (user.role === 'admin') {
+      setCurrentTab('teacher');
+    } else {
+      setCurrentTab('exams');
+    }
     setCurrentView('list');
   };
 
   const handleRegister = (newUser) => {
     setUsers(prev => [...prev, newUser]);
     setCurrentUser(newUser);
-    setCurrentTab('exams');
+    if (newUser.role === 'admin') {
+      setCurrentTab('teacher');
+    } else {
+      setCurrentTab('exams');
+    }
     setCurrentView('list');
   };
 
@@ -194,14 +203,14 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-white text-slate-800 font-sans flex flex-row antialiased relative">
-      {/* CỘT SIDEBAR CHÍNH NGOÀI CÙNG BÊN TRÁI (Hiện khi ở tab quản lý giáo viên/admin hoặc khi user chuyển sang) */}
-      {currentView !== 'room' && currentTab !== 'exams' && (
+      {/* CỘT SIDEBAR TRÁI CHO VAI TRÒ ADMIN (Hiện khi đăng nhập với vai trò Admin và ở ngoài phòng thi) */}
+      {currentView !== 'room' && currentUser.role === 'admin' && (
         <aside className="w-16 bg-white border-r border-slate-200 flex flex-col items-center py-4 justify-between shrink-0 z-30 select-none">
           <div className="flex flex-col items-center gap-5 w-full">
             {/* Logo Wordwall biểu tượng 4 cột hồng */}
             <div 
-              onClick={handleGoHome}
-              title="Wordwall"
+              onClick={() => { setCurrentTab('teacher'); handleGoHome(); }}
+              title="Wordwall - Trang chủ"
               className="w-10 h-10 flex items-center justify-center cursor-pointer hover:opacity-90 mb-1"
             >
               <div className="flex items-end gap-1 h-6">
@@ -212,22 +221,22 @@ export default function App() {
               </div>
             </div>
 
-            {/* Mục duy nhất: Trang chủ (danh sách đề thi) */}
+            {/* Mục duy nhất: Trang chủ (Gộp Trang chủ + Thư viện làm 1, mở thẳng giao diện danh sách đề thi / hoạt động) */}
             <button
-              onClick={() => { setCurrentTab('exams'); handleGoHome(); }}
-              className={`flex flex-col items-center gap-1 text-[10px] w-full py-2.5 transition-all ${
-                currentTab === 'exams'
+              onClick={() => { setCurrentTab('teacher'); handleGoHome(); }}
+              className={`flex flex-col items-center gap-1 text-[10px] w-full py-2.5 transition-all cursor-pointer ${
+                currentTab === 'teacher'
                   ? 'text-slate-900 font-bold border-l-2 border-[#d82a7a] bg-pink-50/20'
                   : 'text-slate-500 hover:text-slate-800'
               }`}
-              title="Trang chủ - Danh sách đề thi"
+              title="Trang chủ - Quản lý danh sách đề thi"
             >
               <Home className="w-5 h-5 text-[#d82a7a]" />
               <span className="scale-90 font-bold">Trang chủ</span>
             </button>
           </div>
 
-          {/* Dưới cùng: Avatar người dùng & Nút Đăng xuất */}
+          {/* Dưới cùng: Avatar Admin & Nút Đăng xuất */}
           <div className="flex flex-col items-center gap-4 w-full">
             <div className="flex flex-col items-center gap-2">
               <div 
