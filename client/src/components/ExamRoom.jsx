@@ -952,13 +952,13 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
 
                 if (answeredState) {
                   if (isSelected) {
-                    // Ô người dùng chọn: nếu nằm trong tập đúng thì xanh lá, không thì đỏ
+                    // Ô người dùng chọn: nếu đúng thì xanh lá, sai thì đỏ (không kèm viền trắng)
                     cardBg = isCorrect ? 'bg-[#1cb059]' : 'bg-[#e53e3e]';
-                    extraStyles = 'ring-4 ring-white shadow-2xl scale-[1.01] sm:scale-[1.02] z-10';
+                    extraStyles = 'shadow-2xl scale-[1.01] sm:scale-[1.02] z-10';
                   } else if (isCorrect) {
                     // Đáp án đúng mà chưa chọn: hiện xanh lá để người học biết
                     cardBg = 'bg-[#1cb059]';
-                    extraStyles = 'ring-4 ring-emerald-400/80 shadow-2xl scale-[1.01] sm:scale-[1.02] z-10';
+                    extraStyles = 'shadow-2xl scale-[1.01] sm:scale-[1.02] z-10';
                   } else {
                     extraStyles = 'opacity-35 scale-[0.98]';
                   }
@@ -976,18 +976,6 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
                         }`}
                     >
                       <span className="leading-snug">{opt.text}</span>
-
-                      {/* Dấu tích ✓ hoặc ✕ ở góc trên khi đã bấm */}
-                      {answeredState && isCorrect && (
-                        <div className="absolute top-2.5 right-2.5 sm:top-3.5 sm:right-3.5 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-white text-[#1cb059] flex items-center justify-center font-black text-sm sm:text-lg shadow-md animate-in zoom-in-75">
-                          ✓
-                        </div>
-                      )}
-                      {answeredState && isSelected && !isCorrect && (
-                        <div className="absolute top-2.5 right-2.5 sm:top-3.5 sm:right-3.5 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-white text-[#e53e3e] flex items-center justify-center font-black text-sm sm:text-lg shadow-md animate-in zoom-in-75">
-                          ✕
-                        </div>
-                      )}
                     </button>
                   </div>
                 );
