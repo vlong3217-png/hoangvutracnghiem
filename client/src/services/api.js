@@ -1,9 +1,10 @@
-// Cấu hình Base API URL kết nối tới Backend Node.js
-// Tự động nhận IP máy chủ khi truy cập từ điện thoại hoặc thiết bị khác trong cùng mạng LAN
+// Cấu hình Base API URL kết nối tới Backend
+// Trên Vercel hoặc production, tự động dùng Serverless Functions (/api/...)
+// Khi chạy localhost dev cục bộ, tự động kết nối cổng 5000 hoặc /api
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 
-  (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
-    ? `http://${window.location.hostname}:5000/api`
-    : 'http://localhost:5000/api');
+  (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:5000/api'
+    : '/api');
 
 /**
  * Lấy danh sách toàn bộ đề thi từ CSDL Neon PostgreSQL
@@ -15,7 +16,7 @@ export async function fetchExams() {
     if (json.success) return json.data;
     throw new Error(json.message || 'Lỗi tải đề thi');
   } catch (err) {
-    console.warn('⚠️ Lỗi gọi Backend, chuyển sang fallback dữ liệu mock:', err);
+    console.warn('⚠️ Lỗi gọi Backend:', err);
     return null;
   }
 }
@@ -25,7 +26,7 @@ export async function fetchExams() {
  */
 export async function fetchExamById(id) {
   try {
-    const res = await fetch(`${API_BASE_URL}/exams/${id}`);
+    const res = await fetch(`${API_BASE_URL}/exams?id=${id}`);
     const json = await res.json();
     if (json.success) return json.data;
     throw new Error(json.message || 'Không tìm thấy đề thi');
@@ -40,7 +41,11 @@ export async function fetchExamById(id) {
  */
 export async function loginUser(email, password) {
   try {
-    const res = await fetch(`${API_BASE_URL}/auth/login`, {
+    const endpoint = API_BASE_URL.startsWith('http://localhost:5000') 
+      ? `${API_BASE_URL}/auth/login`
+      : `${API_BASE_URL}/auth?action=login`;
+
+    const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
@@ -56,7 +61,11 @@ export async function loginUser(email, password) {
  */
 export async function registerUser({ name, email, password, role }) {
   try {
-    const res = await fetch(`${API_BASE_URL}/auth/register`, {
+    const endpoint = API_BASE_URL.startsWith('http://localhost:5000') 
+      ? `${API_BASE_URL}/auth/register`
+      : `${API_BASE_URL}/auth?action=register`;
+
+    const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, password, role })
@@ -72,7 +81,7 @@ export async function registerUser({ name, email, password, role }) {
  */
 export async function fetchUsers() {
   try {
-    const res = await fetch(`${API_BASE_URL}/users`);
+    const res = await fetch(`${API_BASE_URL}/auth`);
     const json = await res.json();
     if (json.success) return json.data;
     return [];
@@ -86,7 +95,7 @@ export async function fetchUsers() {
  */
 export async function deleteExamApi(examId) {
   try {
-    const res = await fetch(`${API_BASE_URL}/exams/${examId}`, {
+    const res = await fetch(`${API_BASE_URL}/exams?examId=${examId}`, {
       method: 'DELETE'
     });
     return await res.json();
@@ -100,7 +109,7 @@ export async function deleteExamApi(examId) {
  */
 export async function updateExamApi(examId, examData) {
   try {
-    const res = await fetch(`${API_BASE_URL}/exams/${examId}`, {
+    const res = await fetch(`${API_BASE_URL}/exams?id=${examId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(examData)
