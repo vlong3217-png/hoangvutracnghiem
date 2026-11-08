@@ -1,27 +1,13 @@
 import { pool } from './db.js';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { initialExams, mockUsers } from './data/mockExams.js';
 
 async function seedData() {
   const client = await pool.connect();
   try {
-    console.log('🌱 Đang đọc dữ liệu đề thi từ client mockExams.js...');
-    const mockFilePath = path.join(__dirname, '../../client/src/data/mockExams.js');
-    let fileContent = fs.readFileSync(mockFilePath, 'utf-8');
+    const examsList = initialExams || [];
+    const usersList = mockUsers || [];
 
-    // Biến đổi file JS export const thành chuỗi có thể import động
-    const tempFilePath = path.join(__dirname, 'tempMockExams.mjs');
-    fs.writeFileSync(tempFilePath, fileContent, 'utf-8');
-
-    const mod = await import('./tempMockExams.mjs');
-    const examsList = mod.initialExams || mod.mockExams || [];
-    const usersList = mod.mockUsers || [];
-
-    console.log(`📦 Tìm thấy ${examsList.length} đề thi và ${usersList.length} tài khoản. Bắt đầu đẩy lên Neon PostgreSQL...`);
+    console.log(`📦 Tìm thấy ${examsList.length} đề thi và ${usersList.length} tài khoản trong server/src/data/mockExams.js. Bắt đầu đẩy lên Neon PostgreSQL...`);
 
     // 0. Nạp tài khoản người dùng
     for (const u of usersList) {
@@ -93,11 +79,6 @@ async function seedData() {
         ]);
       }
       console.log(`  ✓ Đã import đề: ${exam.title} (${exam.questions.length} câu)`);
-    }
-
-    // Dọn file tạm
-    if (fs.existsSync(tempFilePath)) {
-      fs.unlinkSync(tempFilePath);
     }
 
     console.log('🎉 Toàn bộ đề thi đã được nạp lên Neon PostgreSQL thành công!');

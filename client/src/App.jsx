@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { mockUsers, initialExams } from './data/mockExams';
 import { fetchExams, fetchExamById, submitExamResult } from './services/api';
 import ExamList from './components/ExamList';
 import ExamRoom from './components/ExamRoom';
@@ -19,7 +18,24 @@ import {
 } from 'lucide-react';
 
 export default function App() {
-  const [users, setUsers] = useState(mockUsers);
+  const [users, setUsers] = useState([
+    {
+      id: "user-student",
+      name: "Nguyễn Văn An",
+      email: "student@test.com",
+      password: "123",
+      role: "student",
+      roleName: "Sinh viên"
+    },
+    {
+      id: "user-admin",
+      name: "Quản trị viên",
+      email: "admin@test.com",
+      password: "123",
+      role: "admin",
+      roleName: "Admin"
+    }
+  ]);
   
   // Lưu trạng thái đăng nhập vào localStorage để khi F5 / load lại trang KHÔNG bị đẩy ra màn hình đăng nhập
   const [currentUser, setCurrentUser] = useState(() => {
@@ -31,7 +47,7 @@ export default function App() {
     }
   });
 
-  const [exams, setExams] = useState(initialExams);
+  const [exams, setExams] = useState([]);
 
   // Tải danh sách đề thi thời gian thực từ Neon PostgreSQL Backend
   useEffect(() => {

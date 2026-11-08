@@ -63,3 +63,4 @@ export async function submitExamResult(resultData) {
     return null;
   }
 }
+
