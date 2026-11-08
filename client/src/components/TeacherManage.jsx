@@ -292,7 +292,7 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
         </div>
 
         {/* BẢNG DANH SÁCH HOẠT ĐỘNG KIỂU WORDWALL */}
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-2xs overflow-hidden">
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-2xs">
           {/* Header Bảng */}
           <div className="px-5 py-3.5 border-b border-slate-200 bg-white grid grid-cols-12 items-center text-xs font-semibold text-slate-500">
             <div className="col-span-8 flex items-center gap-4">
@@ -418,13 +418,15 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
                         </button>
 
                         {isDropdownOpen && (
-                          <div className="absolute right-0 top-9 w-40 bg-white border border-slate-200 rounded-xl shadow-lg z-30 py-1 text-xs text-slate-700 animate-in fade-in zoom-in-95">
+                          <div className={`absolute right-0 w-44 bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-1 text-xs text-slate-700 animate-in fade-in zoom-in-95 ${
+                            idx >= filteredExams.length - 2 ? 'bottom-full mb-1' : 'top-9'
+                          }`}>
                             <button
                               onClick={() => {
                                 setSelectedExamDetail(exam);
                                 setOpenDropdownId(null);
                               }}
-                              className="w-full px-3 py-2 text-left hover:bg-slate-50 text-slate-700 flex items-center gap-2"
+                              className="w-full px-3.5 py-2.5 text-left hover:bg-slate-50 text-slate-700 flex items-center gap-2 cursor-pointer transition-colors"
                             >
                               <Edit3 className="w-3.5 h-3.5 text-slate-500" />
                               Quản lý câu hỏi
@@ -434,7 +436,7 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
                                 onDeleteExam(exam.id);
                                 setOpenDropdownId(null);
                               }}
-                              className="w-full px-3 py-2 text-left hover:bg-rose-50 text-rose-600 flex items-center gap-2"
+                              className="w-full px-3.5 py-2.5 text-left hover:bg-rose-50 text-rose-600 flex items-center gap-2 cursor-pointer transition-colors border-t border-slate-100"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                               Xóa hoạt động
