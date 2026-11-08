@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import ExamDetailManage from './ExamDetailManage';
 import CreateResourceModal from './CreateResourceModal';
+import QuizizzLogo from './QuizizzLogo';
 
 export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayExam, onUpdateExam, isLoading }) {
   const [activeTab, setActiveTab] = useState('created'); // 'created' | 'history' | 'shared' | 'all'
@@ -245,7 +246,7 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
         </div>
 
         <div className="pt-4 border-t border-slate-100 text-[11px] text-slate-400 px-3">
-          Wordwall Studio v2.6
+          Quizizz Studio v2.6
         </div>
       </aside>
 
@@ -347,17 +348,12 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
                         className="w-4 h-4 rounded border-slate-300 text-[#d82a7a] focus:ring-[#d82a7a] accent-[#d82a7a] cursor-pointer"
                       />
 
-                      {/* Thumbnail Icon vuông bo tròn với biểu tượng Wordwall (dạng cột biểu đồ W) */}
+                      {/* Thumbnail Icon vuông bo tròn với biểu tượng Quizizz chữ Q màu hồng */}
                       <div 
                         onClick={() => handleOpenExamDetail(exam)}
                         className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center shrink-0 shadow-2xs cursor-pointer hover:border-[#d82a7a]"
                       >
-                        <div className="flex items-end gap-0.5 h-4">
-                          <div className="w-1 bg-[#d82a7a] h-3 rounded-xs" />
-                          <div className="w-1 bg-[#d82a7a] h-4 rounded-xs" />
-                          <div className="w-1 bg-[#d82a7a] h-2 rounded-xs" />
-                          <div className="w-1 bg-[#d82a7a] h-3.5 rounded-xs" />
-                        </div>
+                        <QuizizzLogo className="w-5 h-5 text-[#d82a7a]" />
                       </div>
 
                       {/* Chi tiết tiêu đề -> BẤM VÀO ĐỂ XEM QUẢN LÝ TỪNG CÂU HỎI */}

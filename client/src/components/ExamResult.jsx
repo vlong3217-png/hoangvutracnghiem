@@ -183,7 +183,7 @@ export default function ExamResult({ exam, result, onRetry, onGoHome }) {
                     </button>
 
                     <button
-                      onClick={() => alert("Cửa hàng vật phẩm và avatar Wayground!")}
+                      onClick={() => alert("Cửa hàng vật phẩm và avatar Quizizz!")}
                       className="px-4 py-2 bg-white text-slate-900 hover:bg-slate-100 font-extrabold text-xs sm:text-sm rounded-xl shadow-md transition-all active:scale-95 flex items-center gap-1.5 ml-auto cursor-pointer"
                     >
                       <span>Cửa hàng</span>
@@ -381,7 +381,7 @@ export default function ExamResult({ exam, result, onRetry, onGoHome }) {
               </div>
             </div>
 
-            {/* CARD SIDEBAR 2: DIỄN ĐÀN SINH VIÊN WAYGROUND */}
+            {/* CARD SIDEBAR 2: DIỄN ĐÀN SINH VIÊN QUIZIZZ */}
             <div className="bg-[#181126] border-2 border-white/10 rounded-3xl p-5 shadow-2xl flex flex-col justify-between">
               <div className="text-xs font-black text-white mb-3">
                 Kết nối, học hỏi và tham gia!
@@ -396,7 +396,7 @@ export default function ExamResult({ exam, result, onRetry, onGoHome }) {
                 onClick={() => alert("Diễn đàn cộng đồng sinh viên")}
                 className="w-full py-2.5 bg-black/50 hover:bg-black/70 text-white font-extrabold text-xs rounded-xl border border-white/10 transition-colors text-center cursor-pointer"
               >
-                Tham gia diễn đàn sinh viên Wayground
+                Tham gia diễn đàn sinh viên Quizizz
               </button>
             </div>
 

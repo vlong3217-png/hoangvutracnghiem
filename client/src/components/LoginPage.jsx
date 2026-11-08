@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, Asterisk, Eye, EyeOff, AlertCircle, ArrowRight } from 'lucide-react';
 import { loginUser, registerUser } from '../services/api';
+import QuizizzLogo from './QuizizzLogo';
 
 export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
   const [emailOrUser, setEmailOrUser] = useState('student@test.com');
@@ -76,16 +77,12 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
 
   return (
     <div className="min-h-screen bg-white relative flex flex-col justify-between font-sans select-none overflow-x-hidden">
-      {/* 1. LOGO GÓC TRÊN BÊN TRÁI WAYGROUND */}
-      <div className="absolute top-6 left-8 z-20">
-        <div className="flex items-center cursor-pointer">
-          <span className="text-[#d82a7a] font-black text-2xl tracking-tighter">
-            WAYGROUND
-          </span>
-        </div>
-        <div className="text-[11px] text-slate-500 font-medium italic -mt-0.5">
-          formerly Quizizz
-        </div>
+      {/* 1. LOGO GÓC TRÊN BÊN TRÁI QUIZIZZ */}
+      <div className="absolute top-6 left-8 z-20 flex items-center gap-2 cursor-pointer">
+        <QuizizzLogo className="w-8 h-8 text-[#d82a7a]" />
+        <span className="text-[#d82a7a] font-black text-2xl tracking-tight">
+          Quizizz
+        </span>
       </div>
 
       {/* 2. BACKGROUND CÁC CARD MINH HỌA NGHỆ THUẬT HAI BÊN (DECORATION) */}
@@ -317,7 +314,7 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
 
       {/* FOOTER BẢN QUYỀN */}
       <footer className="py-4 text-center text-xs text-slate-400">
-        © 2026 WAYGROUND · formerly Quizizz
+        © 2026 Quizizz · Hệ thống thi trắc nghiệm
       </footer>
     </div>
   );

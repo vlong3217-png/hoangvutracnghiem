@@ -106,7 +106,7 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
     {
       id: 'drag_drop',
       name: 'Kéo thả khớp câu / Ghép nối',
-      tag: 'Tương tác Wordwall',
+      tag: 'Tương tác trực quan',
       color: 'bg-rose-500',
       icon: GripHorizontal,
       desc: 'Kéo thả các từ khóa hoặc ô định nghĩa vào đúng vị trí khuyết trong câu hoặc bảng.',

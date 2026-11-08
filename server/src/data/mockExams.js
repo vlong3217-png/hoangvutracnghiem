@@ -1519,7 +1519,7 @@ export const initialExams = [
   "level": "Đại học",
   "duration": 15,
   "totalQuestions": 2,
-  "author": "Hệ thống Wayground",
+  "author": "Hệ thống Quizizz",
   "className": "Lớp học trải nghiệm tính năng mới",
   "statusBadge": "2 Qs",
   "cardTheme": "teal",

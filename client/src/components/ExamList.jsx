@@ -11,6 +11,7 @@ import {
   LogOut,
   Loader2
 } from 'lucide-react';
+import QuizizzLogo from './QuizizzLogo';
 
 export default function ExamList({ exams, onSelectExam, onOpenTeacherManage, onLogout, isLoading }) {
   const [activeTab, setActiveTab] = useState('running'); // 'running' (Đang chạy), 'completed' (Hoàn thành), 'created' (Tạo)
@@ -52,16 +53,14 @@ export default function ExamList({ exams, onSelectExam, onOpenTeacherManage, onL
 
   return (
     <div className="min-h-screen bg-[#fcfcfd] flex flex-col font-sans text-slate-800">
-      {/* 1. TOPBAR CHUẨN WAYGROUND / QUIZIZZ - TỐI ƯU RESPONSIVE */}
+      {/* 1. TOPBAR CHUẨN QUIZIZZ - TỐI ƯU RESPONSIVE */}
       <header className="bg-white border-b border-slate-200 px-3 sm:px-6 py-2.5 flex items-center justify-between sticky top-0 z-30">
         <div className="flex items-center gap-3 sm:gap-6 flex-1 min-w-0">
-          {/* Logo WAYGROUND (formerly Quizizz) */}
-          <div className="flex items-baseline gap-1 cursor-pointer shrink-0">
-            <span className="text-[#d82a7a] font-black text-lg sm:text-xl tracking-tighter">
-              WAYGROUND
-            </span>
-            <span className="text-[9px] sm:text-[10px] text-slate-400 font-medium italic hidden xs:inline">
-              formerly Quizizz
+          {/* Logo Quizizz */}
+          <div className="flex items-center gap-1.5 cursor-pointer shrink-0">
+            <QuizizzLogo className="w-6 h-6 text-[#d82a7a]" />
+            <span className="text-[#d82a7a] font-black text-lg sm:text-xl tracking-tight">
+              Quizizz
             </span>
           </div>
 

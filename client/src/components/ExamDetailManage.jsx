@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import QuestionEditor from './QuestionEditor';
 import CreateResourceModal from './CreateResourceModal';
+import QuizizzLogo from './QuizizzLogo';
 
 export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExam, onAddExam }) {
   const [showAnswer, setShowAnswer] = useState(true);
@@ -182,12 +183,7 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 pb-6 border-b border-slate-100">
         <div className="flex items-start gap-4">
           <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center shrink-0 shadow-2xs">
-            <div className="flex items-end gap-1 h-6">
-              <div className="w-1.5 bg-[#d82a7a] h-4 rounded-xs" />
-              <div className="w-1.5 bg-[#d82a7a] h-6 rounded-xs" />
-              <div className="w-1.5 bg-[#d82a7a] h-3.5 rounded-xs" />
-              <div className="w-1.5 bg-[#d82a7a] h-5 rounded-xs" />
-            </div>
+            <QuizizzLogo className="w-8 h-8 text-[#d82a7a]" />
           </div>
 
           <div className="flex-1 min-w-0">

@@ -6,6 +6,7 @@ import ExamResult from './components/ExamResult';
 import TeacherManage from './components/TeacherManage';
 import AdminManage from './components/AdminManage';
 import LoginPage from './components/LoginPage';
+import QuizizzLogo from './components/QuizizzLogo';
 import { 
   Home, 
   FolderOpen, 
@@ -40,7 +41,7 @@ export default function App() {
   // Lưu trạng thái đăng nhập vào localStorage để khi F5 / load lại trang KHÔNG bị đẩy ra màn hình đăng nhập
   const [currentUser, setCurrentUser] = useState(() => {
     try {
-      const saved = localStorage.getItem('WAYGROUND_CURRENT_USER');
+      const saved = localStorage.getItem('QUIZIZZ_CURRENT_USER') || localStorage.getItem('WAYGROUND_CURRENT_USER');
       return saved ? JSON.parse(saved) : null;
     } catch {
       return null;
@@ -71,7 +72,7 @@ export default function App() {
 
   const [currentTab, setCurrentTab] = useState(() => {
     try {
-      const savedUser = localStorage.getItem('WAYGROUND_CURRENT_USER');
+      const savedUser = localStorage.getItem('QUIZIZZ_CURRENT_USER') || localStorage.getItem('WAYGROUND_CURRENT_USER');
       if (savedUser) {
         const u = JSON.parse(savedUser);
         return u.role === 'admin' ? 'teacher' : 'exams';
@@ -88,8 +89,9 @@ export default function App() {
   // Lưu thông tin người dùng mỗi khi đăng nhập thành công
   useEffect(() => {
     if (currentUser) {
-      localStorage.setItem('WAYGROUND_CURRENT_USER', JSON.stringify(currentUser));
+      localStorage.setItem('QUIZIZZ_CURRENT_USER', JSON.stringify(currentUser));
     } else {
+      localStorage.removeItem('QUIZIZZ_CURRENT_USER');
       localStorage.removeItem('WAYGROUND_CURRENT_USER');
     }
   }, [currentUser]);
@@ -269,18 +271,13 @@ export default function App() {
       {currentView !== 'room' && currentUser.role === 'admin' && (
         <aside className="w-16 bg-white border-r border-slate-200 flex flex-col items-center py-4 justify-between shrink-0 z-30 select-none">
           <div className="flex flex-col items-center gap-5 w-full">
-            {/* Logo Wordwall biểu tượng 4 cột hồng */}
+            {/* Logo Quizizz biểu tượng chữ Q màu hồng */}
             <div 
               onClick={() => { setCurrentTab('teacher'); handleGoHome(); }}
-              title="Wordwall - Trang chủ"
+              title="Quizizz - Trang chủ"
               className="w-10 h-10 flex items-center justify-center cursor-pointer hover:opacity-90 mb-1"
             >
-              <div className="flex items-end gap-1 h-6">
-                <div className="w-1.5 bg-[#d82a7a] h-4 rounded-xs" />
-                <div className="w-1.5 bg-[#d82a7a] h-6 rounded-xs" />
-                <div className="w-1.5 bg-[#d82a7a] h-3.5 rounded-xs" />
-                <div className="w-1.5 bg-[#d82a7a] h-5 rounded-xs" />
-              </div>
+              <QuizizzLogo className="w-8 h-8 text-[#d82a7a]" />
             </div>
 
             {/* Mục duy nhất: Trang chủ (Gộp Trang chủ + Thư viện làm 1, mở thẳng giao diện danh sách đề thi / hoạt động) */}
@@ -376,10 +373,10 @@ export default function App() {
         </main>
       </div>
 
-      {/* Nút dấu chấm hỏi tím ở góc dưới cùng bên phải chuẩn Wordwall */}
+      {/* Nút dấu chấm hỏi tím ở góc dưới cùng bên phải chuẩn Quizizz */}
       {currentView !== 'room' && (
         <button 
-          onClick={() => alert("Trung tâm trợ giúp & Hướng dẫn sử dụng Wordwall")}
+          onClick={() => alert("Trung tâm trợ giúp & Hướng dẫn sử dụng Quizizz")}
           className="fixed bottom-6 right-6 w-9 h-9 rounded-full bg-[#8c1d76] hover:bg-[#721560] text-white flex items-center justify-center font-bold text-sm shadow-lg z-50 transition-transform hover:scale-105"
         >
           ?
