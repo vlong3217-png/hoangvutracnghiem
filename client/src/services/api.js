@@ -48,6 +48,66 @@ export async function loginUser(email, password) {
 }
 
 /**
+ * Đăng ký người dùng qua Backend CSDL
+ */
+export async function registerUser({ name, email, password, role }) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password, role })
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, message: 'Không thể kết nối đến máy chủ Backend' };
+  }
+}
+
+/**
+ * Lấy danh sách toàn bộ người dùng từ CSDL
+ */
+export async function fetchUsers() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/users`);
+    const json = await res.json();
+    if (json.success) return json.data;
+    return [];
+  } catch (err) {
+    return [];
+  }
+}
+
+/**
+ * Xóa đề thi trên CSDL
+ */
+export async function deleteExamApi(examId) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/exams/${examId}`, {
+      method: 'DELETE'
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Cập nhật đề thi trên CSDL
+ */
+export async function updateExamApi(examId, examData) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/exams/${examId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(examData)
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+/**
  * Lưu lịch sử kết quả thi vào CSDL Neon PostgreSQL
  */
 export async function submitExamResult(resultData) {

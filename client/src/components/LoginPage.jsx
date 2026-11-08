@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
 import { Mail, Asterisk, Eye, EyeOff, AlertCircle, ArrowRight } from 'lucide-react';
+import { loginUser, registerUser } from '../services/api';
 
 export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
   const [emailOrUser, setEmailOrUser] = useState('student@test.com');
   const [password, setPassword] = useState('123');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   // Chế độ đăng ký tài khoản (nếu cần)
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [name, setName] = useState('');
   const [regRole, setRegRole] = useState('student');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -21,36 +23,48 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
         setError('Vui lòng điền đầy đủ các thông tin bắt buộc.');
         return;
       }
-      const existing = registeredUsers.find(
-        u => u.email.toLowerCase() === emailOrUser.toLowerCase()
-      );
-      if (existing) {
-        setError('Email này đã tồn tại trong hệ thống!');
-        return;
-      }
-
-      const newUser = {
-        id: `user-${Date.now()}`,
+      setLoading(true);
+      const res = await registerUser({
         name,
         email: emailOrUser,
         password,
-        role: regRole,
-        roleName: regRole === 'admin' ? 'Admin' : 'Sinh viên'
-      };
+        role: regRole
+      });
+      setLoading(false);
 
-      onRegister(newUser);
-    } else {
-      const found = registeredUsers.find(
-        u => (u.email.toLowerCase() === emailOrUser.toLowerCase() || u.name.toLowerCase() === emailOrUser.toLowerCase()) && 
-             u.password === password
-      );
-
-      if (!found) {
-        setError('Email/Tên người dùng hoặc mật khẩu không chính xác!');
+      if (!res.success) {
+        setError(res.message || 'Lỗi khi đăng ký tài khoản.');
         return;
       }
 
-      onLogin(found);
+      onRegister({
+        ...res.user,
+        roleName: res.user.role === 'admin' ? 'Admin' : 'Sinh viên'
+      });
+    } else {
+      setLoading(true);
+      const res = await loginUser(emailOrUser, password);
+      setLoading(false);
+
+      if (!res.success) {
+        const found = registeredUsers.find(
+          u => (u.email.toLowerCase() === emailOrUser.toLowerCase() || u.name.toLowerCase() === emailOrUser.toLowerCase()) && 
+               u.password === password
+        );
+
+        if (!found) {
+          setError(res.message || 'Email/Tên người dùng hoặc mật khẩu không chính xác!');
+          return;
+        }
+
+        onLogin(found);
+        return;
+      }
+
+      onLogin({
+        ...res.user,
+        roleName: res.user.role === 'admin' ? 'Admin' : 'Sinh viên'
+      });
     }
   };
 

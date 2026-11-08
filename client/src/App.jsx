@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { fetchExams, fetchExamById, submitExamResult } from './services/api';
+import { fetchExams, fetchExamById, submitExamResult, updateExamApi, deleteExamApi } from './services/api';
 import ExamList from './components/ExamList';
 import ExamRoom from './components/ExamRoom';
 import ExamResult from './components/ExamResult';
@@ -135,13 +135,24 @@ export default function App() {
     setExams([newExam, ...exams]);
   };
 
-  const handleUpdateExam = (updatedExam) => {
+  const handleUpdateExam = async (updatedExam) => {
     setExams(exams.map(e => e.id === updatedExam.id ? updatedExam : e));
+    // Đồng bộ trực tiếp thay đổi câu hỏi của đề thi vào CSDL Neon
+    await updateExamApi(updatedExam.id, {
+      title: updatedExam.title,
+      description: updatedExam.description,
+      subject: updatedExam.subject,
+      difficulty: updatedExam.level || updatedExam.difficulty,
+      durationMinutes: updatedExam.duration || updatedExam.durationMinutes,
+      questions: updatedExam.questions
+    });
   };
 
-  const handleDeleteExam = (examId) => {
+  const handleDeleteExam = async (examId) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa hoạt động này?")) {
       setExams(exams.filter(e => e.id !== examId));
+      // Xóa trực tiếp khỏi CSDL Neon
+      await deleteExamApi(examId);
     }
   };
 

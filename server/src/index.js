@@ -57,6 +57,45 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+app.post('/api/auth/register', async (req, res) => {
+  const { name, email, password, role } = req.body;
+  try {
+    const existing = await pool.query('SELECT id FROM users WHERE username = $1', [email]);
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ success: false, message: 'Email này đã tồn tại trong hệ thống!' });
+    }
+
+    const insertRes = await pool.query(`
+      INSERT INTO users (username, password, full_name, role)
+      VALUES ($1, $2, $3, $4)
+      RETURNING id, username, full_name, role;
+    `, [email, password, name, role || 'student']);
+
+    const user = insertRes.rows[0];
+    res.json({
+      success: true,
+      user: {
+        id: user.id,
+        email: user.username,
+        name: user.full_name,
+        role: user.role
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Lấy danh sách tài khoản (dành cho Admin)
+app.get('/api/users', async (req, res) => {
+  try {
+    const usersRes = await pool.query('SELECT id, username as email, full_name as name, role, created_at FROM users ORDER BY id ASC');
+    res.json({ success: true, data: usersRes.rows });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // -------------------------------------------------------------
 // 3. EXAMS API (Lấy danh sách đề thi & chi tiết đề thi kèm câu hỏi)
 // -------------------------------------------------------------
@@ -130,6 +169,74 @@ app.get('/api/exams/:id', async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Xóa đề thi khỏi CSDL
+app.delete('/api/exams/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.query('DELETE FROM exams WHERE id = $1', [id]);
+    res.json({ success: true, message: 'Đã xóa đề thi thành công' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Cập nhật câu hỏi của đề thi
+app.put('/api/exams/:id', async (req, res) => {
+  const { id } = req.params;
+  const { title, description, subject, difficulty, durationMinutes, questions } = req.body;
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    await client.query(`
+      UPDATE exams 
+      SET title = COALESCE($1, title),
+          description = COALESCE($2, description),
+          subject = COALESCE($3, subject),
+          difficulty = COALESCE($4, difficulty),
+          duration_minutes = COALESCE($5, duration_minutes),
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = $6
+    `, [title, description, subject, difficulty, durationMinutes, id]);
+
+    if (Array.isArray(questions)) {
+      await client.query('DELETE FROM questions WHERE exam_id = $1', [id]);
+      for (const q of questions) {
+        await client.query(`
+          INSERT INTO questions (id, exam_id, question_text, type, options, correct_answer, data)
+          VALUES ($1, $2, $3, $4, $5, $6, $7)
+        `, [
+          String(q.id),
+          id,
+          q.question || '',
+          q.type || 'single',
+          JSON.stringify(q.options || []),
+          JSON.stringify(q.correctAnswer ?? null),
+          JSON.stringify({
+            parts: q.parts || null,
+            categories: q.categories || null,
+            items: q.items || null,
+            sentences: q.sentences || null,
+            draggableItems: q.draggableItems || null,
+            blanks: q.blanks || null,
+            sampleAnswer: q.sampleAnswer || null,
+            criteria: q.criteria || q.rubric || null,
+            maxScore: q.maxScore || null
+          })
+        ]);
+      }
+    }
+
+    await client.query('COMMIT');
+    res.json({ success: true, message: 'Cập nhật đề thi thành công' });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ success: false, error: err.message });
+  } finally {
+    client.release();
   }
 });
 
