@@ -34,3 +34,4 @@ export default function QuizizzLogo({ className = "w-6 h-6 text-[#d82a7a]", colo
     </svg>
   );
 }
+
