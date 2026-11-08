@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { fetchExamById } from '../services/api';
 import { 
   Plus, 
   Trash2, 
@@ -26,6 +27,29 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
   
   // Đề thi đang xem chi tiết (quản lý từng câu hỏi theo ảnh mẫu)
   const [selectedExamDetail, setSelectedExamDetail] = useState(null);
+  const [loadingDetailId, setLoadingDetailId] = useState(null);
+
+  // Khi click vào xem chi tiết đề thi: Tải đầy đủ danh sách câu hỏi từ CSDL Backend nếu chưa có
+  const handleOpenExamDetail = async (exam) => {
+    if (exam.questions && exam.questions.length > 0) {
+      setSelectedExamDetail(exam);
+      return;
+    }
+
+    setLoadingDetailId(exam.id);
+    try {
+      const fullExam = await fetchExamById(exam.id);
+      if (fullExam && fullExam.questions) {
+        setSelectedExamDetail(fullExam);
+      } else {
+        setSelectedExamDetail(exam);
+      }
+    } catch {
+      setSelectedExamDetail(exam);
+    } finally {
+      setLoadingDetailId(null);
+    }
+  };
 
   // Form state tạo đề thi
   const [title, setTitle] = useState('');
@@ -298,7 +322,7 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
 
                     {/* Thumbnail Icon vuông bo tròn với biểu tượng Wordwall (dạng cột biểu đồ W) */}
                     <div 
-                      onClick={() => setSelectedExamDetail(exam)}
+                      onClick={() => handleOpenExamDetail(exam)}
                       className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center shrink-0 shadow-2xs cursor-pointer hover:border-[#d82a7a]"
                     >
                       <div className="flex items-end gap-0.5 h-4">
@@ -311,11 +335,14 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
 
                     {/* Chi tiết tiêu đề -> BẤM VÀO ĐỂ XEM QUẢN LÝ TỪNG CÂU HỎI */}
                     <div 
-                      onClick={() => setSelectedExamDetail(exam)}
+                      onClick={() => handleOpenExamDetail(exam)}
                       className="min-w-0 pr-2 cursor-pointer group"
                     >
-                      <h3 className="text-xs sm:text-sm font-bold text-slate-800 truncate group-hover:text-[#d82a7a] transition-colors">
-                        {exam.title}
+                      <h3 className="text-xs sm:text-sm font-bold text-slate-800 truncate group-hover:text-[#d82a7a] transition-colors flex items-center gap-2">
+                        <span>{exam.title}</span>
+                        {loadingDetailId === exam.id && (
+                          <span className="text-[10px] text-amber-600 font-normal">Đang tải...</span>
+                        )}
                       </h3>
                       <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5 flex-wrap">
                         <span className="flex items-center gap-1 font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.2 rounded">
