@@ -1,5 +1,9 @@
 // Cấu hình Base API URL kết nối tới Backend Node.js
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// Tự động nhận IP máy chủ khi truy cập từ điện thoại hoặc thiết bị khác trong cùng mạng LAN
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 
+  (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
+    ? `http://${window.location.hostname}:5000/api`
+    : 'http://localhost:5000/api');
 
 /**
  * Lấy danh sách toàn bộ đề thi từ CSDL Neon PostgreSQL
