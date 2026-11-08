@@ -18,6 +18,7 @@ import {
   Loader2
 } from 'lucide-react';
 import ExamDetailManage from './ExamDetailManage';
+import CreateResourceModal from './CreateResourceModal';
 
 export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayExam, onUpdateExam, isLoading }) {
   const [activeTab, setActiveTab] = useState('created'); // 'created' | 'history' | 'shared' | 'all'
@@ -98,6 +99,19 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
       explanation: 'Word và Media Player phục vụ trực tiếp nhu cầu người dùng nên là phần mềm ứng dụng.'
     }
   ]);
+
+  // Nếu đang mở trang "Thêm tài nguyên" -> Hiển thị CreateResourceModal (Trang tạo đề thi + Liệt kê dạng câu hỏi + Nhập file AI)
+  if (showCreateModal) {
+    return (
+      <CreateResourceModal
+        onBack={() => setShowCreateModal(false)}
+        onSaveExam={async (newExam) => {
+          await onAddExam(newExam);
+          setShowCreateModal(false);
+        }}
+      />
+    );
+  }
 
   // Nếu đang click vào xem chi tiết một hoạt động/đề thi -> Mở giao diện ExamDetailManage (Ảnh 1 & 2)
   if (selectedExamDetail) {

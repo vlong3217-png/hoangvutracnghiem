@@ -182,3 +182,82 @@ Trả về DUY NHẤT một chuỗi JSON hợp lệ với cấu trúc sau (khôn
   };
 }
 
+/**
+ * Phân tích nội dung tài liệu (Word, Excel, PDF hoặc Text) bằng Gemini AI
+ * Tự động trích xuất thành danh sách các câu hỏi trắc nghiệm / tự luận có cấu trúc
+ */
+export async function parseQuestionsWithGemini(rawText, customApiKey = '') {
+  const apiKey = customApiKey || getGeminiApiKey();
+  if (!apiKey) {
+    throw new Error('Vui lòng cung cấp Gemini API Key để sử dụng tính năng phân tích tài liệu bằng AI.');
+  }
+
+  const prompt = `
+Bạn là một chuyên gia khảo thí và tạo đề thi giáo dục.
+Nhiệm vụ của bạn: Đọc nội dung văn bản dưới đây (được trích xuất từ file Word/Excel/PDF/Text) và chuyển đổi thành danh sách các câu hỏi thi trắc nghiệm/tự luận chuẩn.
+
+Yêu cầu định dạng đầu ra:
+Trả về DUY NHẤT một mảng JSON các object theo cấu trúc sau (không kèm markdown thừa):
+[
+  {
+    "id": "1",
+    "type": "single", // "single" (Trắc nghiệm 1 đáp án), "multiple" (Nhiều đáp án đúng), "true_false_multi" (Đúng/Sai các ý), "short_answer" (Điền từ ngắn), hoặc "essay" (Tự luận)
+    "question": "Nội dung câu hỏi...",
+    "options": [
+      { "id": "A", "text": "Nội dung đáp án A" },
+      { "id": "B", "text": "Nội dung đáp án B" },
+      { "id": "C", "text": "Nội dung đáp án C" },
+      { "id": "D", "text": "Nội dung đáp án D" }
+    ],
+    "correctAnswer": "A", // Nếu multiple thì là mảng: ["A", "B"]. Nếu short_answer thì là text ngắn.
+    "explanation": "Giải thích chi tiết vì sao chọn đáp án này..."
+  }
+]
+
+Lưu ý:
+- Tự động nhận diện đáp án đúng nếu trong đề có đánh dấu (ví dụ: gạch chân, in đậm, dấu *, hoặc dòng Đáp án: A). Nếu không ghi rõ, hãy dùng kiến thức chuẩn xác để chọn đáp án đúng.
+- Giữ nguyên văn phong câu hỏi và các lựa chọn.
+
+Nội dung tài liệu cần phân tích:
+"""
+${rawText.slice(0, 30000)}
+"""
+`;
+
+  for (const modelName of CANDIDATE_MODELS) {
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.1,
+            responseMimeType: "application/json"
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const errJson = await response.json().catch(() => ({}));
+        throw new Error(errJson?.error?.message || `Lỗi Gemini API ${response.status}`);
+      }
+
+      const data = await response.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) throw new Error('Không nhận được kết quả từ AI');
+
+      const cleaned = text.replace(/^```json/i, '').replace(/```$/i, '').trim();
+      const parsed = JSON.parse(cleaned);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    } catch (err) {
+      console.warn(`Thử parse bằng ${modelName} thất bại, đang thử model tiếp theo...`, err.message);
+    }
+  }
+
+  throw new Error('AI không thể trích xuất câu hỏi từ tài liệu này. Vui lòng kiểm tra lại cấu trúc file hoặc API Key.');
+}
+
+
