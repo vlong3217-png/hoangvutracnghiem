@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Play, 
   Edit3, 
@@ -6,11 +6,13 @@ import {
   CheckCircle2, 
   Radio, 
   HelpCircle, 
-  ArrowLeft,
-  ChevronRight,
-  FolderOpen,
-  Plus,
-  Trash2
+  ArrowLeft, 
+  ChevronRight, 
+  FolderOpen, 
+  Plus, 
+  Trash2,
+  Check,
+  X
 } from 'lucide-react';
 import QuestionEditor from './QuestionEditor';
 import CreateResourceModal from './CreateResourceModal';
@@ -21,6 +23,32 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
   const [isFullEditMode, setIsFullEditMode] = useState(false); // Mở trang chỉnh sửa toàn diện (giống Thêm tài nguyên)
   const [showAddModal, setShowAddModal] = useState(false);
   const [copiedSuccess, setCopiedSuccess] = useState(false);
+
+  // Chức năng đổi tên đề thi trực tiếp
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [tempTitle, setTempTitle] = useState(exam.title || '');
+
+  useEffect(() => {
+    setTempTitle(exam.title || '');
+  }, [exam.title]);
+
+  const handleSaveTitle = () => {
+    if (!tempTitle.trim()) {
+      setTempTitle(exam.title || '');
+      setIsEditingTitle(false);
+      return;
+    }
+    if (tempTitle.trim() !== exam.title) {
+      const updated = {
+        ...exam,
+        title: tempTitle.trim()
+      };
+      if (onUpdateExam) {
+        onUpdateExam(updated);
+      }
+    }
+    setIsEditingTitle(false);
+  };
 
   // Xử lý sao chép tạo đề thi mới từ đề hiện tại
   const handleDuplicateExam = () => {
@@ -162,10 +190,59 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
             </div>
           </div>
 
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold text-slate-900 leading-snug">
-              {exam.title}
-            </h1>
+          <div className="flex-1 min-w-0">
+            {isEditingTitle ? (
+              <div className="flex items-center gap-2 max-w-xl">
+                <input 
+                  type="text"
+                  autoFocus
+                  value={tempTitle}
+                  onChange={(e) => setTempTitle(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSaveTitle();
+                    if (e.key === 'Escape') {
+                      setTempTitle(exam.title || '');
+                      setIsEditingTitle(false);
+                    }
+                  }}
+                  className="px-3 py-1.5 bg-white border-2 border-[#d82a7a] rounded-lg text-lg md:text-xl font-bold text-slate-900 focus:outline-none w-full shadow-xs"
+                />
+                <button
+                  onClick={handleSaveTitle}
+                  className="p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors cursor-pointer shadow-2xs"
+                  title="Lưu tên mới (Enter)"
+                >
+                  <Check className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => {
+                    setTempTitle(exam.title || '');
+                    setIsEditingTitle(false);
+                  }}
+                  className="p-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg transition-colors cursor-pointer"
+                  title="Hủy (Esc)"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 group">
+                <h1 
+                  onClick={() => setIsEditingTitle(true)}
+                  className="text-xl md:text-2xl font-bold text-slate-900 leading-snug cursor-pointer hover:text-[#d82a7a] transition-colors"
+                  title="Bấm vào để đổi tên đề thi"
+                >
+                  {exam.title}
+                </h1>
+                <button 
+                  onClick={() => setIsEditingTitle(true)}
+                  className="opacity-60 hover:opacity-100 p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-[#d82a7a] transition-all cursor-pointer"
+                  title="Sửa tên đề thi"
+                >
+                  <Edit3 className="w-4 h-4" />
+                </button>
+              </div>
+            )}
 
             {/* Subtags */}
             <div className="flex items-center gap-2 text-xs text-slate-500 mt-1.5 flex-wrap">
