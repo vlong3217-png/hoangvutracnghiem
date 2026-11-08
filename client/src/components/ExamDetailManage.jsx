@@ -274,21 +274,12 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
                       {idx + 1}. {q.type === 'multiple' ? 'NHIỀU LỰA CHỌN' : q.type === 'true_false' ? 'ĐÚNG / SAI' : 'NHIỀU LỰA CHỌN'} • 30 giây • 1 điểm
                     </span>
 
-                    {/* Cụm nút hành động bên phải từng câu (theo đúng ảnh 2 và yêu cầu) */}
+                    {/* Cụm nút hành động bên phải từng câu: Chỉnh sửa và Xóa (Bỏ nút Xem trước thừa) */}
                     <div className="flex items-center gap-3">
-                      {/* Nút Xem trước */}
-                      <button 
-                        onClick={() => onPlayExam(exam)}
-                        className="flex items-center gap-1 text-slate-500 hover:text-slate-800 text-xs font-semibold"
-                      >
-                        <Eye className="w-3.5 h-3.5 text-slate-400" />
-                        <span>Xem trước</span>
-                      </button>
-
                       {/* NÚT CHỈNH SỬA CÂU HỎI (MỞ GIAO DIỆN QUESTIONEDITOR) */}
                       <button 
                         onClick={() => setEditingQuestion(q)}
-                        className="flex items-center gap-1 text-slate-700 hover:text-[#d82a7a] text-xs font-semibold px-2 py-1 rounded-md hover:bg-slate-100 transition-colors"
+                        className="flex items-center gap-1 text-slate-700 hover:text-[#d82a7a] text-xs font-semibold px-2 py-1 rounded-md hover:bg-slate-100 transition-colors cursor-pointer"
                       >
                         <Edit3 className="w-3.5 h-3.5 text-slate-500" />
                         <span>Chỉnh sửa</span>
@@ -297,7 +288,7 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
                       {/* Nút Xóa */}
                       <button 
                         onClick={() => handleDeleteQuestion(q.id)}
-                        className="flex items-center gap-1 text-rose-500 hover:text-rose-700 text-xs font-semibold px-1 py-1 rounded hover:bg-rose-50 transition-colors"
+                        className="flex items-center gap-1 text-rose-500 hover:text-rose-700 text-xs font-semibold px-1 py-1 rounded hover:bg-rose-50 transition-colors cursor-pointer"
                         title="Xóa câu này"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
