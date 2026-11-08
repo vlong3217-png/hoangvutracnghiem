@@ -19,13 +19,12 @@ import {
   PenTool, 
   X, 
   Loader2, 
-  Key, 
   AlertCircle,
   Plus,
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
-import { parseQuestionsWithGemini, getGeminiApiKey, setGeminiApiKey } from '../services/geminiService';
+import { parseQuestionsWithGemini } from '../services/geminiService';
 
 import QuestionEditor from './QuestionEditor';
 
@@ -48,8 +47,6 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
   // Modal / Drawer Nhập từ tài liệu & AI
   const [showImportModal, setShowImportModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [apiKey, setApiKey] = useState(getGeminiApiKey());
-  const [apiKeySaved, setApiKeySaved] = useState(false);
 
   // Trạng thái xử lý file
   const [isProcessingFile, setIsProcessingFile] = useState(false);
@@ -247,7 +244,7 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
         // Đọc text thô từ PDF
         extractedText = await file.text();
         if (!extractedText || extractedText.length < 50) {
-          extractedText = `Tài liệu PDF: ${file.name}\n(Vui lòng đảm bảo Gemini API Key đã được kích hoạt để phân tích chuyên sâu).`;
+          extractedText = `Tài liệu PDF: ${file.name}`;
         }
       } else {
         throw new Error('Định dạng tệp chưa được hỗ trợ. Vui lòng chọn file Word (.docx), Excel (.xlsx, .csv) hoặc văn bản (.txt).');
@@ -259,7 +256,7 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
 
       setImportStatus('Đang gửi dữ liệu tới Gemini AI để phân tích câu hỏi & đáp án...');
       
-      const parsed = await parseQuestionsWithGemini(extractedText, apiKey);
+      const parsed = await parseQuestionsWithGemini(extractedText);
       
       if (Array.isArray(parsed) && parsed.length > 0) {
         // Tự động gán ID duy nhất
@@ -632,40 +629,6 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
                   <p>{importError}</p>
                 </div>
               )}
-
-              {/* Cấu hình Gemini API Key tiện lợi */}
-              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-slate-700 flex items-center gap-1.5">
-                    <Key className="w-3.5 h-3.5 text-amber-500" />
-                    Google Gemini API Key
-                  </span>
-                  {apiKeySaved && (
-                    <span className="text-[11px] text-emerald-600 font-bold flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3" /> Đã lưu
-                    </span>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <input 
-                    type="password"
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    placeholder="Dán API Key (AI Studio) tại đây nếu cần..."
-                    className="flex-1 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-[#d82a7a]"
-                  />
-                  <button 
-                    onClick={() => {
-                      setGeminiApiKey(apiKey);
-                      setApiKeySaved(true);
-                      setTimeout(() => setApiKeySaved(false), 2000);
-                    }}
-                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold transition-colors"
-                  >
-                    Lưu
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
         </div>
