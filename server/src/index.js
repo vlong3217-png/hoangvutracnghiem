@@ -70,7 +70,10 @@ app.get('/api/exams', async (req, res) => {
       ORDER BY e.created_at ASC
     `);
 
-    const formatted = examsRes.rows.map(row => ({
+    // Danh sách theme màu sắc đẹp mắt
+    const themes = ['blue', 'teal', 'coral', 'orange', 'purple'];
+
+    const formatted = examsRes.rows.map((row, idx) => ({
       id: row.id,
       title: row.title,
       description: row.description,
@@ -78,7 +81,10 @@ app.get('/api/exams', async (req, res) => {
       level: row.difficulty,
       duration: row.duration_minutes,
       totalQuestions: parseInt(row.question_count, 10),
-      statusBadge: `${row.question_count} Qs`
+      statusBadge: `${row.question_count} Qs`,
+      theme: themes[idx % themes.length],
+      author: row.subject ? `Bộ môn ${row.subject}` : 'Giáo viên',
+      className: row.description || 'Lớp học phần'
     }));
 
     res.json({ success: true, data: formatted });
@@ -178,3 +184,4 @@ async function startServer() {
 }
 
 startServer();
+

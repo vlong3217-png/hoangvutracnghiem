@@ -43,17 +43,18 @@ export async function initDatabase() {
       );
     `);
 
-    // 3. Bảng Câu hỏi (Questions - hỗ trợ đa dạng cấu trúc trắc nghiệm, kéo thả, đục lỗ, tự luận AI bằng JSONB)
+    // 3. Bảng Câu hỏi (Khóa chính gồm exam_id + id để các đề thi có thể đánh số câu từ 1, 2, 3 độc lập)
     await client.query(`
       CREATE TABLE IF NOT EXISTS questions (
-        id VARCHAR(100) PRIMARY KEY,
+        id VARCHAR(100) NOT NULL,
         exam_id VARCHAR(100) REFERENCES exams(id) ON DELETE CASCADE,
         question_text TEXT NOT NULL,
         type VARCHAR(50) DEFAULT 'single',
         options JSONB,
         correct_answer JSONB,
         data JSONB,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (exam_id, id)
       );
     `);
 
@@ -79,3 +80,4 @@ export async function initDatabase() {
     client.release();
   }
 }
+

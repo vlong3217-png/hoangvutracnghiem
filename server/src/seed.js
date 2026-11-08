@@ -66,14 +66,14 @@ async function seedData() {
         await client.query(`
           INSERT INTO questions (id, exam_id, question_text, type, options, correct_answer, data)
           VALUES ($1, $2, $3, $4, $5, $6, $7)
-          ON CONFLICT (id) DO UPDATE SET
+          ON CONFLICT (exam_id, id) DO UPDATE SET
             question_text = EXCLUDED.question_text,
             type = EXCLUDED.type,
             options = EXCLUDED.options,
             correct_answer = EXCLUDED.correct_answer,
             data = EXCLUDED.data;
         `, [
-          q.id,
+          String(q.id),
           exam.id,
           q.question || '',
           q.type || 'single',
