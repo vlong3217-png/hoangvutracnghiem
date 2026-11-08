@@ -1080,7 +1080,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
                   <h2 className="text-sm sm:text-xl md:text-2xl font-normal text-white mb-4 sm:mb-6 max-w-4xl mx-auto leading-relaxed">
                     {currentQ.question}
                   </h2>
-                  <form onSubmit={handleShortAnswerSubmit} className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 max-w-2xl mx-auto">
+                  <form onSubmit={handleShortAnswerSubmit} className="w-full max-w-2xl mx-auto">
                     <input
                       type="text"
                       autoFocus
@@ -1088,16 +1088,8 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
                       value={shortInputText}
                       onChange={(e) => setShortInputText(e.target.value)}
                       placeholder="Gõ đáp án của bạn vào đây..."
-                      className="flex-1 px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl text-center text-sm sm:text-base font-normal bg-black/40 border-2 border-white/20 text-white outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/20"
+                      className="w-full px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl text-center text-sm sm:text-base font-normal bg-black/40 border-2 border-white/20 text-white outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/20 shadow-inner"
                     />
-                    <button
-                      type="submit"
-                      disabled={Boolean(answeredState) || !shortInputText.trim()}
-                      className="px-6 sm:px-8 py-3 sm:py-4 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold text-xs sm:text-base rounded-xl sm:rounded-2xl flex items-center justify-center gap-2 shadow-xl cursor-pointer transition-all"
-                    >
-                      <span>Gửi đáp án</span>
-                      <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    </button>
                   </form>
                 </>
               )}
