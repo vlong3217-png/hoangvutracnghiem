@@ -8,7 +8,9 @@ import {
   HelpCircle, 
   ArrowLeft,
   ChevronRight,
-  FolderOpen
+  FolderOpen,
+  Plus,
+  Trash2
 } from 'lucide-react';
 import QuestionEditor from './QuestionEditor';
 
