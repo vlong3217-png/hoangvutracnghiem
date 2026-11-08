@@ -21,7 +21,8 @@ import {
   CheckCircle2,
   Bot,
   Loader2,
-  Key
+  Key,
+  Shuffle
 } from 'lucide-react';
 import { gradeEssayWithGemini, getGeminiApiKey, setGeminiApiKey } from '../services/geminiService';
 
@@ -71,7 +72,38 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [tempApiKey, setTempApiKey] = useState(getGeminiApiKey());
 
-  const questions = exam.questions || [];
+  // CHUẨN BỊ DANH SÁCH CÂU HỎI LÀM BÀI (ĐỒNG BỘ CÀI ĐẶT ĐẢO CÂU HỎI & ĐẢO ĐÁP ÁN)
+  const [questions] = useState(() => {
+    let list = exam.questions && Array.isArray(exam.questions) ? [...exam.questions] : [];
+
+    // 1. Nếu đề thi bật "Đảo câu hỏi" (shuffleQuestions)
+    if (exam.shuffleQuestions && list.length > 1) {
+      for (let i = list.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [list[i], list[j]] = [list[j], list[i]];
+      }
+    }
+
+    // 2. Nếu đề thi bật "Đảo đáp án" (shuffleAnswers)
+    if (exam.shuffleAnswers) {
+      list = list.map(q => {
+        if (q.options && Array.isArray(q.options) && q.options.length > 1) {
+          const shuffledOpts = [...q.options];
+          for (let i = shuffledOpts.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffledOpts[i], shuffledOpts[j]] = [shuffledOpts[j], shuffledOpts[i]];
+          }
+          return {
+            ...q,
+            options: shuffledOpts
+          };
+        }
+        return q;
+      });
+    }
+
+    return list;
+  });
   const currentQ = questions[currentIdx] || {
     id: 1,
     type: 'single',
@@ -591,6 +623,17 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
                       ? 'Điền từ'
                       : 'Trắc nghiệm'}
           </span>
+
+          {exam.shuffleQuestions && (
+            <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 bg-purple-500/20 text-purple-300 border border-purple-400/40 font-bold text-[10px] rounded-lg">
+              <Shuffle className="w-2.5 h-2.5" /> Đảo câu hỏi
+            </span>
+          )}
+          {exam.shuffleAnswers && (
+            <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 bg-pink-500/20 text-pink-300 border border-pink-400/40 font-bold text-[10px] rounded-lg">
+              <Shuffle className="w-2.5 h-2.5" /> Đảo đáp án
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-2">

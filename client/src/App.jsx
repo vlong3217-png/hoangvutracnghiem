@@ -152,6 +152,8 @@ export default function App() {
       subject: newExam.subject || 'Khoa học',
       difficulty: newExam.level || newExam.difficulty || 'Đại học',
       durationMinutes: newExam.duration || newExam.durationMinutes || 45,
+      shuffleQuestions: newExam.shuffleQuestions ?? false,
+      shuffleAnswers: newExam.shuffleAnswers ?? false,
       questions: newExam.questions || []
     });
   };
@@ -165,6 +167,8 @@ export default function App() {
       subject: updatedExam.subject,
       difficulty: updatedExam.level || updatedExam.difficulty,
       durationMinutes: updatedExam.duration || updatedExam.durationMinutes,
+      shuffleQuestions: updatedExam.shuffleQuestions ?? false,
+      shuffleAnswers: updatedExam.shuffleAnswers ?? false,
       questions: updatedExam.questions
     });
   };

@@ -22,7 +22,8 @@ import {
   AlertCircle,
   Plus,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Shuffle
 } from 'lucide-react';
 import { parseQuestionsWithGemini } from '../services/geminiService';
 
@@ -33,6 +34,8 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
   const [subject, setSubject] = useState(initialExam?.subject || 'Khoa học Xã hội');
   const [level, setLevel] = useState(initialExam?.level || initialExam?.difficulty || 'Đại học');
   const [duration, setDuration] = useState(initialExam?.duration || initialExam?.durationMinutes || 30);
+  const [shuffleQuestions, setShuffleQuestions] = useState(initialExam?.shuffleQuestions ?? false);
+  const [shuffleAnswers, setShuffleAnswers] = useState(initialExam?.shuffleAnswers ?? false);
 
   // Danh sách câu hỏi đã được tạo / trích xuất
   const [questions, setQuestions] = useState(initialExam?.questions || []);
@@ -300,6 +303,8 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
       difficulty: level || 'Đại học',
       duration: Number(duration) || 30,
       durationMinutes: Number(duration) || 30,
+      shuffleQuestions: Boolean(shuffleQuestions),
+      shuffleAnswers: Boolean(shuffleAnswers),
       totalQuestions: questions.length,
       createdAtText: initialExam?.createdAtText || 'Vừa xong',
       author: initialExam?.author || 'Tôi',
@@ -680,12 +685,71 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-[#d82a7a]"
                 />
               </div>
+
+              {/* TÙY CHỌN ĐẢO CÂU HỎI VÀ ĐẢO ĐÁP ÁN */}
+              <div className="pt-2 border-t border-slate-100 space-y-2.5">
+                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  Tùy chọn xáo trộn bài thi
+                </div>
+
+                {/* 1. Đảo câu hỏi */}
+                <div className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors">
+                  <div className="pr-2">
+                    <div className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                      <Shuffle className="w-3.5 h-3.5 text-[#d82a7a]" />
+                      <span>Đảo câu hỏi</span>
+                    </div>
+                    <div className="text-[11px] text-slate-500 mt-0.5">
+                      Xáo trộn ngẫu nhiên thứ tự các câu hỏi mỗi khi thí sinh làm bài
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShuffleQuestions(prev => !prev)}
+                    className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors shrink-0 ${
+                      shuffleQuestions ? 'bg-[#d82a7a]' : 'bg-slate-200'
+                    }`}
+                  >
+                    <div
+                      className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                        shuffleQuestions ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* 2. Đảo đáp án */}
+                <div className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors">
+                  <div className="pr-2">
+                    <div className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                      <Shuffle className="w-3.5 h-3.5 text-purple-600" />
+                      <span>Đảo đáp án</span>
+                    </div>
+                    <div className="text-[11px] text-slate-500 mt-0.5">
+                      Xáo trộn ngẫu nhiên thứ tự các phương án lựa chọn trong câu hỏi
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShuffleAnswers(prev => !prev)}
+                    className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors shrink-0 ${
+                      shuffleAnswers ? 'bg-[#d82a7a]' : 'bg-slate-200'
+                    }`}
+                  >
+                    <div
+                      className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                        shuffleAnswers ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div className="pt-2">
               <button 
                 onClick={() => setShowSettingsModal(false)}
-                className="w-full py-2 bg-[#d82a7a] hover:bg-[#c2226b] text-white rounded-lg text-xs font-bold transition-colors"
+                className="w-full py-2.5 bg-[#d82a7a] hover:bg-[#c2226b] text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-xs"
               >
                 Xác nhận
               </button>

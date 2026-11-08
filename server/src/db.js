@@ -38,9 +38,13 @@ export async function initDatabase() {
         subject VARCHAR(100),
         difficulty VARCHAR(50),
         duration_minutes INT DEFAULT 45,
+        shuffle_questions BOOLEAN DEFAULT FALSE,
+        shuffle_answers BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+      ALTER TABLE exams ADD COLUMN IF NOT EXISTS shuffle_questions BOOLEAN DEFAULT FALSE;
+      ALTER TABLE exams ADD COLUMN IF NOT EXISTS shuffle_answers BOOLEAN DEFAULT FALSE;
     `);
 
     // 3. Bảng Câu hỏi (Khóa chính gồm exam_id + id để các đề thi có thể đánh số câu từ 1, 2, 3 độc lập)

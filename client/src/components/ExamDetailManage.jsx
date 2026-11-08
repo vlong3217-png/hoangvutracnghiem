@@ -12,7 +12,9 @@ import {
   Plus, 
   Trash2,
   Check,
-  X
+  X,
+  Settings,
+  Shuffle
 } from 'lucide-react';
 import QuestionEditor from './QuestionEditor';
 import CreateResourceModal from './CreateResourceModal';
@@ -29,9 +31,38 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [tempTitle, setTempTitle] = useState(exam.title || '');
 
+  // Modal Cài đặt bài thi (Đảo câu hỏi, Đảo đáp án, Thời gian, Môn học, Cấp độ)
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [detailSubject, setDetailSubject] = useState(exam.subject || 'Khoa học');
+  const [detailLevel, setDetailLevel] = useState(exam.level || exam.difficulty || 'Đại học');
+  const [detailDuration, setDetailDuration] = useState(exam.duration || exam.durationMinutes || 30);
+  const [detailShuffleQuestions, setDetailShuffleQuestions] = useState(exam.shuffleQuestions ?? false);
+  const [detailShuffleAnswers, setDetailShuffleAnswers] = useState(exam.shuffleAnswers ?? false);
+
   useEffect(() => {
     setTempTitle(exam.title || '');
-  }, [exam.title]);
+    setDetailSubject(exam.subject || 'Khoa học');
+    setDetailLevel(exam.level || exam.difficulty || 'Đại học');
+    setDetailDuration(exam.duration || exam.durationMinutes || 30);
+    setDetailShuffleQuestions(exam.shuffleQuestions ?? false);
+    setDetailShuffleAnswers(exam.shuffleAnswers ?? false);
+  }, [exam]);
+
+  const handleSaveSettings = () => {
+    if (onUpdateExam) {
+      onUpdateExam({
+        ...exam,
+        subject: detailSubject,
+        level: detailLevel,
+        difficulty: detailLevel,
+        duration: Number(detailDuration) || 30,
+        durationMinutes: Number(detailDuration) || 30,
+        shuffleQuestions: detailShuffleQuestions,
+        shuffleAnswers: detailShuffleAnswers
+      });
+    }
+    setShowSettingsModal(false);
+  };
 
   const handleSaveTitle = () => {
     if (!tempTitle.trim()) {
@@ -257,7 +288,23 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
               <span>•</span>
               <span>{exam.level || 'Đại học'}</span>
               <span>•</span>
-              <span>11 lần chơi</span>
+              <span>{exam.duration || exam.durationMinutes || 30} phút</span>
+              {exam.shuffleQuestions && (
+                <>
+                  <span>•</span>
+                  <span className="flex items-center gap-1 font-semibold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded text-[10px]">
+                    <Shuffle className="w-2.5 h-2.5" /> Đảo câu hỏi
+                  </span>
+                </>
+              )}
+              {exam.shuffleAnswers && (
+                <>
+                  <span>•</span>
+                  <span className="flex items-center gap-1 font-semibold text-pink-700 bg-pink-50 border border-pink-200 px-2 py-0.5 rounded text-[10px]">
+                    <Shuffle className="w-2.5 h-2.5" /> Đảo đáp án
+                  </span>
+                </>
+              )}
               <span>•</span>
               <span className="text-rose-600 font-semibold">• Dễ</span>
             </div>
@@ -276,7 +323,7 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
         </div>
       </div>
 
-      {/* TOOLBAR: Chỉ giữ Chỉnh sửa, thay Lưu/Chia sẻ/Bảng tính/3 chấm bằng nút Sao chép */}
+      {/* TOOLBAR: Chỉ giữ Chỉnh sửa, Cài đặt, và Sao chép */}
       <div className="flex items-center justify-between py-4 border-b border-slate-100 flex-wrap gap-3">
         <div className="flex items-center gap-2.5">
           <button 
@@ -286,6 +333,16 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
           >
             <Edit3 className="w-3.5 h-3.5 text-slate-500" />
             <span>Chỉnh sửa</span>
+          </button>
+
+          {/* Nút Cài đặt bài thi */}
+          <button 
+            onClick={() => setShowSettingsModal(true)}
+            className="px-3.5 py-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+            title="Mở cài đặt bài thi (Đảo câu hỏi, Đảo đáp án, Thời gian)"
+          >
+            <Settings className="w-3.5 h-3.5 text-slate-500" />
+            <span>Cài đặt</span>
           </button>
 
           {/* Nút Sao chép đề thi mới */}
@@ -434,6 +491,125 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
         </div>
 
       </div>
+
+      {/* MODAL CÀI ĐẶT BÀI THI */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-md p-6 shadow-2xl animate-in fade-in zoom-in-95 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Settings className="w-4 h-4 text-[#d82a7a]" />
+                Cài đặt bài thi
+              </h3>
+              <button onClick={() => setShowSettingsModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3.5 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Chủ đề môn học</label>
+                <input 
+                  type="text"
+                  value={detailSubject}
+                  onChange={(e) => setDetailSubject(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-[#d82a7a]"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Cấp độ</label>
+                <input 
+                  type="text"
+                  value={detailLevel}
+                  onChange={(e) => setDetailLevel(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-[#d82a7a]"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Thời gian làm bài (Phút)</label>
+                <input 
+                  type="number"
+                  min="1"
+                  max="180"
+                  value={detailDuration}
+                  onChange={(e) => setDetailDuration(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-[#d82a7a]"
+                />
+              </div>
+
+              {/* TÙY CHỌN ĐẢO CÂU HỎI VÀ ĐẢO ĐÁP ÁN */}
+              <div className="pt-2 border-t border-slate-100 space-y-2.5">
+                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  Tùy chọn xáo trộn bài thi
+                </div>
+
+                {/* 1. Đảo câu hỏi */}
+                <div className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors">
+                  <div className="pr-2">
+                    <div className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                      <Shuffle className="w-3.5 h-3.5 text-[#d82a7a]" />
+                      <span>Đảo câu hỏi</span>
+                    </div>
+                    <div className="text-[11px] text-slate-500 mt-0.5">
+                      Xáo trộn ngẫu nhiên thứ tự các câu hỏi mỗi khi thí sinh làm bài
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setDetailShuffleQuestions(prev => !prev)}
+                    className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors shrink-0 ${
+                      detailShuffleQuestions ? 'bg-[#d82a7a]' : 'bg-slate-200'
+                    }`}
+                  >
+                    <div
+                      className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                        detailShuffleQuestions ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* 2. Đảo đáp án */}
+                <div className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors">
+                  <div className="pr-2">
+                    <div className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                      <Shuffle className="w-3.5 h-3.5 text-purple-600" />
+                      <span>Đảo đáp án</span>
+                    </div>
+                    <div className="text-[11px] text-slate-500 mt-0.5">
+                      Xáo trộn ngẫu nhiên thứ tự các phương án lựa chọn trong câu hỏi
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setDetailShuffleAnswers(prev => !prev)}
+                    className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors shrink-0 ${
+                      detailShuffleAnswers ? 'bg-[#d82a7a]' : 'bg-slate-200'
+                    }`}
+                  >
+                    <div
+                      className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                        detailShuffleAnswers ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <button 
+                onClick={handleSaveSettings}
+                className="w-full py-2.5 bg-[#d82a7a] hover:bg-[#c2226b] text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-xs"
+              >
+                Xác nhận
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

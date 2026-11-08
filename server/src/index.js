@@ -119,6 +119,8 @@ app.get('/api/exams', async (req, res) => {
       subject: row.subject,
       level: row.difficulty,
       duration: row.duration_minutes,
+      shuffleQuestions: Boolean(row.shuffle_questions),
+      shuffleAnswers: Boolean(row.shuffle_answers),
       totalQuestions: parseInt(row.question_count, 10),
       statusBadge: `${row.question_count} Qs`,
       theme: themes[idx % themes.length],
@@ -164,6 +166,8 @@ app.get('/api/exams/:id', async (req, res) => {
         subject: exam.subject,
         difficulty: exam.difficulty,
         durationMinutes: exam.duration_minutes,
+        shuffleQuestions: Boolean(exam.shuffle_questions),
+        shuffleAnswers: Boolean(exam.shuffle_answers),
         questions
       }
     });
@@ -186,7 +190,7 @@ app.delete('/api/exams/:id', async (req, res) => {
 // Cập nhật câu hỏi của đề thi
 app.put('/api/exams/:id', async (req, res) => {
   const { id } = req.params;
-  const { title, description, subject, difficulty, durationMinutes, questions } = req.body;
+  const { title, description, subject, difficulty, durationMinutes, shuffleQuestions, shuffleAnswers, questions } = req.body;
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -198,9 +202,20 @@ app.put('/api/exams/:id', async (req, res) => {
           subject = COALESCE($3, subject),
           difficulty = COALESCE($4, difficulty),
           duration_minutes = COALESCE($5, duration_minutes),
+          shuffle_questions = COALESCE($6, shuffle_questions),
+          shuffle_answers = COALESCE($7, shuffle_answers),
           updated_at = CURRENT_TIMESTAMP
-      WHERE id = $6
-    `, [title, description, subject, difficulty, durationMinutes, id]);
+      WHERE id = $8
+    `, [
+      title, 
+      description, 
+      subject, 
+      difficulty, 
+      durationMinutes,
+      shuffleQuestions !== undefined ? Boolean(shuffleQuestions) : null,
+      shuffleAnswers !== undefined ? Boolean(shuffleAnswers) : null,
+      id
+    ]);
 
     if (Array.isArray(questions)) {
       await client.query('DELETE FROM questions WHERE exam_id = $1', [id]);

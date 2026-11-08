@@ -16,21 +16,23 @@ export default async function handler(req, res) {
   try {
     // 1. TẠO HOẶC SAO CHÉP ĐỀ THI MỚI (POST /api/exams)
     if (req.method === 'POST') {
-      const { id: newExamId, title, description, subject, difficulty, durationMinutes, questions } = req.body;
+      const { id: newExamId, title, description, subject, difficulty, durationMinutes, shuffleQuestions, shuffleAnswers, questions } = req.body;
       const examId = newExamId || `exam-${Date.now()}`;
       
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
         await client.query(`
-          INSERT INTO exams (id, title, description, subject, difficulty, duration_minutes)
-          VALUES ($1, $2, $3, $4, $5, $6)
+          INSERT INTO exams (id, title, description, subject, difficulty, duration_minutes, shuffle_questions, shuffle_answers)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
           ON CONFLICT (id) DO UPDATE SET
             title = EXCLUDED.title,
             description = EXCLUDED.description,
             subject = EXCLUDED.subject,
             difficulty = EXCLUDED.difficulty,
             duration_minutes = EXCLUDED.duration_minutes,
+            shuffle_questions = EXCLUDED.shuffle_questions,
+            shuffle_answers = EXCLUDED.shuffle_answers,
             updated_at = CURRENT_TIMESTAMP
         `, [
           examId, 
@@ -38,7 +40,9 @@ export default async function handler(req, res) {
           description || '', 
           subject || 'Khoa học', 
           difficulty || 'Đại học', 
-          Number(durationMinutes) || 45
+          Number(durationMinutes) || 45,
+          Boolean(shuffleQuestions),
+          Boolean(shuffleAnswers)
         ]);
 
         if (Array.isArray(questions) && questions.length > 0) {
@@ -87,7 +91,7 @@ export default async function handler(req, res) {
 
     // 2. CẬP NHẬT ĐỀ THI & CÂU HỎI (PUT /api/exams?id=...)
     if (req.method === 'PUT' && id) {
-      const { title, description, subject, difficulty, durationMinutes, questions } = req.body;
+      const { title, description, subject, difficulty, durationMinutes, shuffleQuestions, shuffleAnswers, questions } = req.body;
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
@@ -99,9 +103,20 @@ export default async function handler(req, res) {
               subject = COALESCE($3, subject),
               difficulty = COALESCE($4, difficulty),
               duration_minutes = COALESCE($5, duration_minutes),
+              shuffle_questions = COALESCE($6, shuffle_questions),
+              shuffle_answers = COALESCE($7, shuffle_answers),
               updated_at = CURRENT_TIMESTAMP
-          WHERE id = $6
-        `, [title, description, subject, difficulty, durationMinutes, id]);
+          WHERE id = $8
+        `, [
+          title, 
+          description, 
+          subject, 
+          difficulty, 
+          durationMinutes,
+          shuffleQuestions !== undefined ? Boolean(shuffleQuestions) : null,
+          shuffleAnswers !== undefined ? Boolean(shuffleAnswers) : null,
+          id
+        ]);
 
         if (Array.isArray(questions)) {
           await client.query('DELETE FROM questions WHERE exam_id = $1', [id]);
@@ -183,6 +198,8 @@ export default async function handler(req, res) {
           subject: exam.subject,
           difficulty: exam.difficulty,
           durationMinutes: exam.duration_minutes,
+          shuffleQuestions: Boolean(exam.shuffle_questions),
+          shuffleAnswers: Boolean(exam.shuffle_answers),
           questions
         }
       });
@@ -207,6 +224,8 @@ export default async function handler(req, res) {
         subject: row.subject,
         level: row.difficulty,
         duration: row.duration_minutes,
+        shuffleQuestions: Boolean(row.shuffle_questions),
+        shuffleAnswers: Boolean(row.shuffle_answers),
         totalQuestions: parseInt(row.question_count, 10),
         statusBadge: `${row.question_count} Qs`,
         theme: themes[idx % themes.length],
