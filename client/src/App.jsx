@@ -48,13 +48,22 @@ export default function App() {
   });
 
   const [exams, setExams] = useState([]);
+  const [isLoadingExams, setIsLoadingExams] = useState(true);
+  const [isOpeningExam, setIsOpeningExam] = useState(false);
 
   // Tải danh sách đề thi thời gian thực từ Neon PostgreSQL Backend
   useEffect(() => {
     async function loadExamsFromDatabase() {
-      const dbExams = await fetchExams();
-      if (dbExams && dbExams.length > 0) {
-        setExams(dbExams);
+      setIsLoadingExams(true);
+      try {
+        const dbExams = await fetchExams();
+        if (dbExams && Array.isArray(dbExams)) {
+          setExams(dbExams);
+        }
+      } catch (err) {
+        console.error("Lỗi tải đề thi từ CSDL:", err);
+      } finally {
+        setIsLoadingExams(false);
       }
     }
     loadExamsFromDatabase();
@@ -186,17 +195,22 @@ export default function App() {
   };
 
   const handleSelectExam = async (exam) => {
-    // Nếu exam chưa có questions (chỉ có metadata từ list), lấy đầy đủ từ Backend
-    if (!exam.questions || exam.questions.length === 0) {
-      const fullExam = await fetchExamById(exam.id);
-      if (fullExam && fullExam.questions && fullExam.questions.length > 0) {
-        setActiveExam(fullExam);
-        setCurrentView('room');
-        return;
+    setIsOpeningExam(true);
+    try {
+      // Nếu exam chưa có questions (chỉ có metadata từ list), lấy đầy đủ từ Backend
+      if (!exam.questions || exam.questions.length === 0) {
+        const fullExam = await fetchExamById(exam.id);
+        if (fullExam && fullExam.questions && fullExam.questions.length > 0) {
+          setActiveExam(fullExam);
+          setCurrentView('room');
+          return;
+        }
       }
+      setActiveExam(exam);
+      setCurrentView('room');
+    } finally {
+      setIsOpeningExam(false);
     }
-    setActiveExam(exam);
-    setCurrentView('room');
   };
 
   const handleSubmitExam = async (resultData) => {
@@ -324,6 +338,7 @@ export default function App() {
                   onSelectExam={handleSelectExam}
                   onOpenTeacherManage={() => setCurrentTab('teacher')}
                   onLogout={handleLogout}
+                  isLoading={isLoadingExams}
                 />
               )}
 
@@ -334,6 +349,7 @@ export default function App() {
                   onDeleteExam={handleDeleteExam}
                   onPlayExam={handleSelectExam}
                   onUpdateExam={handleUpdateExam}
+                  isLoading={isLoadingExams}
                 />
               )}
 
@@ -358,6 +374,15 @@ export default function App() {
         >
           ?
         </button>
+      )}
+
+      {/* Overlay hiệu ứng đang tải đề thi khi click vào phòng thi */}
+      {isOpeningExam && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex flex-col items-center justify-center text-white animate-in fade-in duration-200">
+          <div className="w-12 h-12 rounded-full border-4 border-white/20 border-t-[#d82a7a] animate-spin mb-3"></div>
+          <p className="text-sm font-bold tracking-wide">Đang tải đề thi...</p>
+          <p className="text-xs text-white/70 mt-1">Vui lòng chờ trong giây lát</p>
+        </div>
       )}
     </div>
   );

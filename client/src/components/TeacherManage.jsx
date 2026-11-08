@@ -14,11 +14,12 @@ import {
   Edit3, 
   FileText, 
   ArrowUpDown,
-  FolderOpen
+  FolderOpen,
+  Loader2
 } from 'lucide-react';
 import ExamDetailManage from './ExamDetailManage';
 
-export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayExam, onUpdateExam }) {
+export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayExam, onUpdateExam, isLoading }) {
   const [activeTab, setActiveTab] = useState('created'); // 'created' | 'history' | 'shared' | 'all'
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedExams, setSelectedExams] = useState([]);
@@ -272,7 +273,7 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
                 : 'bg-transparent border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
-            Đã tạo ({exams.length}/50)
+            {isLoading ? 'Đang tải...' : `Đã tạo (${exams.length}/50)`}
           </button>
         </div>
 
@@ -301,132 +302,138 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
 
           {/* Danh sách các hàng */}
           <div className="divide-y divide-slate-100">
-            {filteredExams.map((exam, idx) => {
-              const isChecked = selectedExams.includes(exam.id);
-              const isDropdownOpen = openDropdownId === exam.id;
+            {isLoading ? (
+              <div className="py-20 flex flex-col items-center justify-center text-center animate-in fade-in duration-300">
+                <div className="w-12 h-12 rounded-full border-4 border-pink-100 border-t-[#d82a7a] animate-spin mb-3"></div>
+                <div className="text-sm font-bold text-slate-800">Đang tải...</div>
+                <div className="text-xs text-slate-400 mt-1">Đang đồng bộ dữ liệu hoạt động từ CSDL đám mây</div>
+              </div>
+            ) : filteredExams.length === 0 ? (
+              <div className="py-12 text-center text-slate-400 text-xs">
+                Không tìm thấy hoạt động nào phù hợp.
+              </div>
+            ) : (
+              filteredExams.map((exam, idx) => {
+                const isChecked = selectedExams.includes(exam.id);
+                const isDropdownOpen = openDropdownId === exam.id;
 
-              return (
-                <div 
-                  key={exam.id} 
-                  className={`px-5 py-4 grid grid-cols-12 items-center hover:bg-slate-50/70 transition-colors ${
-                    isChecked ? 'bg-pink-50/20' : ''
-                  }`}
-                >
-                  {/* Cột trái: Checkbox + Icon logo + Tiêu đề & Subtag */}
-                  <div className="col-span-7 flex items-center gap-4">
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => handleSelectOne(exam.id)}
-                      className="w-4 h-4 rounded border-slate-300 text-[#d82a7a] focus:ring-[#d82a7a] accent-[#d82a7a] cursor-pointer"
-                    />
+                return (
+                  <div 
+                    key={exam.id} 
+                    className={`px-5 py-4 grid grid-cols-12 items-center hover:bg-slate-50/70 transition-colors ${
+                      isChecked ? 'bg-pink-50/20' : ''
+                    }`}
+                  >
+                    {/* Cột trái: Checkbox + Icon logo + Tiêu đề & Subtag */}
+                    <div className="col-span-7 flex items-center gap-4">
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => handleSelectOne(exam.id)}
+                        className="w-4 h-4 rounded border-slate-300 text-[#d82a7a] focus:ring-[#d82a7a] accent-[#d82a7a] cursor-pointer"
+                      />
 
-                    {/* Thumbnail Icon vuông bo tròn với biểu tượng Wordwall (dạng cột biểu đồ W) */}
-                    <div 
-                      onClick={() => handleOpenExamDetail(exam)}
-                      className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center shrink-0 shadow-2xs cursor-pointer hover:border-[#d82a7a]"
-                    >
-                      <div className="flex items-end gap-0.5 h-4">
-                        <div className="w-1 bg-[#d82a7a] h-3 rounded-xs" />
-                        <div className="w-1 bg-[#d82a7a] h-4 rounded-xs" />
-                        <div className="w-1 bg-[#d82a7a] h-2 rounded-xs" />
-                        <div className="w-1 bg-[#d82a7a] h-3.5 rounded-xs" />
-                      </div>
-                    </div>
-
-                    {/* Chi tiết tiêu đề -> BẤM VÀO ĐỂ XEM QUẢN LÝ TỪNG CÂU HỎI */}
-                    <div 
-                      onClick={() => handleOpenExamDetail(exam)}
-                      className="min-w-0 pr-2 cursor-pointer group"
-                    >
-                      <h3 className="text-xs sm:text-sm font-bold text-slate-800 truncate group-hover:text-[#d82a7a] transition-colors flex items-center gap-2">
-                        <span>{exam.title}</span>
-                        {loadingDetailId === exam.id && (
-                          <span className="text-[10px] text-amber-600 font-normal">Đang tải...</span>
-                        )}
-                      </h3>
-                      <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5 flex-wrap">
-                        <span className="flex items-center gap-1 font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.2 rounded">
-                          ✓ {exam.questions ? exam.questions.length : exam.totalQuestions || 0} Qs
-                        </span>
-                        <span>•</span>
-                        <span>{exam.subject || 'Khoa học Xã hội'}</span>
-                        <span>•</span>
-                        <span>{exam.level || 'Đại học'}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Cột giữa: Thời gian tạo */}
-                  <div className="col-span-2 text-right text-xs text-slate-500 pr-4">
-                    {exam.createdAtText || `${idx + 1} tháng trước`}
-                  </div>
-
-                  {/* Cột phải: Các nút Thao tác (Chơi, Share, More) */}
-                  <div className="col-span-3 flex items-center justify-end gap-2 relative">
-                    <button
-                      onClick={() => onPlayExam ? onPlayExam(exam) : null}
-                      className="px-3 py-1.5 border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors"
-                    >
-                      <Play className="w-3 h-3 fill-slate-700" />
-                      <span>Chơi</span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        navigator.clipboard?.writeText(window.location.href);
-                        alert("Đã sao chép liên kết hoạt động!");
-                      }}
-                      title="Chia sẻ"
-                      className="p-1.5 border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50 text-slate-600 rounded-lg shadow-2xs transition-colors"
-                    >
-                      <Share2 className="w-3.5 h-3.5" />
-                    </button>
-
-                    <div className="relative">
-                      <button
-                        onClick={() => setOpenDropdownId(isDropdownOpen ? null : exam.id)}
-                        className="p-1.5 border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50 text-slate-600 rounded-lg shadow-2xs transition-colors"
+                      {/* Thumbnail Icon vuông bo tròn với biểu tượng Wordwall (dạng cột biểu đồ W) */}
+                      <div 
+                        onClick={() => handleOpenExamDetail(exam)}
+                        className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center shrink-0 shadow-2xs cursor-pointer hover:border-[#d82a7a]"
                       >
-                        <MoreVertical className="w-3.5 h-3.5" />
+                        <div className="flex items-end gap-0.5 h-4">
+                          <div className="w-1 bg-[#d82a7a] h-3 rounded-xs" />
+                          <div className="w-1 bg-[#d82a7a] h-4 rounded-xs" />
+                          <div className="w-1 bg-[#d82a7a] h-2 rounded-xs" />
+                          <div className="w-1 bg-[#d82a7a] h-3.5 rounded-xs" />
+                        </div>
+                      </div>
+
+                      {/* Chi tiết tiêu đề -> BẤM VÀO ĐỂ XEM QUẢN LÝ TỪNG CÂU HỎI */}
+                      <div 
+                        onClick={() => handleOpenExamDetail(exam)}
+                        className="min-w-0 pr-2 cursor-pointer group"
+                      >
+                        <h3 className="text-xs sm:text-sm font-bold text-slate-800 truncate group-hover:text-[#d82a7a] transition-colors flex items-center gap-2">
+                          <span>{exam.title}</span>
+                          {loadingDetailId === exam.id && (
+                            <span className="text-[10px] text-amber-600 font-normal">Đang tải...</span>
+                          )}
+                        </h3>
+                        <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5 flex-wrap">
+                          <span className="flex items-center gap-1 font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.2 rounded">
+                            ✓ {exam.questions ? exam.questions.length : exam.totalQuestions || 0} Qs
+                          </span>
+                          <span>•</span>
+                          <span>{exam.subject || 'Khoa học Xã hội'}</span>
+                          <span>•</span>
+                          <span>{exam.level || 'Đại học'}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Cột giữa: Thời gian tạo */}
+                    <div className="col-span-2 text-right text-xs text-slate-500 pr-4">
+                      {exam.createdAtText || `${idx + 1} tháng trước`}
+                    </div>
+
+                    {/* Cột phải: Các nút Thao tác (Chơi, Share, More) */}
+                    <div className="col-span-3 flex items-center justify-end gap-2 relative">
+                      <button
+                        onClick={() => onPlayExam ? onPlayExam(exam) : null}
+                        className="px-3 py-1.5 border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors"
+                      >
+                        <Play className="w-3 h-3 fill-slate-700" />
+                        <span>Chơi</span>
                       </button>
 
-                      {isDropdownOpen && (
-                        <div className="absolute right-0 top-9 w-40 bg-white border border-slate-200 rounded-xl shadow-lg z-30 py-1 text-xs text-slate-700 animate-in fade-in zoom-in-95">
-                          <button
-                            onClick={() => {
-                              setSelectedExamDetail(exam);
-                              setOpenDropdownId(null);
-                            }}
-                            className="w-full px-3 py-2 text-left hover:bg-slate-50 text-slate-700 flex items-center gap-2"
-                          >
-                            <Edit3 className="w-3.5 h-3.5 text-slate-500" />
-                            Quản lý câu hỏi
-                          </button>
-                          <button
-                            onClick={() => {
-                              onDeleteExam(exam.id);
-                              setOpenDropdownId(null);
-                            }}
-                            className="w-full px-3 py-2 text-left hover:bg-rose-50 text-rose-600 flex items-center gap-2"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            Xóa hoạt động
-                          </button>
-                        </div>
-                      )}
+                      <button
+                        onClick={() => {
+                          navigator.clipboard?.writeText(window.location.href);
+                          alert("Đã sao chép liên kết hoạt động!");
+                        }}
+                        title="Chia sẻ"
+                        className="p-1.5 border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50 text-slate-600 rounded-lg shadow-2xs transition-colors"
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                      </button>
+
+                      <div className="relative">
+                        <button
+                          onClick={() => setOpenDropdownId(isDropdownOpen ? null : exam.id)}
+                          className="p-1.5 border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50 text-slate-600 rounded-lg shadow-2xs transition-colors"
+                        >
+                          <MoreVertical className="w-3.5 h-3.5" />
+                        </button>
+
+                        {isDropdownOpen && (
+                          <div className="absolute right-0 top-9 w-40 bg-white border border-slate-200 rounded-xl shadow-lg z-30 py-1 text-xs text-slate-700 animate-in fade-in zoom-in-95">
+                            <button
+                              onClick={() => {
+                                setSelectedExamDetail(exam);
+                                setOpenDropdownId(null);
+                              }}
+                              className="w-full px-3 py-2 text-left hover:bg-slate-50 text-slate-700 flex items-center gap-2"
+                            >
+                              <Edit3 className="w-3.5 h-3.5 text-slate-500" />
+                              Quản lý câu hỏi
+                            </button>
+                            <button
+                              onClick={() => {
+                                onDeleteExam(exam.id);
+                                setOpenDropdownId(null);
+                              }}
+                              className="w-full px-3 py-2 text-left hover:bg-rose-50 text-rose-600 flex items-center gap-2"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              Xóa hoạt động
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
-
-          {filteredExams.length === 0 && (
-            <div className="py-12 text-center text-slate-400 text-xs">
-              Không tìm thấy hoạt động nào phù hợp.
-            </div>
-          )}
         </div>
       </main>
 

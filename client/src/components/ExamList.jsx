@@ -8,10 +8,11 @@ import {
   Edit3, 
   Check, 
   ArrowRight,
-  LogOut
+  LogOut,
+  Loader2
 } from 'lucide-react';
 
-export default function ExamList({ exams, onSelectExam, onOpenTeacherManage, onLogout }) {
+export default function ExamList({ exams, onSelectExam, onOpenTeacherManage, onLogout, isLoading }) {
   const [activeTab, setActiveTab] = useState('running'); // 'running' (Đang chạy), 'completed' (Hoàn thành), 'created' (Tạo)
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedExamId, setSelectedExamId] = useState(null);
@@ -141,7 +142,17 @@ export default function ExamList({ exams, onSelectExam, onOpenTeacherManage, onL
 
       {/* 3. LƯỚI THẺ BÀI THI CHUẨN QUIZIZZ (RESPONSIVE TOÀN DIỆN CHO MOBILE) */}
       <main className="flex-1 px-4 sm:px-8 py-4 sm:py-6">
-        {filteredExams.length === 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-28 text-center animate-in fade-in duration-300">
+            <div className="relative mb-4 flex items-center justify-center">
+              <div className="w-14 h-14 rounded-full border-4 border-pink-100 border-t-[#d82a7a] animate-spin"></div>
+            </div>
+            <h2 className="text-base sm:text-lg font-bold text-slate-800 mb-1">Đang tải...</h2>
+            <p className="text-xs text-slate-500 max-w-sm">
+              Đang kết nối và đồng bộ dữ liệu đề thi từ CSDL đám mây. Vui lòng chờ trong giây lát!
+            </p>
+          </div>
+        ) : filteredExams.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="w-20 h-20 rounded-full bg-pink-50 flex items-center justify-center text-4xl mb-4 text-[#d82a7a] shadow-xs">
               📝

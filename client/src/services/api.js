@@ -8,16 +8,27 @@ export const API_BASE_URL = import.meta.env.VITE_API_URL ||
 
 /**
  * Lấy danh sách toàn bộ đề thi từ CSDL Neon PostgreSQL
+ * Có cơ chế tự động thử lại (retry) khi Neon PostgreSQL đang khởi động (cold start)
  */
-export async function fetchExams() {
-  try {
-    const res = await fetch(`${API_BASE_URL}/exams`);
-    const json = await res.json();
-    if (json.success) return json.data;
-    throw new Error(json.message || 'Lỗi tải đề thi');
-  } catch (err) {
-    console.warn('⚠️ Lỗi gọi Backend:', err);
-    return null;
+export async function fetchExams(retries = 2) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/exams`);
+      if (!res.ok && attempt < retries) {
+        await new Promise(resolve => setTimeout(resolve, 1200));
+        continue;
+      }
+      const json = await res.json();
+      if (json.success) return json.data;
+      throw new Error(json.message || 'Lỗi tải đề thi');
+    } catch (err) {
+      if (attempt < retries) {
+        await new Promise(resolve => setTimeout(resolve, 1200));
+        continue;
+      }
+      console.warn('⚠️ Lỗi gọi Backend:', err);
+      return null;
+    }
   }
 }
 
