@@ -60,7 +60,18 @@ export default function App() {
     loadExamsFromDatabase();
   }, []);
 
-  const [currentTab, setCurrentTab] = useState('exams'); // 'exams' | 'teacher' | 'admin' | 'reports' | 'students'
+  const [currentTab, setCurrentTab] = useState(() => {
+    try {
+      const savedUser = localStorage.getItem('WAYGROUND_CURRENT_USER');
+      if (savedUser) {
+        const u = JSON.parse(savedUser);
+        return u.role === 'admin' ? 'teacher' : 'exams';
+      }
+      return 'exams';
+    } catch {
+      return 'exams';
+    }
+  }); // 'exams' | 'teacher' | 'admin' | 'reports' | 'students'
   const [currentView, setCurrentView] = useState('list'); // 'list' | 'room' | 'result'
   const [activeExam, setActiveExam] = useState(null);
   const [examResult, setExamResult] = useState(null);
