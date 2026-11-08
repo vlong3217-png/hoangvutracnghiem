@@ -14,8 +14,146 @@ export default async function handler(req, res) {
   const { id } = req.query;
 
   try {
-    // 1. LẤY CHI TIẾT 1 ĐỀ THI KÈM CÂU HỎI
-    if (id) {
+    // 1. TẠO HOẶC SAO CHÉP ĐỀ THI MỚI (POST /api/exams)
+    if (req.method === 'POST') {
+      const { id: newExamId, title, description, subject, difficulty, durationMinutes, questions } = req.body;
+      const examId = newExamId || `exam-${Date.now()}`;
+      
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        await client.query(`
+          INSERT INTO exams (id, title, description, subject, difficulty, duration_minutes)
+          VALUES ($1, $2, $3, $4, $5, $6)
+          ON CONFLICT (id) DO UPDATE SET
+            title = EXCLUDED.title,
+            description = EXCLUDED.description,
+            subject = EXCLUDED.subject,
+            difficulty = EXCLUDED.difficulty,
+            duration_minutes = EXCLUDED.duration_minutes,
+            updated_at = CURRENT_TIMESTAMP
+        `, [
+          examId, 
+          title || 'Đề thi mới', 
+          description || '', 
+          subject || 'Khoa học', 
+          difficulty || 'Đại học', 
+          Number(durationMinutes) || 45
+        ]);
+
+        if (Array.isArray(questions) && questions.length > 0) {
+          for (const q of questions) {
+            await client.query(`
+              INSERT INTO questions (id, exam_id, question_text, type, options, correct_answer, data)
+              VALUES ($1, $2, $3, $4, $5, $6, $7)
+              ON CONFLICT (exam_id, id) DO UPDATE SET
+                question_text = EXCLUDED.question_text,
+                type = EXCLUDED.type,
+                options = EXCLUDED.options,
+                correct_answer = EXCLUDED.correct_answer,
+                data = EXCLUDED.data
+            `, [
+              String(q.id),
+              examId,
+              q.question || '',
+              q.type || 'single',
+              JSON.stringify(q.options || []),
+              JSON.stringify(q.correctAnswer ?? null),
+              JSON.stringify({
+                parts: q.parts || null,
+                categories: q.categories || null,
+                items: q.items || null,
+                sentences: q.sentences || null,
+                draggableItems: q.draggableItems || null,
+                blanks: q.blanks || null,
+                sampleAnswer: q.sampleAnswer || null,
+                criteria: q.criteria || q.rubric || null,
+                maxScore: q.maxScore || null,
+                explanation: q.explanation || null
+              })
+            ]);
+          }
+        }
+
+        await client.query('COMMIT');
+        return res.status(200).json({ success: true, message: 'Đã tạo đề thi thành công', examId });
+      } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+      } finally {
+        client.release();
+      }
+    }
+
+    // 2. CẬP NHẬT ĐỀ THI & CÂU HỎI (PUT /api/exams?id=...)
+    if (req.method === 'PUT' && id) {
+      const { title, description, subject, difficulty, durationMinutes, questions } = req.body;
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+
+        await client.query(`
+          UPDATE exams 
+          SET title = COALESCE($1, title),
+              description = COALESCE($2, description),
+              subject = COALESCE($3, subject),
+              difficulty = COALESCE($4, difficulty),
+              duration_minutes = COALESCE($5, duration_minutes),
+              updated_at = CURRENT_TIMESTAMP
+          WHERE id = $6
+        `, [title, description, subject, difficulty, durationMinutes, id]);
+
+        if (Array.isArray(questions)) {
+          await client.query('DELETE FROM questions WHERE exam_id = $1', [id]);
+          for (const q of questions) {
+            await client.query(`
+              INSERT INTO questions (id, exam_id, question_text, type, options, correct_answer, data)
+              VALUES ($1, $2, $3, $4, $5, $6, $7)
+            `, [
+              String(q.id),
+              id,
+              q.question || '',
+              q.type || 'single',
+              JSON.stringify(q.options || []),
+              JSON.stringify(q.correctAnswer ?? null),
+              JSON.stringify({
+                parts: q.parts || null,
+                categories: q.categories || null,
+                items: q.items || null,
+                sentences: q.sentences || null,
+                draggableItems: q.draggableItems || null,
+                blanks: q.blanks || null,
+                sampleAnswer: q.sampleAnswer || null,
+                criteria: q.criteria || q.rubric || null,
+                maxScore: q.maxScore || null,
+                explanation: q.explanation || null
+              })
+            ]);
+          }
+        }
+
+        await client.query('COMMIT');
+        return res.status(200).json({ success: true, message: 'Cập nhật đề thi thành công' });
+      } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+      } finally {
+        client.release();
+      }
+    }
+
+    // 3. XÓA ĐỀ THI (DELETE /api/exams?examId=...)
+    if (req.method === 'DELETE') {
+      const examIdToDelete = req.query.examId || id;
+      if (examIdToDelete) {
+        await pool.query('DELETE FROM exams WHERE id = $1', [examIdToDelete]);
+        return res.status(200).json({ success: true, message: 'Đã xóa đề thi' });
+      }
+      return res.status(400).json({ success: false, message: 'Thiếu examId để xóa' });
+    }
+
+    // 4. LẤY CHI TIẾT 1 ĐỀ THI KÈM CÂU HỎI (GET /api/exams?id=...)
+    if (req.method === 'GET' && id) {
       const examRes = await pool.query('SELECT * FROM exams WHERE id = $1', [id]);
       if (examRes.rows.length === 0) {
         return res.status(404).json({ success: false, message: 'Không tìm thấy đề thi' });
@@ -50,7 +188,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // 2. LẤY DANH SÁCH TOÀN BỘ ĐỀ THI
+    // 5. LẤY DANH SÁCH TOÀN BỘ ĐỀ THI (GET /api/exams)
     if (req.method === 'GET') {
       const examsRes = await pool.query(`
         SELECT e.*, COUNT(q.id) as question_count 
@@ -77,13 +215,6 @@ export default async function handler(req, res) {
       }));
 
       return res.status(200).json({ success: true, data: formatted });
-    }
-
-    // 3. XÓA ĐỀ THI
-    if (req.method === 'DELETE') {
-      const { examId } = req.query;
-      await pool.query('DELETE FROM exams WHERE id = $1', [examId]);
-      return res.status(200).json({ success: true, message: 'Đã xóa đề thi' });
     }
 
     return res.status(405).json({ success: false, message: 'Method Not Allowed' });

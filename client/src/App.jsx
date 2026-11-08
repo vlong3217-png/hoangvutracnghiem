@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { fetchExams, fetchExamById, submitExamResult, updateExamApi, deleteExamApi } from './services/api';
+import { fetchExams, fetchExamById, submitExamResult, updateExamApi, deleteExamApi, createExamApi } from './services/api';
 import ExamList from './components/ExamList';
 import ExamRoom from './components/ExamRoom';
 import ExamResult from './components/ExamResult';
@@ -140,8 +140,18 @@ export default function App() {
     setCurrentView('list');
   };
 
-  const handleAddExam = (newExam) => {
+  const handleAddExam = async (newExam) => {
     setExams([newExam, ...exams]);
+    // Đồng bộ đề thi mới (hoặc bản sao chép) vào CSDL Neon Cloud
+    await createExamApi({
+      id: newExam.id,
+      title: newExam.title,
+      description: newExam.description || newExam.className || '',
+      subject: newExam.subject || 'Khoa học',
+      difficulty: newExam.level || newExam.difficulty || 'Đại học',
+      durationMinutes: newExam.duration || newExam.durationMinutes || 45,
+      questions: newExam.questions || []
+    });
   };
 
   const handleUpdateExam = async (updatedExam) => {

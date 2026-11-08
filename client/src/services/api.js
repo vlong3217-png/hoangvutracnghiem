@@ -116,6 +116,22 @@ export async function deleteExamApi(examId) {
 }
 
 /**
+ * Tạo mới đề thi trên CSDL Neon PostgreSQL
+ */
+export async function createExamApi(examData) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/exams`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(examData)
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+/**
  * Cập nhật đề thi trên CSDL
  */
 export async function updateExamApi(examId, examData) {
