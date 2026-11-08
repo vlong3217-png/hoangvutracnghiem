@@ -13,10 +13,12 @@ import {
   Trash2
 } from 'lucide-react';
 import QuestionEditor from './QuestionEditor';
+import CreateResourceModal from './CreateResourceModal';
 
 export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExam, onAddExam }) {
   const [showAnswer, setShowAnswer] = useState(true);
   const [editingQuestion, setEditingQuestion] = useState(null); // Câu hỏi đang được chỉnh sửa
+  const [isFullEditMode, setIsFullEditMode] = useState(false); // Mở trang chỉnh sửa toàn diện (giống Thêm tài nguyên)
   const [showAddModal, setShowAddModal] = useState(false);
   const [copiedSuccess, setCopiedSuccess] = useState(false);
 
@@ -51,6 +53,22 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
   const questions = exam.questions || [];
   const totalQuestions = questions.length;
   const totalPoints = totalQuestions;
+
+  // NẾU BẤM VÀO "CHỈNH SỬA" -> MỞ TRANG TOÀN DIỆN (GIỐNG THÊM TÀI NGUYÊN KÈM CÁC DẠNG CÂU HỎI VÀ CÂU HỎI ĐÃ CÓ)
+  if (isFullEditMode) {
+    return (
+      <CreateResourceModal
+        initialExam={exam}
+        onBack={() => setIsFullEditMode(false)}
+        onSaveExam={async (updatedExam) => {
+          if (onUpdateExam) {
+            await onUpdateExam(updatedExam);
+          }
+          setIsFullEditMode(false);
+        }}
+      />
+    );
+  }
 
   // NẾU ĐANG BẤM VÀO NÚT "CHỈNH SỬA" CÂU HỎI -> MỞ GIAO DIỆN QUESTIONEDITOR (Chuẩn ảnh mới)
   if (editingQuestion) {
@@ -189,14 +207,9 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
       <div className="flex items-center justify-between py-4 border-b border-slate-100 flex-wrap gap-3">
         <div className="flex items-center gap-2.5">
           <button 
-            onClick={() => {
-              if (questions.length > 0) {
-                setEditingQuestion(questions[0]);
-              } else {
-                setShowAddModal(true);
-              }
-            }}
+            onClick={() => setIsFullEditMode(true)}
             className="px-3.5 py-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+            title="Mở trang chỉnh sửa và thêm các dạng câu hỏi mới cho đề thi"
           >
             <Edit3 className="w-3.5 h-3.5 text-slate-500" />
             <span>Chỉnh sửa</span>

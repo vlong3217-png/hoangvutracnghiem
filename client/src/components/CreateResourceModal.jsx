@@ -25,15 +25,18 @@ import {
 } from 'lucide-react';
 import { parseQuestionsWithGemini, getGeminiApiKey, setGeminiApiKey } from '../services/geminiService';
 
-export default function CreateResourceModal({ onBack, onSaveExam }) {
-  const [examTitle, setExamTitle] = useState('Bài Quiz không có tiêu đề');
-  const [subject, setSubject] = useState('Khoa học Xã hội');
-  const [level, setLevel] = useState('Đại học');
-  const [duration, setDuration] = useState(30);
+import QuestionEditor from './QuestionEditor';
+
+export default function CreateResourceModal({ onBack, onSaveExam, initialExam }) {
+  const [examTitle, setExamTitle] = useState(initialExam?.title || 'Bài Quiz không có tiêu đề');
+  const [subject, setSubject] = useState(initialExam?.subject || 'Khoa học Xã hội');
+  const [level, setLevel] = useState(initialExam?.level || initialExam?.difficulty || 'Đại học');
+  const [duration, setDuration] = useState(initialExam?.duration || initialExam?.durationMinutes || 30);
 
   // Danh sách câu hỏi đã được tạo / trích xuất
-  const [questions, setQuestions] = useState([]);
+  const [questions, setQuestions] = useState(initialExam?.questions || []);
   const [hoveredType, setHoveredType] = useState(null);
+  const [editingQuestion, setEditingQuestion] = useState(null); // Câu hỏi đang mở QuestionEditor chi tiết
 
   // Modal / Drawer Nhập từ tài liệu & AI
   const [showImportModal, setShowImportModal] = useState(false);
@@ -133,6 +136,21 @@ export default function CreateResourceModal({ onBack, onSaveExam }) {
       }
     }
   ];
+
+  // NẾU ĐANG BẤM VÀO SỬA 1 CÂU HỎI TRONG DANH SÁCH -> MỞ QUESTIONEDITOR
+  if (editingQuestion) {
+    return (
+      <QuestionEditor
+        question={editingQuestion}
+        onSave={(updatedQ) => {
+          const updated = questions.map(q => q.id === updatedQ.id ? updatedQ : q);
+          setQuestions(updated);
+          setEditingQuestion(null);
+        }}
+        onCancel={() => setEditingQuestion(null)}
+      />
+    );
+  }
 
   // Thêm nhanh 1 câu hỏi mẫu theo dạng được chọn
   const handleAddQuestionByType = (typeId) => {
@@ -269,20 +287,23 @@ export default function CreateResourceModal({ onBack, onSaveExam }) {
       return;
     }
 
-    const newExam = {
-      id: `exam-${Date.now()}`,
+    const savedExam = {
+      ...initialExam,
+      id: initialExam?.id || `exam-${Date.now()}`,
       title: examTitle.trim(),
       subject: subject || 'Khoa học Xã hội',
       level: level || 'Đại học',
+      difficulty: level || 'Đại học',
       duration: Number(duration) || 30,
+      durationMinutes: Number(duration) || 30,
       totalQuestions: questions.length,
-      createdAtText: 'Vừa xong',
-      author: 'Tôi',
+      createdAtText: initialExam?.createdAtText || 'Vừa xong',
+      author: initialExam?.author || 'Tôi',
       questions
     };
 
     if (onSaveExam) {
-      await onSaveExam(newExam);
+      await onSaveExam(savedExam);
     }
   };
 
@@ -433,17 +454,26 @@ export default function CreateResourceModal({ onBack, onSaveExam }) {
           {/* DANH SÁCH CÂU HỎI ĐÃ ĐƯỢC THÊM TRONG ĐỀ */}
           {questions.length > 0 && (
             <div className="mt-8 pt-6 border-t border-slate-200">
-              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">
-                Danh sách câu hỏi trong đề ({questions.length})
-              </h4>
-              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                  Danh sách câu hỏi trong đề ({questions.length})
+                </h4>
+                <span className="text-[11px] text-slate-400">Bấm vào câu hỏi để sửa chi tiết phương án</span>
+              </div>
+              <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                 {questions.map((q, idx) => (
-                  <div key={q.id || idx} className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-3 min-w-0 pr-4">
-                      <span className="w-6 h-6 rounded-full bg-slate-200 text-slate-700 font-bold flex items-center justify-center text-[11px] shrink-0">
+                  <div 
+                    key={q.id || idx} 
+                    className="p-3 bg-slate-50 hover:bg-pink-50/20 border border-slate-200 hover:border-slate-300 rounded-xl flex items-center justify-between text-xs transition-colors group"
+                  >
+                    <div 
+                      onClick={() => setEditingQuestion(q)}
+                      className="flex items-center gap-3 min-w-0 pr-4 flex-1 cursor-pointer"
+                    >
+                      <span className="w-6 h-6 rounded-full bg-slate-200 group-hover:bg-[#d82a7a] group-hover:text-white text-slate-700 font-bold flex items-center justify-center text-[11px] shrink-0 transition-colors">
                         {idx + 1}
                       </span>
-                      <span className="font-semibold text-slate-800 truncate">
+                      <span className="font-semibold text-slate-800 truncate group-hover:text-[#d82a7a] transition-colors">
                         {q.question}
                       </span>
                       <span className="text-[10px] text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded shrink-0">
@@ -451,13 +481,22 @@ export default function CreateResourceModal({ onBack, onSaveExam }) {
                       </span>
                     </div>
 
-                    <button 
-                      onClick={() => setQuestions(questions.filter((_, i) => i !== idx))}
-                      className="text-slate-400 hover:text-rose-600 p-1"
-                      title="Xóa câu này"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => setEditingQuestion(q)}
+                        className="px-2 py-1 text-[11px] font-semibold text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-200 rounded-md transition-colors"
+                        title="Chỉnh sửa câu này"
+                      >
+                        Sửa
+                      </button>
+                      <button 
+                        onClick={() => setQuestions(questions.filter((_, i) => i !== idx))}
+                        className="text-slate-400 hover:text-rose-600 p-1 transition-colors"
+                        title="Xóa câu này"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
