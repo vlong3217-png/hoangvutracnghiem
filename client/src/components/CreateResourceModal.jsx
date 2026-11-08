@@ -362,18 +362,20 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
 
       {/* 2. KHUNG NỘI DUNG CHÍNH (CANVAS TRẮNG Ở GIỮA) */}
       <main className="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-8 flex flex-col">
-        {/* NÚT "NHẬP TỪ TÀI LIỆU (AI PHÂN TÍCH)" NHỎ GỌN */}
-        <div className="mb-5 p-3.5 sm:p-4 bg-gradient-to-r from-pink-50 via-purple-50 to-indigo-50 border border-pink-200/80 rounded-xl flex items-center justify-between gap-4 shadow-2xs">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-[#d82a7a] text-white flex items-center justify-center shadow-xs shrink-0">
-              <Sparkles className="w-5 h-5 animate-pulse" />
+        {/* NÚT "NHẬP TỪ TÀI LIỆU (AI PHÂN TÍCH)" ĐỒNG BỘ NỀN TRẮNG VIỀN XÁM NHẸ */}
+        <div className="mb-5 p-4 bg-white border border-slate-200 rounded-2xl flex items-center justify-between gap-4 shadow-2xs">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 text-[#d82a7a] flex items-center justify-center shadow-2xs shrink-0">
+              <Sparkles className="w-5 h-5 text-[#d82a7a]" />
             </div>
             <div>
               <h2 className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-2">
                 <span>Nhập câu hỏi từ tệp (Word, Excel, PDF)</span>
-                <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-[#d82a7a] text-white">AI Hỗ trợ</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-pink-50 text-[#d82a7a] border border-pink-100">
+                  AI Hỗ trợ
+                </span>
               </h2>
-              <p className="text-[11px] text-slate-500 hidden sm:block">
+              <p className="text-[11px] text-slate-500 mt-0.5 hidden sm:block">
                 Tự động nhận diện câu hỏi, lựa chọn và đáp án đúng từ file tài liệu của bạn.
               </p>
             </div>
@@ -381,9 +383,9 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
 
           <button
             onClick={() => setShowImportModal(true)}
-            className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all shrink-0 hover:scale-[1.02] cursor-pointer"
+            className="px-4 py-2 bg-[#d82a7a] hover:bg-[#c2226b] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all shrink-0 hover:scale-[1.02] cursor-pointer"
           >
-            <Upload className="w-3.5 h-3.5 text-pink-400" />
+            <Upload className="w-3.5 h-3.5 text-white" />
             <span>Tải tệp & Phân tích</span>
           </button>
         </div>
