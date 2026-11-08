@@ -77,16 +77,11 @@ export default function ExamList({ exams, onSelectExam, onOpenTeacherManage, onL
           </div>
         </div>
 
-        {/* Navigation links giữa/phải: Giữ Trang chủ, Hoạt động và Đăng xuất */}
+        {/* Navigation links giữa/phải: Giữ Trang chủ và Đăng xuất */}
         <div className="flex items-center gap-1 sm:gap-2 text-xs font-semibold text-slate-600 shrink-0">
-          <button className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors">
-            <Home className="w-4 h-4 text-slate-500" />
+          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[#883494] bg-purple-50 font-bold transition-colors">
+            <Home className="w-4 h-4 text-[#883494]" />
             <span>Trang chủ</span>
-          </button>
-
-          <button className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg text-[#883494] font-bold border-b-2 border-[#883494] transition-colors">
-            <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span className="hidden sm:inline">Hoạt động</span>
           </button>
 
           <div className="h-4 w-px bg-slate-200 mx-0.5 sm:mx-1"></div>

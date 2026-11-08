@@ -76,22 +76,14 @@ export default function App() {
 
   const handleLogin = (user) => {
     setCurrentUser(user);
-    if (user.role === 'admin') {
-      setCurrentTab('teacher'); // Admin vào thẳng trang quản lý đề thi hoặc admin
-    } else {
-      setCurrentTab('exams');
-    }
+    setCurrentTab('exams');
     setCurrentView('list');
   };
 
   const handleRegister = (newUser) => {
     setUsers(prev => [...prev, newUser]);
     setCurrentUser(newUser);
-    if (newUser.role === 'admin') {
-      setCurrentTab('teacher');
-    } else {
-      setCurrentTab('exams');
-    }
+    setCurrentTab('exams');
     setCurrentView('list');
   };
 
@@ -220,91 +212,23 @@ export default function App() {
               </div>
             </div>
 
-            {/* Mục 1: Trang chủ */}
+            {/* Mục duy nhất: Trang chủ (danh sách đề thi) */}
             <button
               onClick={() => { setCurrentTab('exams'); handleGoHome(); }}
-              className={`flex flex-col items-center gap-1 text-[10px] w-full py-2 transition-all ${
+              className={`flex flex-col items-center gap-1 text-[10px] w-full py-2.5 transition-all ${
                 currentTab === 'exams'
                   ? 'text-slate-900 font-bold border-l-2 border-[#d82a7a] bg-pink-50/20'
                   : 'text-slate-500 hover:text-slate-800'
               }`}
+              title="Trang chủ - Danh sách đề thi"
             >
-              <Home className="w-5 h-5" />
-              <span className="scale-90">Trang chủ</span>
+              <Home className="w-5 h-5 text-[#d82a7a]" />
+              <span className="scale-90 font-bold">Trang chủ</span>
             </button>
-
-            {/* Mục 2: Thư viện (Quản lý hoạt động/câu hỏi cho Admin) */}
-            {canAccessManagement && (
-              <button
-                onClick={() => { setCurrentTab('teacher'); handleGoHome(); }}
-                className={`flex flex-col items-center gap-1 text-[10px] w-full py-2 transition-all ${
-                  currentTab === 'teacher'
-                    ? 'text-slate-900 font-bold border-l-2 border-[#d82a7a] bg-pink-50/20'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                <FolderOpen className="w-5 h-5" />
-                <span className="scale-90">Thư viện...</span>
-              </button>
-            )}
-
-            {/* Mục 3: Báo cáo */}
-            <button
-              onClick={() => alert("Mục Báo cáo kết quả và thống kê học sinh")}
-              className="flex flex-col items-center gap-1 text-[10px] text-slate-500 hover:text-slate-800 w-full py-2"
-            >
-              <FileText className="w-5 h-5" />
-              <span className="scale-90">Báo cáo</span>
-            </button>
-
-            {/* Mục 4: Học sinh */}
-            <button
-              onClick={() => alert("Quản lý danh sách lớp học & học sinh")}
-              className="flex flex-col items-center gap-1 text-[10px] text-slate-500 hover:text-slate-800 w-full py-2"
-            >
-              <Users className="w-5 h-5" />
-              <span className="scale-90">Học sinh</span>
-            </button>
-
-            {/* Mục 5: Sân chơi */}
-            <button
-              onClick={() => alert("Sân chơi trò chơi tương tác")}
-              className="flex flex-col items-center gap-1 text-[10px] text-slate-500 hover:text-slate-800 w-full py-2"
-            >
-              <Award className="w-5 h-5" />
-              <span className="scale-90">Sân chơi</span>
-            </button>
-
-            {/* Quản trị viên (nếu có role admin) */}
-            {canAccessAdmin && (
-              <button
-                onClick={() => { setCurrentTab('admin'); handleGoHome(); }}
-                className={`flex flex-col items-center gap-1 text-[10px] w-full py-2 transition-all ${
-                  currentTab === 'admin'
-                    ? 'text-slate-900 font-bold border-l-2 border-[#d82a7a] bg-pink-50/20'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                <Users className="w-5 h-5 text-purple-600" />
-                <span className="scale-90 font-bold text-purple-700">Admin</span>
-              </button>
-            )}
           </div>
 
-          {/* Dưới cùng: Nâng cấp (Vương miện vàng) + Avatar người dùng */}
+          {/* Dưới cùng: Avatar người dùng & Nút Đăng xuất */}
           <div className="flex flex-col items-center gap-4 w-full">
-            {/* Nút Nâng cấp màu vàng */}
-            <button 
-              onClick={() => alert("Nâng cấp tài khoản Wordwall Pro!")}
-              className="flex flex-col items-center gap-0.5 text-[9px] text-amber-600 font-bold hover:scale-105 transition-transform"
-            >
-              <div className="w-7 h-7 rounded-lg bg-amber-400 flex items-center justify-center text-slate-900 shadow-xs">
-                <Crown className="w-4 h-4 fill-slate-900" />
-              </div>
-              <span>Nâng cấp</span>
-            </button>
-
-            {/* Avatar & LogOut */}
             <div className="flex flex-col items-center gap-2">
               <div 
                 title={`${currentUser.name} (${currentUser.roleName})`}
@@ -316,9 +240,9 @@ export default function App() {
               <button
                 onClick={handleLogout}
                 title="Đăng xuất"
-                className="text-slate-400 hover:text-rose-600 p-1"
+                className="text-slate-400 hover:text-rose-600 p-1 cursor-pointer transition-colors"
               >
-                <LogOut className="w-3.5 h-3.5" />
+                <LogOut className="w-4 h-4" />
               </button>
             </div>
           </div>
