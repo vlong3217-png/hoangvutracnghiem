@@ -512,16 +512,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
 
         {/* CÁC NÚT BÊN PHẢI: Giải thích, Thời gian, Điểm, Hủy, Lưu */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Nút mở/đóng ô nhập giải thích */}
-          <button 
-            onClick={() => setShowExplanationInput(prev => !prev)}
-            className={`hidden sm:flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
-              showExplanationInput ? 'bg-amber-100 text-amber-900 font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-            }`}
-          >
-            <Lightbulb className="w-4 h-4 text-amber-500" />
-            <span>Thêm giải thích cho đáp án</span>
-          </button>
+          
 
           {/* DROPDOWN CHỌN THỜI GIAN */}
           <div className="relative">

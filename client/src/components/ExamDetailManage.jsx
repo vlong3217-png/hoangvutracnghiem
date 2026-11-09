@@ -479,11 +479,7 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
                     </div>
                   )}
 
-                  {q.explanation && showAnswer && (
-                    <div className="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500 leading-relaxed bg-slate-50/60 p-3 rounded-xl">
-                      <strong className="text-blue-700">💡 Giải thích chi tiết:</strong> {q.explanation}
-                    </div>
-                  )}
+                  
                 </div>
               );
             })}
