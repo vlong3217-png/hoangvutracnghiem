@@ -1124,8 +1124,8 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
                     extraStyles = 'opacity-35 scale-[0.98]';
                   }
                 } else if (isMulti && isSelected) {
-                  // Đang trong lúc chọn nhiều đáp án: viền sáng nổi bật
-                  extraStyles = 'ring-4 ring-white shadow-2xl scale-[1.02] brightness-110';
+                  // Đang trong lúc chọn nhiều đáp án: bỏ viền trắng ring-4 ring-white
+                  extraStyles = 'shadow-2xl scale-[1.01] brightness-105';
                 }
 
                 return (
@@ -1136,6 +1136,19 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
                       className={`${cardBg} ${animClass} ${extraStyles} w-full min-h-[90px] sm:min-h-[170px] md:min-h-[210px] lg:h-[220px] rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-white border-2 border-white/20 flex items-center justify-center text-center font-normal text-sm sm:text-lg md:text-xl lg:text-2xl shadow-xl transition-all duration-300 cursor-pointer relative ${!answeredState ? 'active:scale-[0.98] hover:brightness-105 hover:-translate-y-1' : ''
                         }`}
                     >
+                      {/* Ô tích vuông nhỏ ở góc phải dành cho câu hỏi có nhiều đáp án đúng */}
+                      {isMulti && (
+                        <div
+                          className={`absolute top-3 right-3 sm:top-4 sm:right-4 w-6 h-6 sm:w-7 sm:h-7 rounded-lg border-2 flex items-center justify-center transition-all shadow-md ${
+                            isSelected
+                              ? 'bg-white text-slate-900 border-white'
+                              : 'bg-black/25 border-white/50'
+                          }`}
+                        >
+                          {isSelected && <Check className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[3.5]" />}
+                        </div>
+                      )}
+
                       <span className="leading-snug">{opt.text}</span>
                     </button>
                   </div>

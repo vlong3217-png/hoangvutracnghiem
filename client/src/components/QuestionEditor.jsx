@@ -892,13 +892,13 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                       </button>
                     </div>
 
-                    {/* Nút tròn đánh dấu ĐÁP ÁN ĐÚNG ✓ */}
+                    {/* Nút tích đánh dấu ĐÁP ÁN ĐÚNG ✓ (Vuông cho Nhiều đáp án, Tròn cho 1 đáp án) */}
                     <button
                       type="button"
                       onClick={() => handleToggleOptionCorrect(opt.id)}
                       title={isCorrect ? "Đây là đáp án đúng" : "Nhấp để chọn làm đáp án đúng"}
-                      className={`w-7 h-7 rounded-full flex items-center justify-center transition-transform hover:scale-110 shadow-sm cursor-pointer ${isCorrect
-                        ? 'bg-emerald-500 text-white ring-2 ring-white'
+                      className={`w-7 h-7 ${questionType === 'multiple' ? 'rounded-lg' : 'rounded-full'} flex items-center justify-center transition-transform hover:scale-110 shadow-sm cursor-pointer ${isCorrect
+                        ? 'bg-emerald-500 text-white'
                         : 'bg-black/20 text-white/40 hover:bg-black/40 hover:text-white'
                         }`}
                     >
