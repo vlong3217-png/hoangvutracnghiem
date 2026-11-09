@@ -1,17 +1,17 @@
 import React, { useState, useRef } from 'react';
-import { 
-  ArrowLeft, 
-  ChevronDown, 
-  Lightbulb, 
-  Clock, 
-  Check, 
-  Save, 
-  Trash2, 
-  Image as ImageIcon, 
-  Video, 
-  Plus, 
-  Columns, 
-  Rows, 
+import {
+  ArrowLeft,
+  ChevronDown,
+  Lightbulb,
+  Clock,
+  Check,
+  Save,
+  Trash2,
+  Image as ImageIcon,
+  Video,
+  Plus,
+  Columns,
+  Rows,
   CheckCircle2,
   CheckSquare,
   Eye,
@@ -121,14 +121,14 @@ const POINT_OPTIONS = [
 
 // Các ký hiệu toán học & khoa học
 const MATH_SYMBOLS = [
-  '∑', '∫', '∂', '√', 'π', '∞', '±', '×', '÷', '=', '≠', '≈', '≤', '≥', 
-  '²', '³', 'ⁿ', '½', '¼', 'α', 'β', 'γ', 'δ', 'θ', 'λ', 'μ', 'σ', 'ω', 
+  '∑', '∫', '∂', '√', 'π', '∞', '±', '×', '÷', '=', '≠', '≈', '≤', '≥',
+  '²', '³', 'ⁿ', '½', '¼', 'α', 'β', 'γ', 'δ', 'θ', 'λ', 'μ', 'σ', 'ω',
   'Δ', 'Ω', '°', '→', '⇔', '∈', '∉', '⊂', '∪', '∩', '∅'
 ];
 
 export default function QuestionEditor({ question, onSave, onCancel }) {
   // 1. Phân loại dạng câu hỏi ban đầu
-  const initialType = question.type 
+  const initialType = question.type
     ? (question.type === 'true_false' ? 'true_false_multi' : question.type)
     : (Array.isArray(question.correctAnswer) ? 'multiple' : 'single');
 
@@ -166,23 +166,23 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
   ];
 
   // Khởi tạo các phương án lựa chọn
-  const initialOptions = question.options && question.options.length > 0 
+  const initialOptions = question.options && question.options.length > 0
     ? question.options.map(opt => ({ id: opt.id, text: opt.text, image: opt.image || '' }))
     : [
-        { id: 'A', text: '', image: '' },
-        { id: 'B', text: '', image: '' },
-        { id: 'C', text: '', image: '' },
-        { id: 'D', text: '', image: '' }
-      ];
+      { id: 'A', text: '', image: '' },
+      { id: 'B', text: '', image: '' },
+      { id: 'C', text: '', image: '' },
+      { id: 'D', text: '', image: '' }
+    ];
 
   const [options, setOptions] = useState(initialOptions);
 
   // Danh sách ID đáp án đúng
   const initialCorrect = Array.isArray(question.correctAnswer)
     ? question.correctAnswer
-    : question.correctAnswer 
-    ? [question.correctAnswer] 
-    : ['B'];
+    : question.correctAnswer
+      ? [question.correctAnswer]
+      : ['B'];
 
   const [correctAnswers, setCorrectAnswers] = useState(initialCorrect);
   const [isMultiCorrect, setIsMultiCorrect] = useState(
@@ -192,14 +192,14 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
 
   // Trạng thái cho dạng Đúng/Sai theo ý (true_false_multi)
   const [tfParts, setTfParts] = useState(
-    question.parts && question.parts.length > 0 
-      ? question.parts 
+    question.parts && question.parts.length > 0
+      ? question.parts
       : [
-          { id: 'A', text: 'Mệnh đề 1', isCorrect: true },
-          { id: 'B', text: 'Mệnh đề 2', isCorrect: false },
-          { id: 'C', text: 'Mệnh đề 3', isCorrect: true },
-          { id: 'D', text: 'Mệnh đề 4', isCorrect: false }
-        ]
+        { id: 'A', text: 'Mệnh đề 1', isCorrect: true },
+        { id: 'B', text: 'Mệnh đề 2', isCorrect: false },
+        { id: 'C', text: 'Mệnh đề 3', isCorrect: true },
+        { id: 'D', text: 'Mệnh đề 4', isCorrect: false }
+      ]
   );
 
   // Trạng thái cho dạng Điền từ / Trả lời ngắn (short_answer)
@@ -430,12 +430,12 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
 
   return (
     <div className="flex-1 bg-white min-h-[calc(100vh-64px)] flex flex-col antialiased select-none">
-      
+
       {/* 1. TOP HEADER TOOLBAR */}
       <div className="h-14 border-b border-slate-200 px-2.5 sm:px-4 flex items-center justify-between bg-white shrink-0 relative z-30 gap-2">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           {/* Nút quay lại < */}
-          <button 
+          <button
             onClick={onCancel}
             title="Quay lại danh sách câu hỏi"
             className="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-700 transition-colors cursor-pointer shrink-0"
@@ -445,7 +445,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
 
           {/* NÚT DROPDOWN CÁC DẠNG CÂU HỎI HIỆN TẠI CỦA HỆ THỐNG */}
           <div className="relative min-w-0">
-            <button 
+            <button
               onClick={() => {
                 setIsTypeDropdownOpen(prev => !prev);
                 setIsTimeDropdownOpen(false);
@@ -464,9 +464,9 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
             {/* Menu Popover danh sách dạng câu hỏi */}
             {isTypeDropdownOpen && (
               <>
-                <div 
-                  className="fixed inset-0 z-40" 
-                  onClick={() => setIsTypeDropdownOpen(false)} 
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setIsTypeDropdownOpen(false)}
                 />
                 <div className="absolute top-full left-0 mt-1.5 w-80 sm:w-96 bg-white rounded-xl shadow-2xl border border-slate-200 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150 max-h-[85vh] overflow-y-auto">
                   <div className="px-3 py-1.5 border-b border-slate-100 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
@@ -480,9 +480,8 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                       <button
                         key={t.id}
                         onClick={() => handleSelectQuestionType(t.id)}
-                        className={`w-full px-3.5 py-2.5 text-left flex items-start gap-3 transition-colors cursor-pointer ${
-                          isSelected ? 'bg-purple-50/80 text-purple-950' : 'hover:bg-slate-50 text-slate-800'
-                        }`}
+                        className={`w-full px-3.5 py-2.5 text-left flex items-start gap-3 transition-colors cursor-pointer ${isSelected ? 'bg-purple-50/80 text-purple-950' : 'hover:bg-slate-50 text-slate-800'
+                          }`}
                       >
                         <div className={`w-7 h-7 rounded-lg ${t.iconColor} flex items-center justify-center shrink-0 mt-0.5 shadow-2xs`}>
                           <TypeIcon className="w-4 h-4" />
@@ -514,7 +513,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
         <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
           {/* DROPDOWN CHỌN THỜI GIAN */}
           <div className="relative">
-            <button 
+            <button
               onClick={() => {
                 setIsTimeDropdownOpen(prev => !prev);
                 setIsTypeDropdownOpen(false);
@@ -543,9 +542,8 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                         setTimeLimit(opt.value);
                         setIsTimeDropdownOpen(false);
                       }}
-                      className={`w-full px-3 py-1.5 text-left text-xs font-medium flex items-center justify-between transition-colors cursor-pointer ${
-                        timeLimit === opt.value ? 'bg-purple-50 text-purple-700 font-bold' : 'hover:bg-slate-50 text-slate-700'
-                      }`}
+                      className={`w-full px-3 py-1.5 text-left text-xs font-medium flex items-center justify-between transition-colors cursor-pointer ${timeLimit === opt.value ? 'bg-purple-50 text-purple-700 font-bold' : 'hover:bg-slate-50 text-slate-700'
+                        }`}
                     >
                       <span>{opt.label}</span>
                       {timeLimit === opt.value && <Check className="w-3.5 h-3.5 text-purple-600" />}
@@ -558,7 +556,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
 
           {/* DROPDOWN CHỌN ĐIỂM SỐ */}
           <div className="relative">
-            <button 
+            <button
               onClick={() => {
                 setIsPointsDropdownOpen(prev => !prev);
                 setIsTypeDropdownOpen(false);
@@ -587,9 +585,8 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                         setPoints(opt.value);
                         setIsPointsDropdownOpen(false);
                       }}
-                      className={`w-full px-3 py-1.5 text-left text-xs font-medium flex items-center justify-between transition-colors cursor-pointer ${
-                        points === opt.value ? 'bg-purple-50 text-purple-700 font-bold' : 'hover:bg-slate-50 text-slate-700'
-                      }`}
+                      className={`w-full px-3 py-1.5 text-left text-xs font-medium flex items-center justify-between transition-colors cursor-pointer ${points === opt.value ? 'bg-purple-50 text-purple-700 font-bold' : 'hover:bg-slate-50 text-slate-700'
+                        }`}
                     >
                       <span>{opt.label}</span>
                       {points === opt.value && <Check className="w-3.5 h-3.5 text-purple-600" />}
@@ -601,7 +598,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
           </div>
 
           {/* Nút Hủy (Ẩn trên mobile vì đã có ArrowLeft) */}
-          <button 
+          <button
             onClick={onCancel}
             className="hidden sm:inline-block px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
           >
@@ -609,7 +606,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
           </button>
 
           {/* Nút LƯU MÀU TÍM */}
-          <button 
+          <button
             onClick={handleSave}
             className="px-3 sm:px-5 py-1.5 bg-[#78398e] hover:bg-[#632977] text-white text-xs font-bold rounded-lg flex items-center gap-1 sm:gap-1.5 shadow-xs transition-colors cursor-pointer shrink-0"
           >
@@ -698,9 +695,8 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
               type="button"
               onClick={() => setIsSymbolPickerOpen(prev => !prev)}
               title="Bảng ký hiệu toán học & khoa học"
-              className={`w-7 h-7 rounded flex items-center justify-center text-slate-900 transition-colors cursor-pointer ${
-                isSymbolPickerOpen ? 'bg-purple-100 text-purple-700 font-bold' : 'hover:bg-slate-100'
-              }`}
+              className={`w-7 h-7 rounded flex items-center justify-center text-slate-900 transition-colors cursor-pointer ${isSymbolPickerOpen ? 'bg-purple-100 text-purple-700 font-bold' : 'hover:bg-slate-100'
+                }`}
             >
               Σ
             </button>
@@ -748,7 +744,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
       {showExplanationInput && (
         <div className="bg-amber-50 border-b border-amber-200 px-6 py-2.5 flex items-center gap-3 animate-in fade-in slide-in-from-top-1 duration-150">
           <Lightbulb className="w-4 h-4 text-amber-600 shrink-0" />
-          <input 
+          <input
             type="text"
             value={explanation}
             onChange={(e) => setExplanation(e.target.value)}
@@ -766,14 +762,14 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
 
       {/* 3. KHÔNG GIAN SOẠN THẢO CHÍNH - TÔNG MÀU TÍM ĐEN HUYỀN BÍ */}
       <div className="flex-1 bg-[#471842] p-3 sm:p-6 lg:p-8 flex flex-col justify-between overflow-y-auto">
-        
+
         {/* VÙNG NHẬP CÂU HỎI */}
         <div className="relative bg-[#2d0e2b] border-2 border-[#64245f] rounded-2xl p-4 pt-12 sm:p-8 mb-4 sm:mb-6 min-h-[160px] sm:min-h-[220px] flex flex-col justify-center items-center shadow-lg group">
-          
+
           {/* CÁC NÚT MEDIA GÓC TRÊN BÊN TRÁI: ẢNH VÀ VIDEO (ĐÃ BỎ NÚT GHI ÂM) */}
           <div className="absolute top-3 left-3 sm:top-4 sm:left-4 flex items-center gap-2">
             {/* Nút Thêm Hình ảnh */}
-            <button 
+            <button
               type="button"
               onClick={() => setIsImageModalOpen(true)}
               title="Thêm hình ảnh cho câu hỏi"
@@ -786,7 +782,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
             </button>
 
             {/* Nút Thêm Video */}
-            <button 
+            <button
               type="button"
               onClick={() => setIsVideoModalOpen(true)}
               title="Thêm video minh họa (YouTube / MP4)"
@@ -822,11 +818,11 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
             <div className="mb-4 relative group/video">
               <div className="w-64 sm:w-72 h-36 sm:h-40 bg-black/40 rounded-lg overflow-hidden border border-white/20 flex items-center justify-center">
                 {videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be') ? (
-                  <iframe 
-                    src={videoUrl.replace('watch?v=', 'embed/')} 
-                    title="Video preview" 
+                  <iframe
+                    src={videoUrl.replace('watch?v=', 'embed/')}
+                    title="Video preview"
                     className="w-full h-full"
-                    allowFullScreen 
+                    allowFullScreen
                   />
                 ) : (
                   <video src={videoUrl} controls className="w-full h-full object-cover" />
@@ -855,7 +851,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
         </div>
 
         {/* 4. KHU VỰC ĐÁP ÁN THEO TỪNG DẠNG CÂU HỎI */}
-        
+
         {/* DẠNG 1 & 2: TRẮC NGHIỆM 1 HOẶC NHIỀU ĐÁP ÁN (single / multiple) */}
         {(questionType === 'single' || questionType === 'multiple') && (
           <div className={`grid gap-3 sm:gap-4 mb-4 sm:mb-6 ${
@@ -864,20 +860,20 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
               : options.length <= 4 
               ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4' 
               : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
-          }`}>
+            }`}>
             {options.map((opt, idx) => {
               const color = defaultColors[idx % defaultColors.length];
               const isCorrect = correctAnswers.includes(opt.id);
 
               return (
-                <div 
+                <div
                   key={opt.id}
                   className={`${color.bg} border-2 ${color.border} rounded-2xl p-3 sm:p-4 min-h-[130px] sm:min-h-[170px] flex flex-col justify-between text-white relative shadow-md transition-all`}
                 >
                   {/* Thanh action góc trên thẻ: Icon Xóa, Icon Ảnh + Icon Dấu Tích Chọn Đúng */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 opacity-80 hover:opacity-100">
-                      <button 
+                      <button
                         type="button"
                         onClick={() => handleDeleteOption(idx)}
                         title="Xóa phương án này"
@@ -885,13 +881,12 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                       >
                         <Trash2 className="w-3.5 h-3.5 text-white/80" />
                       </button>
-                      <button 
+                      <button
                         type="button"
                         onClick={() => setOptionImageTargetIdx(idx)}
                         title="Chèn ảnh cho phương án này"
-                        className={`w-6 h-6 rounded-md flex items-center justify-center transition-colors cursor-pointer ${
-                          opt.image ? 'bg-amber-400 text-slate-900' : 'bg-black/20 hover:bg-black/40 text-white/80'
-                        }`}
+                        className={`w-6 h-6 rounded-md flex items-center justify-center transition-colors cursor-pointer ${opt.image ? 'bg-amber-400 text-slate-900' : 'bg-black/20 hover:bg-black/40 text-white/80'
+                          }`}
                       >
                         <ImageIcon className="w-3.5 h-3.5" />
                       </button>
@@ -902,11 +897,10 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                       type="button"
                       onClick={() => handleToggleOptionCorrect(opt.id)}
                       title={isCorrect ? "Đây là đáp án đúng" : "Nhấp để chọn làm đáp án đúng"}
-                      className={`w-7 h-7 rounded-full flex items-center justify-center transition-transform hover:scale-110 shadow-sm cursor-pointer ${
-                        isCorrect 
-                          ? 'bg-emerald-500 text-white ring-2 ring-white' 
-                          : 'bg-black/20 text-white/40 hover:bg-black/40 hover:text-white'
-                      }`}
+                      className={`w-7 h-7 rounded-full flex items-center justify-center transition-transform hover:scale-110 shadow-sm cursor-pointer ${isCorrect
+                        ? 'bg-emerald-500 text-white ring-2 ring-white'
+                        : 'bg-black/20 text-white/40 hover:bg-black/40 hover:text-white'
+                        }`}
                     >
                       <Check className="w-4 h-4 stroke-[3]" />
                     </button>
@@ -1007,11 +1001,10 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                         updated[pIdx].isCorrect = true;
                         setTfParts(updated);
                       }}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                        part.isCorrect 
-                          ? 'bg-emerald-500 text-white shadow-xs' 
-                          : 'bg-white/10 text-white/50 hover:bg-white/20'
-                      }`}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${part.isCorrect
+                        ? 'bg-emerald-500 text-white shadow-xs'
+                        : 'bg-white/10 text-white/50 hover:bg-white/20'
+                        }`}
                     >
                       ĐÚNG
                     </button>
@@ -1022,11 +1015,10 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                         updated[pIdx].isCorrect = false;
                         setTfParts(updated);
                       }}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                        !part.isCorrect 
-                          ? 'bg-rose-500 text-white shadow-xs' 
-                          : 'bg-white/10 text-white/50 hover:bg-white/20'
-                      }`}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${!part.isCorrect
+                        ? 'bg-rose-500 text-white shadow-xs'
+                        : 'bg-white/10 text-white/50 hover:bg-white/20'
+                        }`}
                     >
                       SAI
                     </button>
@@ -1159,14 +1151,12 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
               <button
                 type="button"
                 onClick={handleToggleMultiCorrect}
-                className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors ${
-                  isMultiCorrect ? 'bg-emerald-500' : 'bg-white/30'
-                }`}
+                className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors ${isMultiCorrect ? 'bg-emerald-500' : 'bg-white/30'
+                  }`}
               >
                 <div
-                  className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
-                    isMultiCorrect ? 'translate-x-5' : 'translate-x-0'
-                  }`}
+                  className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${isMultiCorrect ? 'translate-x-5' : 'translate-x-0'
+                    }`}
                 />
               </button>
             </div>
@@ -1194,7 +1184,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                 <ImageIcon className="w-4 h-4 text-purple-600" />
                 <span>Chèn hình ảnh cho câu hỏi</span>
               </h3>
-              <button 
+              <button
                 onClick={() => setIsImageModalOpen(false)}
                 className="w-6 h-6 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-700 cursor-pointer"
               >
@@ -1210,11 +1200,11 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                   <Upload className="w-6 h-6 text-purple-600 mb-1" />
                   <span className="text-xs font-bold text-purple-800">Bấm để chọn file ảnh</span>
                   <span className="text-[10px] text-slate-400 mt-0.5">JPG, PNG, GIF, WebP</span>
-                  <input 
-                    type="file" 
-                    accept="image/*" 
+                  <input
+                    type="file"
+                    accept="image/*"
                     onChange={(e) => handleUploadLocalImage(e)}
-                    className="hidden" 
+                    className="hidden"
                   />
                 </label>
               </div>
@@ -1225,7 +1215,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                 <div className="flex items-center gap-2">
                   <div className="flex-1 flex items-center gap-2 px-3 py-2 border border-slate-300 rounded-xl text-xs">
                     <LinkIcon className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <input 
+                    <input
                       type="url"
                       defaultValue={imageUrl}
                       id="inputQuestionImgUrl"
@@ -1260,7 +1250,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                 <ImageIcon className="w-4 h-4 text-purple-600" />
                 <span>Chèn hình ảnh cho Lựa chọn {options[optionImageTargetIdx]?.id}</span>
               </h3>
-              <button 
+              <button
                 onClick={() => setOptionImageTargetIdx(null)}
                 className="w-6 h-6 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-700 cursor-pointer"
               >
@@ -1274,11 +1264,11 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                 <label className="border-2 border-dashed border-purple-200 hover:border-purple-400 bg-purple-50/50 hover:bg-purple-50 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer transition-colors">
                   <Upload className="w-6 h-6 text-purple-600 mb-1" />
                   <span className="text-xs font-bold text-purple-800">Bấm để chọn file ảnh</span>
-                  <input 
-                    type="file" 
-                    accept="image/*" 
+                  <input
+                    type="file"
+                    accept="image/*"
                     onChange={(e) => handleUploadLocalImage(e, optionImageTargetIdx)}
-                    className="hidden" 
+                    className="hidden"
                   />
                 </label>
               </div>
@@ -1286,7 +1276,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">Hoặc nhập link URL:</label>
                 <div className="flex items-center gap-2">
-                  <input 
+                  <input
                     type="url"
                     id="inputOptionImgUrl"
                     defaultValue={options[optionImageTargetIdx]?.image}
@@ -1324,7 +1314,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                 <Video className="w-4 h-4 text-rose-600" />
                 <span>Chèn video minh họa cho câu hỏi</span>
               </h3>
-              <button 
+              <button
                 onClick={() => setIsVideoModalOpen(false)}
                 className="w-6 h-6 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-700 cursor-pointer"
               >
@@ -1334,7 +1324,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
 
             <div className="py-4 space-y-3">
               <label className="block text-xs font-bold text-slate-700">Dán đường dẫn video (YouTube / MP4):</label>
-              <input 
+              <input
                 type="url"
                 defaultValue={videoUrl}
                 id="inputVideoUrl"

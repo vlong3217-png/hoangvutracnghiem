@@ -80,20 +80,6 @@ export default async function handler(req, res) {
               qIdx
             ]);
           }
-              JSON.stringify({
-                parts: q.parts || null,
-                categories: q.categories || null,
-                items: q.items || null,
-                sentences: q.sentences || null,
-                draggableItems: q.draggableItems || null,
-                blanks: q.blanks || null,
-                sampleAnswer: q.sampleAnswer || null,
-                criteria: q.criteria || q.rubric || null,
-                maxScore: q.maxScore || null,
-                explanation: q.explanation || null
-              })
-            ]);
-          }
         }
 
         await client.query('COMMIT');
@@ -162,20 +148,6 @@ export default async function handler(req, res) {
                 explanation: q.explanation || null
               }),
               qIdx
-            ]);
-          }
-              JSON.stringify({
-                parts: q.parts || null,
-                categories: q.categories || null,
-                items: q.items || null,
-                sentences: q.sentences || null,
-                draggableItems: q.draggableItems || null,
-                blanks: q.blanks || null,
-                sampleAnswer: q.sampleAnswer || null,
-                criteria: q.criteria || q.rubric || null,
-                maxScore: q.maxScore || null,
-                explanation: q.explanation || null
-              })
             ]);
           }
         }
