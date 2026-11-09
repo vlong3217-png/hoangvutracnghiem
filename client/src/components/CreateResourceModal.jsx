@@ -56,6 +56,132 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
   const [importStatus, setImportStatus] = useState('');
   const [importError, setImportError] = useState('');
 
+
+  // Hàm hiển thị chi tiết các đáp án của từng câu hỏi
+  const renderQuestionOptionsPreview = (q) => {
+    // 1. Trắc nghiệm 1 đáp án hoặc Nhiều đáp án
+    if (q.options && Array.isArray(q.options) && q.options.length > 0) {
+      return (
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 pl-9">
+          {q.options.map((opt, oIdx) => {
+            const isCorrect = Array.isArray(q.correctAnswer)
+              ? q.correctAnswer.includes(opt.id) || q.correctAnswer.includes(opt.text)
+              : q.correctAnswer === opt.id || q.correctAnswer === opt.text;
+            return (
+              <div 
+                key={opt.id || oIdx}
+                className={`p-2.5 rounded-xl border flex items-start gap-2.5 text-xs transition-colors ${
+                  isCorrect 
+                    ? 'bg-emerald-50/80 border-emerald-300 text-emerald-950 font-medium shadow-2xs' 
+                    : 'bg-white border-slate-200 text-slate-700'
+                }`}
+              >
+                <span className={`w-5 h-5 rounded-lg flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                  isCorrect ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 border border-slate-200'
+                }`}>
+                  {isCorrect ? '✓' : String.fromCharCode(65 + oIdx)}
+                </span>
+                <span className="break-words flex-1 leading-relaxed">{opt.text}</span>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    // 2. Đúng / Sai theo ý (true_false_multi)
+    if (q.parts && Array.isArray(q.parts)) {
+      return (
+        <div className="mt-3 space-y-2 pl-9">
+          {q.parts.map((part, pIdx) => (
+            <div key={pIdx} className="p-2.5 rounded-xl bg-white border border-slate-200 flex items-center justify-between text-xs shadow-2xs">
+              <div className="flex items-center gap-2.5">
+                <span className="font-bold text-slate-500 w-5 h-5 rounded-md bg-slate-100 flex items-center justify-center text-[11px]">
+                  {part.id || String.fromCharCode(97 + pIdx)}
+                </span>
+                <span className="text-slate-800">{part.text}</span>
+              </div>
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                part.isCorrect ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-rose-100 text-rose-700 border border-rose-200'
+              }`}>
+                {part.isCorrect ? 'ĐÚNG' : 'SAI'}
+              </span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    // 3. Phân loại vào cột (categorize)
+    if (q.categories && q.items) {
+      return (
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2.5 pl-9">
+          {q.categories.map((cat, cIdx) => (
+            <div key={cIdx} className="p-2.5 bg-white border border-slate-200 rounded-xl text-xs shadow-2xs">
+              <div className="font-bold text-slate-800 pb-1.5 mb-2 border-b border-slate-100 flex items-center gap-1.5">
+                <span>📁</span>
+                <span>{cat.name}</span>
+              </div>
+              <div className="space-y-1 text-slate-600">
+                {q.items.filter(it => it.categoryId === cat.id).map((it, iIdx) => (
+                  <div key={iIdx} className="px-2 py-1 bg-slate-50 rounded-lg border border-slate-100 text-[11px] flex items-center gap-1.5">
+                    <span className="text-slate-400">•</span>
+                    <span>{it.text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    // 4. Kéo thả ghép nối (drag_drop)
+    if (q.sentences) {
+      return (
+        <div className="mt-3 space-y-2 pl-9">
+          {q.sentences.map((s, sIdx) => (
+            <div key={sIdx} className="p-2.5 bg-white border border-slate-200 rounded-xl text-xs flex items-center gap-2 text-slate-700 shadow-2xs">
+              <span>{s.prefix}</span>
+              <span className="px-2.5 py-0.5 bg-pink-50 text-[#d82a7a] font-bold rounded-lg border border-pink-200">
+                {s.correctWord}
+              </span>
+              <span>{s.suffix}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    // 5. Điền từ ngắn (short_answer)
+    if (q.type === 'short_answer' || q.correctAnswer) {
+      return (
+        <div className="mt-3 pl-9 flex items-center gap-2">
+          <span className="text-xs text-slate-500 font-medium">Đáp án chuẩn:</span>
+          <span className="px-3 py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold text-xs rounded-lg shadow-2xs">
+            {typeof q.correctAnswer === 'string' ? q.correctAnswer : JSON.stringify(q.correctAnswer)}
+          </span>
+        </div>
+      );
+    }
+
+    // 6. Tự luận (essay)
+    if (q.type === 'essay') {
+      return (
+        <div className="mt-3 pl-9 p-3 bg-pink-50/40 border border-pink-100 rounded-xl text-xs text-slate-700 space-y-1">
+          {q.sampleAnswer && (
+            <div><span className="font-bold text-[#d82a7a]">Dàn ý đáp án:</span> {q.sampleAnswer}</div>
+          )}
+          {q.criteria && (
+            <div className="text-[11px] text-slate-500 italic"><span className="font-semibold text-slate-600">Tiêu chí chấm:</span> {q.criteria}</div>
+          )}
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   // 1. Danh sách 7 dạng câu hỏi trong hệ thống
   const QUESTION_TYPES = [
     {
@@ -362,10 +488,10 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
         </div>
       </header>
 
-      {/* 2. KHUNG NỘI DUNG CHÍNH (CANVAS TRẮNG Ở GIỮA) */}
-      <main className="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-8 flex flex-col">
+            {/* 2. KHUNG NỘI DUNG CHÍNH (CANVAS TRẮNG Ở GIỮA) */}
+      <main className="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-8 flex flex-col space-y-5">
         {/* NÚT "NHẬP TỪ TÀI LIỆU (AI PHÂN TÍCH)" ĐỒNG BỘ NỀN TRẮNG VIỀN XÁM NHẸ */}
-        <div className="mb-5 p-4 bg-white border border-slate-200 rounded-2xl flex items-center justify-between gap-4 shadow-2xs">
+        <div className="p-4 bg-white border border-slate-200 rounded-2xl flex items-center justify-between gap-4 shadow-2xs">
           <div className="flex items-center gap-3.5">
             <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 text-[#d82a7a] flex items-center justify-center shadow-2xs shrink-0">
               <Sparkles className="w-5 h-5 text-[#d82a7a]" />
@@ -392,182 +518,188 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
           </button>
         </div>
 
-        {/* CONTAINER CHÍNH: TẬP TRUNG VÀO DANH SÁCH CÂU HỎI */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-xs flex-1 flex flex-col space-y-6">
-          {/* PHẦN 1: DANH SÁCH CÂU HỎI TRONG ĐỀ (ĐƯA LÊN TRÊN HẾT CHO DỄ QUẢN LÝ) */}
-          <div>
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-tight">
-                  Danh sách câu hỏi trong đề ({questions.length})
-                </h3>
-                <span className="text-xs text-slate-400 hidden sm:inline">• Bấm vào câu hỏi để sửa chi tiết phương án</span>
-              </div>
-              
-              <button
-                onClick={() => handleAddQuestionByType('single')}
-                className="px-3 py-1.5 bg-pink-50 hover:bg-pink-100 text-[#d82a7a] text-xs font-bold rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Thêm nhanh trắc nghiệm</span>
-              </button>
+        {/* KHUNG THÊM DẠNG CÂU HỎI KHÁC (ĐƯỢC ĐƯA LÊN TRÊN CÙNG VỚI NHẬP TỆP) */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-xs space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                Thêm dạng câu hỏi khác
+              </span>
+              <span className="text-[11px] text-slate-400 hidden sm:inline">
+                (Bấm trực tiếp vào dạng câu hỏi để thêm ngay vào đề)
+              </span>
             </div>
 
-            {questions.length === 0 ? (
-              <div className="py-12 border-2 border-dashed border-slate-200 rounded-xl text-center flex flex-col items-center justify-center bg-slate-50/50">
-                <div className="w-12 h-12 rounded-full bg-pink-100 text-[#d82a7a] flex items-center justify-center mb-2">
-                  <FileText className="w-6 h-6" />
-                </div>
-                <p className="text-xs font-bold text-slate-700">Đề thi chưa có câu hỏi nào</p>
-                <p className="text-[11px] text-slate-400 mt-0.5">Chọn một dạng câu hỏi bên dưới hoặc tải tệp tài liệu để AI tự động trích xuất</p>
-              </div>
-            ) : (
-              <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
-                {questions.map((q, idx) => (
-                  <div 
-                    key={q.id || idx} 
-                    className="p-3 bg-slate-50 hover:bg-pink-50/20 border border-slate-200 hover:border-[#d82a7a]/50 rounded-xl flex items-center justify-between text-xs transition-all group shadow-2xs"
+            <button
+              onClick={() => setIsTypePanelExpanded(!isTypePanelExpanded)}
+              className="text-xs font-semibold text-slate-500 hover:text-slate-800 flex items-center gap-1 cursor-pointer"
+            >
+              <span>{isTypePanelExpanded ? 'Thu gọn' : 'Xem dạng đầy đủ'}</span>
+              {isTypePanelExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </button>
+          </div>
+
+          {/* DẠNG GỌN (PILLS NẰM NGANG KHI THU GỌN) */}
+          {!isTypePanelExpanded ? (
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+              {QUESTION_TYPES.map((type) => {
+                const Icon = type.icon;
+                return (
+                  <button
+                    key={type.id}
+                    onClick={() => handleAddQuestionByType(type.id)}
+                    className="px-3 py-2 bg-slate-50 hover:bg-pink-50/30 border border-slate-200 hover:border-[#d82a7a] rounded-xl flex items-center gap-2 shrink-0 transition-all cursor-pointer group shadow-2xs hover:shadow-xs"
+                    title={type.desc}
                   >
+                    <div className={`w-5 h-5 rounded-md ${type.color} text-white flex items-center justify-center shrink-0`}>
+                      <Icon className="w-3 h-3" />
+                    </div>
+                    <span className="text-xs font-semibold text-slate-700 group-hover:text-[#d82a7a] transition-colors whitespace-nowrap">
+                      + {type.name}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            /* DẠNG LƯỚI CHI TIẾT */
+            <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {QUESTION_TYPES.map((type) => {
+                  const Icon = type.icon;
+                  return (
+                    <div 
+                      key={type.id}
+                      onMouseEnter={() => setHoveredType(type)}
+                      onMouseLeave={() => setHoveredType(null)}
+                      onClick={() => handleAddQuestionByType(type.id)}
+                      className="p-3 border border-slate-200 hover:border-[#d82a7a] rounded-xl bg-white hover:bg-pink-50/20 transition-all cursor-pointer flex flex-col justify-between group shadow-2xs hover:shadow-xs"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className={`w-7 h-7 rounded-lg ${type.color} text-white flex items-center justify-center shadow-xs`}>
+                            <Icon className="w-3.5 h-3.5" />
+                          </div>
+                          <span className="text-[9px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-full">
+                            {type.tag}
+                          </span>
+                        </div>
+
+                        <h4 className="text-xs font-bold text-slate-900 group-hover:text-[#d82a7a] transition-colors">
+                          {type.name}
+                        </h4>
+                        <p className="text-[10.5px] text-slate-500 mt-0.5 line-clamp-1 leading-normal">
+                          {type.desc}
+                        </p>
+                      </div>
+
+                      <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px] font-bold text-[#d82a7a]">
+                        <span>+ Thêm dạng này</span>
+                        <Plus className="w-3 h-3" />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* VÙNG XEM TRƯỚC (PREVIEW HOVER) */}
+              {hoveredType && (
+                <div className="mt-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200 animate-in fade-in duration-200">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                    Xem trước ({hoveredType.name})
+                  </div>
+                  <div className="text-xs font-bold text-slate-800">{hoveredType.preview.q}</div>
+                  <div className="mt-1.5 grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[10.5px] text-slate-600">
+                    {hoveredType.preview.opts.map((opt, i) => (
+                      <div key={i} className="px-2 py-1 bg-white border border-slate-200 rounded-md">
+                        {opt}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* CONTAINER CHÍNH: HIỂN THỊ ĐẦY ĐỦ CÂU HỎI VÀ TẤT CẢ CÁC ĐÁP ÁN (KHÔNG THU GỌN) */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-xs flex-1 flex flex-col space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-tight">
+                Danh sách câu hỏi trong đề ({questions.length})
+              </h3>
+              <span className="text-xs text-slate-400 hidden sm:inline">• Hiển thị đầy đủ nội dung câu hỏi và các phương án</span>
+            </div>
+            
+            <button
+              onClick={() => handleAddQuestionByType('single')}
+              className="px-3 py-1.5 bg-pink-50 hover:bg-pink-100 text-[#d82a7a] text-xs font-bold rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Thêm nhanh trắc nghiệm</span>
+            </button>
+          </div>
+
+          {questions.length === 0 ? (
+            <div className="py-12 border-2 border-dashed border-slate-200 rounded-xl text-center flex flex-col items-center justify-center bg-slate-50/50">
+              <div className="w-12 h-12 rounded-full bg-pink-100 text-[#d82a7a] flex items-center justify-center mb-2">
+                <FileText className="w-6 h-6" />
+              </div>
+              <p className="text-xs font-bold text-slate-700">Đề thi chưa có câu hỏi nào</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">Chọn một dạng câu hỏi bên trên hoặc tải tệp tài liệu để AI tự động trích xuất</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {questions.map((q, idx) => (
+                <div 
+                  key={q.id || idx} 
+                  className="p-4 bg-slate-50/60 hover:bg-pink-50/10 border border-slate-200 hover:border-[#d82a7a]/60 rounded-2xl transition-all shadow-2xs group"
+                >
+                  <div className="flex items-start justify-between gap-3">
                     <div 
                       onClick={() => setEditingQuestion(q)}
-                      className="flex items-center gap-3 min-w-0 pr-4 flex-1 cursor-pointer"
+                      className="flex items-start gap-3 min-w-0 pr-4 flex-1 cursor-pointer"
                     >
-                      <span className="w-6 h-6 rounded-full bg-slate-200 group-hover:bg-[#d82a7a] group-hover:text-white text-slate-700 font-bold flex items-center justify-center text-[11px] shrink-0 transition-colors">
+                      <span className="w-6 h-6 rounded-lg bg-slate-200 group-hover:bg-[#d82a7a] group-hover:text-white text-slate-700 font-bold flex items-center justify-center text-xs shrink-0 transition-colors mt-0.5">
                         {idx + 1}
                       </span>
-                      <span className="font-semibold text-slate-800 truncate group-hover:text-[#d82a7a] transition-colors">
-                        {q.question}
-                      </span>
-                      <span className="text-[10px] text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded shrink-0">
-                        {q.type === 'multiple' ? 'Chọn nhiều' : q.type === 'true_false_multi' ? 'Đúng/Sai' : q.type === 'essay' ? 'Tự luận' : q.type === 'categorize' ? 'Phân loại' : q.type === 'drag_drop' ? 'Kéo thả' : q.type === 'short_answer' ? 'Điền từ' : 'Trắc nghiệm'}
-                      </span>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-slate-900 group-hover:text-[#d82a7a] text-xs sm:text-sm leading-snug transition-colors">
+                            {q.question}
+                          </span>
+                          <span className="text-[10px] text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded-full shrink-0">
+                            {q.type === 'multiple' ? 'Chọn nhiều' : q.type === 'true_false_multi' ? 'Đúng/Sai' : q.type === 'essay' ? 'Tự luận' : q.type === 'categorize' ? 'Phân loại' : q.type === 'drag_drop' ? 'Kéo thả' : q.type === 'short_answer' ? 'Điền từ' : 'Trắc nghiệm'}
+                          </span>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 shrink-0">
                       <button 
                         onClick={() => setEditingQuestion(q)}
-                        className="px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:text-[#d82a7a] bg-white hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors cursor-pointer shadow-2xs"
+                        className="px-3 py-1.5 text-xs font-semibold text-slate-700 hover:text-[#d82a7a] bg-white hover:bg-slate-100 border border-slate-200 rounded-xl transition-colors cursor-pointer shadow-2xs"
                         title="Chỉnh sửa câu này"
                       >
                         Sửa
                       </button>
                       <button 
                         onClick={() => setQuestions(questions.filter((_, i) => i !== idx))}
-                        className="text-slate-400 hover:text-rose-600 p-1 transition-colors cursor-pointer"
+                        className="text-slate-400 hover:text-rose-600 p-1.5 transition-colors cursor-pointer"
                         title="Xóa câu này"
                       >
                         <X className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
 
-          {/* PHẦN 2: CÁC NÚT THÊM DẠNG CÂU HỎI (THIẾT KẾ GỌN GÀNG, CÓ THỂ THU GỌN / MỞ RỘNG) */}
-          <div className="pt-4 border-t border-slate-100">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">
-                  Thêm dạng câu hỏi khác
-                </span>
-                <span className="text-[11px] text-slate-400 hidden sm:inline">
-                  (Bấm trực tiếp vào dạng câu hỏi để thêm ngay vào đề)
-                </span>
-              </div>
-
-              <button
-                onClick={() => setIsTypePanelExpanded(!isTypePanelExpanded)}
-                className="text-xs font-semibold text-slate-500 hover:text-slate-800 flex items-center gap-1 cursor-pointer"
-              >
-                <span>{isTypePanelExpanded ? 'Thu gọn' : 'Xem dạng đầy đủ'}</span>
-                {isTypePanelExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-              </button>
-            </div>
-
-            {/* DẠNG GỌN (PILLS NẰM NGANG KHI THU GỌN) */}
-            {!isTypePanelExpanded ? (
-              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-                {QUESTION_TYPES.map((type) => {
-                  const Icon = type.icon;
-                  return (
-                    <button
-                      key={type.id}
-                      onClick={() => handleAddQuestionByType(type.id)}
-                      className="px-3 py-2 bg-slate-50 hover:bg-pink-50/30 border border-slate-200 hover:border-[#d82a7a] rounded-xl flex items-center gap-2 shrink-0 transition-all cursor-pointer group shadow-2xs hover:shadow-xs"
-                      title={type.desc}
-                    >
-                      <div className={`w-5 h-5 rounded-md ${type.color} text-white flex items-center justify-center shrink-0`}>
-                        <Icon className="w-3 h-3" />
-                      </div>
-                      <span className="text-xs font-semibold text-slate-700 group-hover:text-[#d82a7a] transition-colors whitespace-nowrap">
-                        + {type.name}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              /* DẠNG LƯỚI CHI TIẾT (KHI MỞ RỘNG HOẶC KHI ĐỀ ĐANG TRỐNG CÂU HỎI) */
-              <div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {QUESTION_TYPES.map((type) => {
-                    const Icon = type.icon;
-                    return (
-                      <div 
-                        key={type.id}
-                        onMouseEnter={() => setHoveredType(type)}
-                        onMouseLeave={() => setHoveredType(null)}
-                        onClick={() => handleAddQuestionByType(type.id)}
-                        className="p-3 border border-slate-200 hover:border-[#d82a7a] rounded-xl bg-white hover:bg-pink-50/20 transition-all cursor-pointer flex flex-col justify-between group shadow-2xs hover:shadow-xs"
-                      >
-                        <div>
-                          <div className="flex items-center justify-between mb-1.5">
-                            <div className={`w-7 h-7 rounded-lg ${type.color} text-white flex items-center justify-center shadow-xs`}>
-                              <Icon className="w-3.5 h-3.5" />
-                            </div>
-                            <span className="text-[9px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-full">
-                              {type.tag}
-                            </span>
-                          </div>
-
-                          <h4 className="text-xs font-bold text-slate-900 group-hover:text-[#d82a7a] transition-colors">
-                            {type.name}
-                          </h4>
-                          <p className="text-[10.5px] text-slate-500 mt-0.5 line-clamp-1 leading-normal">
-                            {type.desc}
-                          </p>
-                        </div>
-
-                        <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px] font-bold text-[#d82a7a]">
-                          <span>+ Thêm dạng này</span>
-                          <Plus className="w-3 h-3" />
-                        </div>
-                      </div>
-                    );
-                  })}
+                  {/* HIỂN THỊ ĐẦY ĐỦ CÁC ĐÁP ÁN CỦA CÂU HỎI */}
+                  {renderQuestionOptionsPreview(q)}
                 </div>
-
-                {/* VÙNG XEM TRƯỚC (PREVIEW HOVER) */}
-                {hoveredType && (
-                  <div className="mt-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200 animate-in fade-in duration-200">
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                      Xem trước ({hoveredType.name})
-                    </div>
-                    <div className="text-xs font-bold text-slate-800">{hoveredType.preview.q}</div>
-                    <div className="mt-1.5 grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[10.5px] text-slate-600">
-                      {hoveredType.preview.opts.map((opt, i) => (
-                        <div key={i} className="px-2 py-1 bg-white border border-slate-200 rounded-md">
-                          {opt}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </main>
 
