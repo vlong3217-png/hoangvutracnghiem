@@ -50,10 +50,12 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
   const [columnAssignments, setColumnAssignments] = useState({});
   const [unassignedItems, setUnassignedItems] = useState([]);
   const [draggedItem, setDraggedItem] = useState(null);
+  const [selectedCategorizeItem, setSelectedCategorizeItem] = useState(null);
 
   // STATE DÀNH CHO DẠNG KÉO THẢ KHỚP CÂU (Drag & Drop Fill Blank)
   const [sentenceSlots, setSentenceSlots] = useState({});
   const [availableDropItems, setAvailableDropItems] = useState([]);
+  const [selectedDropItem, setSelectedDropItem] = useState(null);
 
   // STATE DÀNH CHO DẠNG TRẮC NGHIỆM CHỌN NHIỀU ĐÁP ÁN (Multiple choice)
   const [multiSelectedOpts, setMultiSelectedOpts] = useState([]);
@@ -131,10 +133,22 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
       const initialCats = {};
       cats.forEach(c => initialCats[c.id] = []);
       setColumnAssignments(initialCats);
-      setUnassignedItems(currentQ.items ? [...currentQ.items] : []);
+      const rawItems = currentQ.items ? [...currentQ.items] : [];
+      setUnassignedItems(rawItems.map((it, idx) => ({
+        id: it.id || `item-${idx}`,
+        text: it.text || it.name || `Mục ${idx + 1}`,
+        categoryId: it.categoryId || it.targetCategory || cats[0]?.id
+      })));
+      setSelectedCategorizeItem(null);
     } else if (currentQ.type === 'drag_drop') {
       setSentenceSlots({});
-      setAvailableDropItems(currentQ.draggableItems ? [...currentQ.draggableItems] : []);
+      const rawItems = currentQ.draggableItems || [];
+      const normalized = rawItems.map((d, idx) => {
+        if (typeof d === 'string') return { id: d, text: d };
+        return { id: d.id || d.text || `drop-${idx}`, text: d.text || d.id || String(d) };
+      });
+      setAvailableDropItems(normalized);
+      setSelectedDropItem(null);
     } else if (currentQ.type === 'short_answer' || currentQ.type === 'fill_blank') {
       setShortInputText(selectedAnswers[currentQ.id] || '');
       setClozeAnswers(typeof selectedAnswers[currentQ.id] === 'object' ? selectedAnswers[currentQ.id] : {});
@@ -246,13 +260,15 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
     };
     setColumnAssignments(nextColumnAssignments);
     setDraggedItem(null);
+    setSelectedCategorizeItem(null);
 
     // Nếu đã phân loại hết tất cả các mục => Tự động đánh giá Đúng/Sai toàn câu
     if (remainingUnassigned.length === 0) {
       const allItems = currentQ.items || [];
       const isAllMatch = allItems.every(it => {
-        const targetCol = nextColumnAssignments[it.targetCategory] || [];
-        return targetCol.some(cItem => cItem.id === it.id);
+        const targetColId = it.categoryId || it.targetCategory;
+        const targetCol = nextColumnAssignments[targetColId] || [];
+        return targetCol.some(cItem => cItem.id === it.id || cItem.text === it.text);
       });
 
       setSelectedAnswers(prev => ({ ...prev, [currentQ.id]: nextColumnAssignments }));
@@ -290,23 +306,33 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
     if (!item || answeredState) return;
     const existingItemId = sentenceSlots[slotId];
     if (existingItemId) {
-      const oldItem = currentQ.draggableItems.find(d => d.id === existingItemId);
+      const normalizedAll = (currentQ.draggableItems || []).map((d, idx) => {
+        if (typeof d === 'string') return { id: d, text: d };
+        return { id: d.id || d.text || `drop-${idx}`, text: d.text || d.id || String(d) };
+      });
+      const oldItem = normalizedAll.find(d => (d.id || d.text) === existingItemId);
       if (oldItem) {
         setAvailableDropItems(prev => [...prev, oldItem]);
       }
     }
 
-    const nextSlots = { ...sentenceSlots, [slotId]: item.id };
+    const itemId = item.id || item.text;
+    const nextSlots = { ...sentenceSlots, [slotId]: itemId };
     setSentenceSlots(nextSlots);
-    const nextAvailable = availableDropItems.filter(d => d.id !== item.id);
+    const nextAvailable = availableDropItems.filter(d => (d.id || d.text) !== itemId);
     setAvailableDropItems(nextAvailable);
     setDraggedItem(null);
+    setSelectedDropItem(null);
 
     // Nếu đã điền đủ tất cả các ô trống => Tự động đánh giá Đúng/Sai
     const sentences = currentQ.sentences || [];
     const isAllFilled = sentences.every(s => nextSlots[s.id] !== undefined);
     if (isAllFilled) {
-      const isAllCorrect = sentences.every(s => nextSlots[s.id] === s.correctItemId);
+      const isAllCorrect = sentences.every(s => {
+        const userChoice = String(nextSlots[s.id] || '').trim().toLowerCase();
+        const correctChoice = String(s.correctItemId || s.correctWord || s.correctAnswer || '').trim().toLowerCase();
+        return userChoice === correctChoice;
+      });
       setSelectedAnswers(prev => ({ ...prev, [currentQ.id]: nextSlots }));
       setAnsweredState({ isCorrect: isAllCorrect });
       if (isAllCorrect) {
@@ -330,10 +356,12 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
     if (answeredState) return;
     const itemId = sentenceSlots[slotId];
     if (!itemId) return;
-    const itemObj = currentQ.draggableItems.find(d => d.id === itemId);
-    if (itemObj) {
-      setAvailableDropItems(prev => [...prev, itemObj]);
-    }
+    const normalizedAll = (currentQ.draggableItems || []).map((d, idx) => {
+      if (typeof d === 'string') return { id: d, text: d };
+      return { id: d.id || d.text || `drop-${idx}`, text: d.text || d.id || String(d) };
+    });
+    const itemObj = normalizedAll.find(d => (d.id || d.text) === itemId) || { id: itemId, text: itemId };
+    setAvailableDropItems(prev => [...prev, itemObj]);
     setSentenceSlots(prev => {
       const next = { ...prev };
       delete next[slotId];
@@ -794,141 +822,214 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
         )}
 
         {/* ============================================================== */}
-        {/* TRƯỜNG HỢP B: DẠNG PHÂN LOẠI VÀO CỘT (Categorize - MỞ RỘNG TOÀN DIỆN) */}
+        {/* TRƯỜNG HỢP B: DẠNG PHÂN LOẠI VÀO CỘT (Categorize - TỐI ƯU TOÀN DIỆN CHO DI ĐỘNG & MÁY TÍNH) */}
         {/* ============================================================== */}
         {currentQ.type === 'categorize' && (
-          <div className="w-full max-w-7xl px-2 sm:px-6 h-full max-h-[84vh] flex gap-5">
-            <div className="w-72 md:w-80 bg-[#230620] border-2 border-white/15 rounded-3xl flex flex-col overflow-hidden shadow-2xl shrink-0">
-              <div className="px-5 py-3.5 border-b border-white/10 text-xs sm:text-sm font-black text-slate-200">
-                Options ({unassignedItems.length})
-              </div>
-
-              <div className="p-3.5 overflow-y-auto flex-1 space-y-3">
-                {unassignedItems.map(item => (
-                  <div
-                    key={item.id}
-                    draggable
-                    onDragStart={() => setDraggedItem(item)}
-                    onClick={() => {
-                      const firstCatId = currentQ.categories?.[0]?.id;
-                      if (firstCatId) handleDropIntoCategory(firstCatId, item);
-                    }}
-                    className="p-3.5 bg-white text-slate-900 rounded-2xl shadow-lg cursor-grab active:cursor-grabbing hover:bg-slate-50 transition-all flex items-center gap-2.5 border border-slate-200 text-xs sm:text-sm font-bold leading-snug group"
-                  >
-                    <GripVertical className="w-4 h-4 text-slate-400 shrink-0 group-hover:text-[#d82a7a]" />
-                    <span className="line-clamp-2">{item.text}</span>
-                  </div>
-                ))}
-              </div>
+          <div className="w-full max-w-5xl px-2 sm:px-6 flex flex-col gap-4">
+            {/* Box đề bài */}
+            <div className="bg-black/60 border border-white/15 rounded-2xl p-4 sm:p-5 text-center shadow-lg relative">
+              <span className="text-xs text-slate-400 block font-mono mb-1">
+                {currentIdx + 1}/{questions.length}
+              </span>
+              <h2 className="text-sm sm:text-lg md:text-xl font-bold text-white leading-relaxed">
+                {currentQ.question}
+              </h2>
+              {selectedCategorizeItem && (
+                <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 bg-[#d82a7a]/20 border border-[#d82a7a] text-pink-200 text-xs font-bold rounded-full animate-pulse">
+                  <span>Đang chọn: <strong>"{selectedCategorizeItem.text}"</strong></span>
+                  <span>➔ Chạm vào 1 nhóm bên dưới để xếp vào</span>
+                </div>
+              )}
             </div>
 
-            <div className="flex-1 flex flex-col gap-4">
-              <div className="bg-black/60 border border-white/15 rounded-2xl px-6 py-4 text-center shadow-lg relative">
-                <span className="text-xs text-slate-400 block font-mono mb-1">
-                  {currentIdx + 1}/{questions.length}
-                </span>
-                <h2 className="text-sm sm:text-lg md:text-xl font-bold text-white">
-                  {currentQ.question}
-                </h2>
-              </div>
+            {/* Các nhóm phân loại (Columns) */}
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
+              {(currentQ.categories || []).map((cat, cIdx) => {
+                const assigned = columnAssignments[cat.id] || [];
+                const isHeaderTeal = cIdx % 2 === 1;
+                const catName = cat.name || cat.title || `Nhóm ${cIdx + 1}`;
+                const isHighlight = selectedCategorizeItem !== null;
 
-              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-5 overflow-y-auto">
-                {(currentQ.categories || []).map((cat, cIdx) => {
-                  const assigned = columnAssignments[cat.id] || [];
-                  const isHeaderTeal = cIdx % 2 === 1;
+                return (
+                  <div
+                    key={cat.id}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={() => handleDropIntoCategory(cat.id, draggedItem)}
+                    onClick={() => {
+                      if (selectedCategorizeItem) {
+                        handleDropIntoCategory(cat.id, selectedCategorizeItem);
+                      }
+                    }}
+                    className={`bg-[#240520] border-2 rounded-2xl sm:rounded-3xl flex flex-col overflow-hidden shadow-2xl min-h-[160px] sm:min-h-[220px] transition-all ${
+                      isHighlight
+                        ? 'border-[#d82a7a] ring-2 ring-[#d82a7a]/60 cursor-pointer scale-[1.01]'
+                        : 'border-white/15'
+                    }`}
+                  >
+                    <div className={`px-3 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-base font-black text-white shadow-md truncate flex items-center justify-between ${
+                      isHeaderTeal ? 'bg-[#149184]' : 'bg-[#1e6f9f]'
+                    }`}>
+                      <span className="truncate">{catName}</span>
+                      <span className="text-[10px] sm:text-xs bg-black/30 px-1.5 py-0.5 rounded-full font-bold shrink-0 ml-1">
+                        {assigned.length}
+                      </span>
+                    </div>
 
-                  // Kiểm tra xem câu hiện tại đã hoàn thành hay chưa
-                  const hasAnsweredCurrent = Boolean(
-                    answeredState ||
-                    selectedAnswers[currentQ.id] ||
-                    (currentQ.type === 'true_false_multi' && Object.keys(multiTfAnswers).length >= (currentQ.parts || []).length) ||
-                    (currentQ.type === 'categorize' && unassignedItems.length === 0) ||
-                    (currentQ.type === 'drag_drop' && Object.keys(sentenceSlots).length >= (currentQ.sentences || []).length) ||
-                    (currentQ.type === 'essay' && essayAnswer.trim().length > 0) ||
-                    ((currentQ.type === 'short_answer' || currentQ.type === 'fill_blank') && (
-                      currentQ.blanks
-                        ? currentQ.blanks.every(b => (clozeAnswers[b.id] || '').trim().length > 0)
-                        : shortInputText.trim().length > 0
-                    ))
-                  );
-
-                  return (
-                    <div
-                      key={cat.id}
-                      onDragOver={(e) => e.preventDefault()}
-                      onDrop={() => handleDropIntoCategory(cat.id, draggedItem)}
-                      className="bg-[#240520] border-2 border-white/15 rounded-3xl flex flex-col overflow-hidden shadow-2xl min-h-[220px]"
-                    >
-                      <div className={`px-5 py-3.5 text-sm sm:text-base font-black text-white shadow-md truncate ${isHeaderTeal ? 'bg-[#149184]' : 'bg-[#1e6f9f]'
+                    <div className="flex-1 p-2 sm:p-3 overflow-y-auto space-y-2">
+                      {assigned.length === 0 ? (
+                        <div className={`h-full min-h-[80px] border border-dashed rounded-xl flex items-center justify-center p-2 text-center text-[11px] sm:text-xs transition-colors ${
+                          isHighlight ? 'border-[#d82a7a] text-pink-300 font-bold bg-[#d82a7a]/10' : 'border-white/10 text-white/30'
                         }`}>
-                        {cat.title}
-                      </div>
-
-                      <div className="flex-1 p-4 overflow-y-auto space-y-3">
-                        {assigned.map(item => (
+                          {isHighlight ? '+ Chạm để xếp vào đây' : 'Chưa có mục nào'}
+                        </div>
+                      ) : (
+                        assigned.map(item => (
                           <div
                             key={item.id}
-                            onClick={() => handleReturnToOptions(cat.id, item)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleReturnToOptions(cat.id, item);
+                            }}
                             title="Bấm vào để bỏ ra ngoài"
-                            className="p-3.5 bg-white text-slate-900 rounded-2xl shadow-md cursor-pointer hover:bg-rose-50 transition-all flex items-center justify-between text-xs sm:text-sm font-bold leading-snug border border-slate-200"
+                            className="p-2 sm:p-2.5 bg-white text-slate-900 rounded-xl shadow-md cursor-pointer hover:bg-rose-50 transition-all flex items-center justify-between text-xs sm:text-sm font-bold leading-snug border border-slate-200"
                           >
-                            <span>{item.text}</span>
-                            <X className="w-4 h-4 text-slate-400 hover:text-rose-600 shrink-0 ml-2" />
+                            <span className="truncate pr-1">{item.text}</span>
+                            <X className="w-3.5 h-3.5 text-slate-400 hover:text-rose-600 shrink-0" />
                           </div>
-                        ))}
-                      </div>
+                        ))
+                      )}
                     </div>
-                  );
-                })}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Khung chứa các mục cần phân loại (Options) */}
+            <div className="bg-[#230620] border-2 border-white/15 rounded-2xl sm:rounded-3xl flex flex-col overflow-hidden shadow-2xl">
+              <div className="px-4 py-2.5 sm:px-5 sm:py-3 border-b border-white/10 text-xs sm:text-sm font-black text-slate-200 flex items-center justify-between">
+                <span>Mục cần phân loại ({unassignedItems.length})</span>
+                <span className="text-[11px] text-slate-400 font-normal">Chạm 1 nút để xếp nhanh, hoặc chạm mục rồi chạm cột</span>
+              </div>
+
+              <div className="p-2.5 sm:p-3.5 overflow-y-auto max-h-[220px]">
+                {unassignedItems.length === 0 ? (
+                  <div className="text-center py-4 text-emerald-400 text-xs font-bold flex items-center justify-center gap-1.5">
+                    <Check className="w-4 h-4" /> Đã xếp xong tất cả các mục!
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {unassignedItems.map(item => {
+                      const isSelected = selectedCategorizeItem?.id === item.id;
+                      return (
+                        <div
+                          key={item.id}
+                          draggable
+                          onDragStart={() => setDraggedItem(item)}
+                          onClick={() => {
+                            setSelectedCategorizeItem(isSelected ? null : item);
+                          }}
+                          className={`p-2.5 sm:p-3 rounded-xl shadow-lg cursor-pointer transition-all flex flex-col justify-between border ${
+                            isSelected
+                              ? 'bg-pink-50 border-2 border-[#d82a7a] ring-2 ring-[#d82a7a]/60 text-[#d82a7a] scale-[1.01]'
+                              : 'bg-white text-slate-900 border-slate-200 hover:bg-slate-50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <GripVertical className="w-4 h-4 text-slate-400 shrink-0 group-hover:text-[#d82a7a]" />
+                            <span className="text-xs sm:text-sm font-bold flex-1 leading-snug break-words">{item.text}</span>
+                          </div>
+
+                          {/* Các nút bấm 1 chạm xếp nhanh vào nhóm */}
+                          <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-slate-100 flex-wrap">
+                            <span className="text-[10px] text-slate-400 font-medium">Xếp vào:</span>
+                            {(currentQ.categories || []).map((cat, cIdx) => (
+                              <button
+                                key={cat.id}
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDropIntoCategory(cat.id, item);
+                                }}
+                                className={`px-2 py-0.5 text-[10px] font-bold rounded-lg text-white transition-transform active:scale-95 cursor-pointer shadow-2xs ${
+                                  cIdx % 2 === 1 ? 'bg-[#149184] hover:bg-[#0f7267]' : 'bg-[#1e6f9f] hover:bg-[#155377]'
+                                }`}
+                              >
+                                ➔ {cat.name || cat.title || `Nhóm ${cIdx + 1}`}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           </div>
         )}
 
         {/* ============================================================== */}
-        {/* TRƯỜNG HỢP C: DẠNG KÉO THẢ KHỚP CÂU (Drag & Drop Blank - MỞ RỘNG) */}
+        {/* TRƯỜNG HỢP C: DẠNG KÉO THẢ KHỚP CÂU (Drag & Drop Blank - TỐI ƯU TOÀN DIỆN CHO DI ĐỘNG & MÁY TÍNH) */}
         {/* ============================================================== */}
         {currentQ.type === 'drag_drop' && (
-          <div className="w-full max-w-6xl px-2 sm:px-6 flex flex-col gap-8">
-            <div className="bg-[#240520] border-2 border-white/15 rounded-3xl p-8 sm:p-12 shadow-2xl space-y-8">
+          <div className="w-full max-w-4xl px-2 sm:px-6 flex flex-col gap-5 sm:gap-6">
+            <div className="bg-[#240520] border-2 border-white/15 rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-2xl space-y-5">
               <div className="text-center">
-                <span className="text-xs text-slate-400 block font-mono mb-2">
+                <span className="text-xs text-slate-400 block font-mono mb-1.5">
                   {currentIdx + 1}/{questions.length}
                 </span>
-                <h2 className="text-base sm:text-xl md:text-2xl font-black text-slate-200">
+                <h2 className="text-sm sm:text-xl font-black text-slate-200">
                   {currentQ.question}
                 </h2>
+                <p className="text-[11px] sm:text-xs text-slate-400 mt-1">
+                  Chạm vào từ khóa bên dưới để tự động điền vào chỗ trống, hoặc kéo thả vào ô.
+                </p>
               </div>
 
-              <div className="space-y-8 pt-4">
+              <div className="space-y-4 pt-2">
                 {(currentQ.sentences || []).map((sent) => {
                   const droppedItemId = sentenceSlots[sent.id];
-                  const droppedItemObj = currentQ.draggableItems?.find(d => d.id === droppedItemId);
+                  // Lấy thông tin từ khóa đã điền
+                  const droppedItemObj = droppedItemId ? (
+                    (currentQ.draggableItems || []).map((d, idx) => {
+                      if (typeof d === 'string') return { id: d, text: d };
+                      return { id: d.id || d.text || `drop-${idx}`, text: d.text || d.id || String(d) };
+                    }).find(d => (d.id || d.text) === droppedItemId) || { id: droppedItemId, text: droppedItemId }
+                  ) : null;
 
                   return (
                     <div
                       key={sent.id}
-                      className="flex items-center justify-center flex-wrap gap-3 text-sm sm:text-lg md:text-xl font-semibold text-slate-200 leading-relaxed text-center"
+                      className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-black/30 border border-white/10 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 text-xs sm:text-base font-semibold text-slate-200 leading-relaxed text-center"
                     >
                       <span>{sent.prefix}</span>
                       <div
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={() => handleDropIntoSlot(sent.id, draggedItem)}
                         onClick={() => {
-                          if (droppedItemId) handleRemoveFromSlot(sent.id);
+                          if (droppedItemId) {
+                            handleRemoveFromSlot(sent.id);
+                          } else if (selectedDropItem) {
+                            handleDropIntoSlot(sent.id, selectedDropItem);
+                          }
                         }}
-                        className={`min-w-[240px] md:min-w-[280px] h-12 px-5 rounded-2xl border-2 border-dashed flex items-center justify-center transition-all cursor-pointer ${droppedItemObj
+                        className={`min-w-[150px] sm:min-w-[200px] max-w-full h-11 sm:h-12 px-3 sm:px-4 rounded-xl border-2 border-dashed flex items-center justify-center transition-all cursor-pointer ${
+                          droppedItemObj
                             ? 'bg-white text-slate-900 border-white font-bold shadow-xl'
-                            : 'bg-black/30 border-white/40 text-white/40 hover:border-white/70'
-                          }`}
+                            : selectedDropItem
+                              ? 'bg-[#d82a7a]/20 border-[#d82a7a] text-pink-200 ring-2 ring-[#d82a7a]/40 animate-pulse'
+                              : 'bg-black/40 border-white/40 text-white/40 hover:border-white/70'
+                        }`}
                       >
                         {droppedItemObj ? (
                           <div className="flex items-center gap-2">
-                            <span>{droppedItemObj.text}</span>
-                            <X className="w-4 h-4 text-slate-400 hover:text-rose-600" />
+                            <span className="font-bold text-xs sm:text-sm">{droppedItemObj.text}</span>
+                            <X className="w-3.5 h-3.5 text-slate-400 hover:text-rose-600 shrink-0" />
                           </div>
                         ) : (
-                          <span className="text-xs font-mono text-white/50">....................................</span>
+                          <span className="text-[11px] sm:text-xs font-mono text-white/50">
+                            {selectedDropItem ? '+ Chạm để đặt vào đây' : '...................'}
+                          </span>
                         )}
                       </div>
                       <span>{sent.suffix}</span>
@@ -938,22 +1039,48 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
               </div>
             </div>
 
-            <div className="flex items-center justify-center flex-wrap gap-4">
-              {availableDropItems.map((item) => (
-                <div
-                  key={item.id}
-                  draggable
-                  onDragStart={() => setDraggedItem(item)}
-                  onClick={() => {
-                    const emptySlot = currentQ.sentences?.find(s => !sentenceSlots[s.id]);
-                    if (emptySlot) handleDropIntoSlot(emptySlot.id, item);
-                  }}
-                  className="px-6 py-3.5 bg-white text-slate-900 rounded-2xl shadow-xl border border-slate-200 font-extrabold text-sm sm:text-base cursor-grab active:cursor-grabbing hover:bg-slate-50 transition-all flex items-center gap-2.5 group"
-                >
-                  <GripVertical className="w-4 h-4 text-slate-400 group-hover:text-[#d82a7a]" />
-                  <span>{item.text}</span>
-                </div>
-              ))}
+            {/* Danh sách các từ khóa có thể kéo / chạm */}
+            <div className="p-3 sm:p-4 bg-black/40 border border-white/15 rounded-2xl sm:rounded-3xl flex flex-col items-center gap-2">
+              <span className="text-[11px] sm:text-xs text-slate-400 font-semibold">
+                Các từ khóa lựa chọn ({availableDropItems.length}):
+              </span>
+
+              <div className="flex items-center justify-center flex-wrap gap-2.5">
+                {availableDropItems.length === 0 ? (
+                  <span className="text-emerald-400 text-xs font-bold py-1 flex items-center gap-1">
+                    <Check className="w-4 h-4" /> Đã điền xong tất cả chỗ trống!
+                  </span>
+                ) : (
+                  availableDropItems.map((item, idx) => {
+                    const isSelected = selectedDropItem?.id === item.id;
+                    return (
+                      <div
+                        key={item.id || idx}
+                        draggable
+                        onDragStart={() => setDraggedItem(item)}
+                        onClick={() => {
+                          // Tự động tìm ô trống đầu tiên để điền ngay
+                          const sentences = currentQ.sentences || [];
+                          const firstEmpty = sentences.find(s => !sentenceSlots[s.id]);
+                          if (firstEmpty) {
+                            handleDropIntoSlot(firstEmpty.id, item);
+                          } else {
+                            setSelectedDropItem(isSelected ? null : item);
+                          }
+                        }}
+                        className={`px-4 py-2.5 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl shadow-xl border font-bold text-xs sm:text-sm cursor-pointer transition-all flex items-center gap-1.5 active:scale-95 ${
+                          isSelected
+                            ? 'bg-[#d82a7a] text-white border-white ring-2 ring-white shadow-2xl scale-105'
+                            : 'bg-white text-slate-900 border-slate-200 hover:bg-slate-100 hover:scale-[1.02]'
+                        }`}
+                      >
+                        <GripVertical className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span>{item.text}</span>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </div>
           </div>
         )}
