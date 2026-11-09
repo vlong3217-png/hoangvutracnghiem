@@ -245,9 +245,6 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
           </nav>
         </div>
 
-        <div className="pt-4 border-t border-slate-100 text-[11px] text-slate-400 px-3">
-          Quizizz Studio v2.6
-        </div>
       </aside>
 
       {/* VÙNG NỘI DUNG CHÍNH (BÊN PHẢI) */}

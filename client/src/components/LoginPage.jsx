@@ -470,17 +470,9 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
                 </span>
               )}
             </div>
-            {/* FOOTER BẢN QUYỀN */}
-      <footer className="py-4 text-center text-xs text-slate-400">
-        © 2026 Quizizz · Hệ thống thi trắc nghiệm
-      </footer>
     </div>
           </div>
         </div>
-        {/* FOOTER BẢN QUYỀN */}
-      <footer className="py-4 text-center text-xs text-slate-400">
-        © 2026 Quizizz · Hệ thống thi trắc nghiệm
-      </footer>
     </div>
   );
 }
