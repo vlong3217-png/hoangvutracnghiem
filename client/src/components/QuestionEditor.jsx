@@ -846,7 +846,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
             onChange={(e) => setQuestionText(e.target.value)}
             placeholder="Nhập nội dung câu hỏi tại đây..."
             rows={2}
-            className="w-full max-w-3xl text-center bg-transparent text-white placeholder-white/30 text-base sm:text-xl md:text-2xl font-bold outline-none resize-none leading-relaxed"
+            className="w-full max-w-3xl text-center bg-transparent text-white placeholder-white/30 text-base sm:text-xl md:text-2xl font-normal outline-none resize-none leading-relaxed"
           />
         </div>
 
@@ -931,7 +931,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                       value={opt.text}
                       onChange={(e) => handleOptionTextChange(idx, e.target.value)}
                       placeholder={`Đáp án ${idx + 1}`}
-                      className="w-full bg-transparent text-center text-white placeholder-white/40 font-bold text-base md:text-lg outline-none resize-none leading-snug"
+                      className="w-full bg-transparent text-center text-white placeholder-white/40 font-normal text-base md:text-lg outline-none resize-none leading-snug"
                     />
                   </div>
 
@@ -990,7 +990,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                       setTfParts(updated);
                     }}
                     placeholder={`Nội dung mệnh đề ${part.id}...`}
-                    className="flex-1 bg-transparent text-white font-semibold text-sm outline-none border-b border-white/20 focus:border-purple-400 py-1"
+                    className="flex-1 bg-transparent text-white font-normal text-sm outline-none border-b border-white/20 focus:border-purple-400 py-1"
                   />
                   {/* Hai nút chuyển đổi Đúng / Sai */}
                   <div className="flex items-center gap-1.5 shrink-0">
@@ -1049,7 +1049,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
               value={shortAnswer}
               onChange={(e) => setShortAnswer(e.target.value)}
               placeholder="Nhập đáp án đúng chuẩn (Ví dụ: LAN, Hệ điều hành, 1945)..."
-              className="w-full bg-white/10 border-2 border-indigo-500/50 rounded-xl px-4 py-3 text-white text-base font-bold outline-none focus:border-indigo-400"
+              className="w-full bg-white/10 border-2 border-indigo-500/50 rounded-xl px-4 py-3 text-white text-base font-normal outline-none focus:border-indigo-400"
             />
             <p className="text-[11px] text-white/60">
               💡 Hệ thống sẽ tự động đối chiếu không phân biệt chữ hoa, chữ thường và khoảng trắng thừa.
