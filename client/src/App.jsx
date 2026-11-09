@@ -167,7 +167,14 @@ export default function App() {
   };
 
   const handleUpdateExam = async (updatedExam) => {
-    setExams(exams.map(e => e.id === updatedExam.id ? updatedExam : e));
+    const totalQ = Array.isArray(updatedExam.questions) ? updatedExam.questions.length : (updatedExam.totalQuestions || 0);
+    const normalized = {
+      ...updatedExam,
+      totalQuestions: totalQ,
+      statusBadge: `${totalQ} Qs`
+    };
+    setExams(prev => prev.map(e => e.id === updatedExam.id ? normalized : e));
+
     // Đồng bộ trực tiếp thay đổi câu hỏi của đề thi vào CSDL Neon
     await updateExamApi(updatedExam.id, {
       title: updatedExam.title,
@@ -179,6 +186,12 @@ export default function App() {
       shuffleAnswers: updatedExam.shuffleAnswers ?? false,
       questions: updatedExam.questions
     });
+
+    // Làm mới lại danh sách từ CSDL để đảm bảo tất cả số lượng câu hỏi đều chuẩn xác
+    const freshExams = await fetchExams();
+    if (freshExams && Array.isArray(freshExams)) {
+      setExams(freshExams);
+    }
   };
 
   const handleDeleteExam = async (examId) => {
@@ -221,15 +234,16 @@ export default function App() {
   const handleSelectExam = async (exam) => {
     setIsOpeningExam(true);
     try {
-      // Nếu exam chưa có questions (chỉ có metadata từ list), lấy đầy đủ từ Backend
-      if (!exam.questions || exam.questions.length === 0) {
-        const fullExam = await fetchExamById(exam.id);
-        if (fullExam && fullExam.questions && fullExam.questions.length > 0) {
-          setActiveExam(fullExam);
-          setCurrentView('room');
-          return;
-        }
+      // Luôn luôn lấy chi tiết đề thi mới nhất từ CSDL Backend để thí sinh nhận trọn vẹn câu hỏi mới nhất
+      const fullExam = await fetchExamById(exam.id);
+      if (fullExam && fullExam.questions && fullExam.questions.length > 0) {
+        setActiveExam(fullExam);
+        setCurrentView('room');
+        return;
       }
+      setActiveExam(exam);
+      setCurrentView('room');
+    } catch {
       setActiveExam(exam);
       setCurrentView('room');
     } finally {

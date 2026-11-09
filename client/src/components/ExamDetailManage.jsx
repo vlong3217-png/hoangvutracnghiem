@@ -22,6 +22,7 @@ import {
 import QuestionEditor from './QuestionEditor';
 import CreateResourceModal from './CreateResourceModal';
 import QuizizzLogo from './QuizizzLogo';
+import { fetchExamById } from '../services/api';
 
 // Helper chuyển đổi tên dạng câu hỏi đồng nhất 100% với hệ thống
 const getQuestionTypeName = (type) => {
@@ -46,6 +47,25 @@ const getQuestionTypeName = (type) => {
 };
 
 export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExam, onAddExam }) {
+  const [internalExam, setInternalExam] = useState(exam);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(!exam.questions || exam.questions.length === 0);
+
+  useEffect(() => {
+    if (!exam.questions || exam.questions.length === 0) {
+      setIsLoadingDetail(true);
+      fetchExamById(exam.id).then(full => {
+        if (full && full.questions) {
+          setInternalExam(full);
+        }
+      }).finally(() => {
+        setIsLoadingDetail(false);
+      });
+    } else {
+      setInternalExam(exam);
+      setIsLoadingDetail(false);
+    }
+  }, [exam]);
+
   const [showAnswer, setShowAnswer] = useState(true);
   const [editingQuestion, setEditingQuestion] = useState(null); // Câu hỏi đang được chỉnh sửa
   const [isFullEditMode, setIsFullEditMode] = useState(false); // Mở trang chỉnh sửa toàn diện (giống Thêm tài nguyên)
@@ -222,7 +242,7 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
   const [newCorrectAnswer, setNewCorrectAnswer] = useState('A');
   const [newExplanation, setNewExplanation] = useState('');
 
-  const questions = exam.questions || [];
+  const questions = internalExam.questions || [];
   const totalQuestions = questions.length;
   const totalPoints = totalQuestions;
 
@@ -230,9 +250,10 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
   if (isFullEditMode) {
     return (
       <CreateResourceModal
-        initialExam={exam}
+        initialExam={internalExam}
         onBack={() => setIsFullEditMode(false)}
         onSaveExam={async (updatedExam) => {
+          setInternalExam(updatedExam);
           if (onUpdateExam) {
             await onUpdateExam(updatedExam);
           }

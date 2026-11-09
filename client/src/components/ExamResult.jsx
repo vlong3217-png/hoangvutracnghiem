@@ -55,6 +55,22 @@ export default function ExamResult({ exam, result, onRetry, onGoHome }) {
         const correctPossible = Array.isArray(q.correctAnswer) ? q.correctAnswer : [q.correctAnswer];
         isCorrect = correctPossible.some(c => c.toString().trim().toLowerCase() === formattedUser);
       }
+    } else if (q.type === 'drag_drop') {
+      const userSlots = typeof userAns === 'object' && userAns !== null ? userAns : {};
+      const sentences = q.sentences || [];
+      isCorrect = sentences.length > 0 && sentences.every(s => {
+        const userChoice = String(userSlots[s.id] || '').trim().toLowerCase();
+        const correctChoice = String(s.correctWord || s.correctItemId || s.correctAnswer || '').trim().toLowerCase();
+        return userChoice === correctChoice;
+      });
+    } else if (q.type === 'categorize') {
+      const userAssignments = typeof userAns === 'object' && userAns !== null ? userAns : {};
+      const items = q.items || [];
+      isCorrect = items.length > 0 && items.every(it => {
+        const targetColId = it.categoryId || it.targetCategory;
+        const targetCol = userAssignments[targetColId] || [];
+        return targetCol.some(cItem => cItem.id === it.id || cItem.text === it.text);
+      });
     } else if (q.type === 'essay') {
       const essayObj = typeof userAns === 'object' && userAns !== null ? userAns : { text: userAns };
       const aiScore = essayObj?.aiResult?.score ?? 5;
@@ -369,6 +385,56 @@ export default function ExamResult({ exam, result, onRetry, onGoHome }) {
                                   </div>
                                 );
                               })}
+                            </div>
+                          ) : q.type === 'drag_drop' && q.sentences ? (
+                            <div className="space-y-1.5 pl-1">
+                              {q.sentences.map((sent, sIdx) => {
+                                const userWord = (q.userAns || {})[sent.id] || '';
+                                const correctWord = sent.correctWord || sent.correctItemId || '';
+                                const isMatch = String(userWord).trim().toLowerCase() === String(correctWord).trim().toLowerCase();
+                                return (
+                                  <div key={sIdx} className={`p-2 rounded-lg border text-xs flex flex-wrap items-center justify-between gap-1.5 ${
+                                    isMatch ? 'border-emerald-200 bg-emerald-50/70 text-emerald-900' : 'border-rose-200 bg-rose-50/70 text-rose-900'
+                                  }`}>
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="font-bold">{sIdx + 1}.</span>
+                                      <span>{sent.prefix}</span>
+                                      <span className={`px-2 py-0.5 rounded font-bold border ${isMatch ? 'bg-emerald-100 border-emerald-300 text-emerald-800' : 'bg-rose-100 border-rose-300 text-rose-800'}`}>
+                                        [{userWord || 'Chưa điền'}]
+                                      </span>
+                                      <span>{sent.suffix}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 text-[11px] font-bold">
+                                      {!isMatch && <span className="text-emerald-700">Đ.Án: [{correctWord}]</span>}
+                                      {isMatch ? <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[3]" /> : <X className="w-3.5 h-3.5 text-rose-600 stroke-[3]" />}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : q.type === 'categorize' && q.categories ? (
+                            <div className="space-y-1.5 pl-1">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                {q.categories.map((cat, cIdx) => (
+                                  <div key={cIdx} className="p-2 rounded-lg bg-slate-50 border border-slate-200">
+                                    <span className="font-bold text-slate-800 block mb-1">Cột: {cat.name || cat.title}</span>
+                                    <div className="space-y-1">
+                                      {((q.userAns || {})[cat.id] || []).map((uItem, uIdx) => {
+                                        const originalItem = (q.items || []).find(it => it.id === uItem.id || it.text === uItem.text);
+                                        const isItemCorrect = originalItem && (originalItem.categoryId === cat.id || originalItem.targetCategory === cat.id);
+                                        return (
+                                          <div key={uIdx} className={`px-2 py-0.5 rounded text-[11px] font-semibold flex items-center justify-between border ${
+                                            isItemCorrect ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-200'
+                                          }`}>
+                                            <span>{uItem.text}</span>
+                                            {isItemCorrect ? <Check className="w-3 h-3 text-emerald-600" /> : <X className="w-3 h-3 text-rose-600" />}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           ) : (
                             <div className="text-xs text-slate-600 font-medium">

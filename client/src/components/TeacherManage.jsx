@@ -456,7 +456,7 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
                           }`}>
                             <button
                               onClick={() => {
-                                setSelectedExamDetail(exam);
+                                handleOpenExamDetail(exam);
                                 setOpenDropdownId(null);
                               }}
                               className="w-full px-3.5 py-2.5 text-left hover:bg-slate-50 text-slate-700 flex items-center gap-2 cursor-pointer transition-colors"
