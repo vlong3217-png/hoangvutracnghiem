@@ -57,10 +57,8 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
   const [regRole, setRegRole] = useState('student');
 
   // Quản lý Google Client ID
-  const defaultClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || localStorage.getItem('QUIZIZZ_GOOGLE_CLIENT_ID') || '';
+  const defaultClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || localStorage.getItem('QUIZIZZ_GOOGLE_CLIENT_ID') || '249147434256-tlu69jjva0l5gl7sorsh05b7rlbmembo.apps.googleusercontent.com';
   const [googleClientId, setGoogleClientId] = useState(defaultClientId);
-  const [showConfigModal, setShowConfigModal] = useState(false);
-  const [tempClientId, setTempClientId] = useState(defaultClientId);
   const [googleStatus, setGoogleStatus] = useState('');
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
@@ -146,69 +144,74 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
   const handleTriggerGoogleLogin = () => {
     setError('');
 
-    // Nếu chưa có Client ID trong env hoặc localStorage, mở popup hướng dẫn nhập Client ID
-    if (!googleClientId) {
-      setShowConfigModal(true);
-      return;
-    }
-
-    // Nếu đã có SDK và Client ID, kích hoạt Google Prompt popup
-    if (window.google?.accounts?.id) {
+    // Dùng Google OAuth2 Token Client để luôn mở popup đăng nhập chính thức của Google
+    if (window.google?.accounts?.oauth2) {
       try {
-        window.google.accounts.id.prompt((notification) => {
-          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-            // Mở token client fallback nếu prompt bị chặn
-            const client = window.google.accounts.oauth2.initTokenClient({
-              client_id: googleClientId,
-              scope: 'email profile openid',
-              callback: async (tokenResponse) => {
-                if (tokenResponse && tokenResponse.access_token) {
-                  try {
-                    const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                      headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
-                    });
-                    const userInfo = await userInfoRes.json();
-                    if (userInfo && userInfo.email) {
-                      const email = userInfo.email.toLowerCase().trim();
-                      if (email !== 'vlong3217@gmail.com') {
-                        setError(`⛔ Tài khoản Google "${userInfo.email}" không có quyền Quản trị viên! Chỉ dành cho vlong3217@gmail.com.`);
-                        return;
-                      }
-                      onLogin({
-                        id: "user-admin-vlong",
-                        name: userInfo.name || "Long Hoàng Vũ",
-                        email: email,
-                        role: "admin",
-                        roleName: "Admin",
-                        picture: userInfo.picture,
-                        authProvider: "google"
-                      });
-                    }
-                  } catch (e) {
-                    setError("Lỗi lấy thông tin Google User: " + e.message);
+        setIsGoogleLoading(true);
+        setGoogleStatus('Đang mở cửa sổ đăng nhập Google...');
+        const client = window.google.accounts.oauth2.initTokenClient({
+          client_id: googleClientId,
+          scope: 'email profile openid',
+          callback: async (tokenResponse) => {
+            if (tokenResponse && tokenResponse.access_token) {
+              try {
+                setGoogleStatus('Đang xác thực thông tin tài khoản Google...');
+                const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                  headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
+                });
+                const userInfo = await userInfoRes.json();
+                if (userInfo && userInfo.email) {
+                  const email = userInfo.email.toLowerCase().trim();
+                  if (email !== 'vlong3217@gmail.com') {
+                    setError(`⛔ Tài khoản Google "${userInfo.email}" không có quyền Quản trị viên! Chỉ dành cho vlong3217@gmail.com.`);
+                    setIsGoogleLoading(false);
+                    setGoogleStatus('');
+                    return;
                   }
+                  onLogin({
+                    id: "user-admin-vlong",
+                    name: userInfo.name || "Long Hoàng Vũ",
+                    email: email,
+                    role: "admin",
+                    roleName: "Admin",
+                    picture: userInfo.picture,
+                    authProvider: "google"
+                  });
                 }
+              } catch (e) {
+                setError("Lỗi lấy thông tin Google User: " + e.message);
+                setIsGoogleLoading(false);
+                setGoogleStatus('');
               }
-            });
-            client.requestAccessToken();
+            } else {
+              setIsGoogleLoading(false);
+              setGoogleStatus('');
+            }
+          },
+          error_callback: (err) => {
+            console.error("Lỗi Google Auth:", err);
+            setError("Đăng nhập Google bị hủy hoặc gặp sự cố.");
+            setIsGoogleLoading(false);
+            setGoogleStatus('');
           }
         });
+        client.requestAccessToken({ prompt: 'select_account' });
+      } catch (err) {
+        console.error("Lỗi kích hoạt Google OAuth:", err);
+        setError("Không thể mở cửa sổ đăng nhập Google: " + err.message);
+        setIsGoogleLoading(false);
+        setGoogleStatus('');
+      }
+    } else if (window.google?.accounts?.id) {
+      // Fallback GSI Prompt
+      try {
+        window.google.accounts.id.prompt();
       } catch {
-        setShowConfigModal(true);
+        setError("Đang tải thư viện Google, vui lòng thử lại sau 2 giây!");
       }
     } else {
-      setShowConfigModal(true);
+      setError("Đang kết nối tới dịch vụ Google, vui lòng tải lại trang nếu chờ quá lâu!");
     }
-  };
-
-  const handleSaveGoogleClientId = () => {
-    if (!tempClientId.trim()) {
-      alert("Vui lòng nhập Google OAuth Client ID từ Google Cloud Console!");
-      return;
-    }
-    localStorage.setItem('QUIZIZZ_GOOGLE_CLIENT_ID', tempClientId.trim());
-    setGoogleClientId(tempClientId.trim());
-    setShowConfigModal(false);
   };
 
   const handleSubmit = async (e) => {
@@ -515,93 +518,15 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
               )}
             </div>
 
-            {/* Nút cấu hình Google Client ID nếu cần thay đổi */}
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={() => setShowConfigModal(true)}
-                className="text-[11px] text-slate-400 hover:text-slate-600 underline cursor-pointer"
-              >
-                ⚙️ {googleClientId ? 'Thay đổi Google Client ID' : 'Cấu hình Google Client ID'}
-              </button>
-            </div>
+            {/* FOOTER BẢN QUYỀN */}
+      <footer className="py-4 text-center text-xs text-slate-400">
+        © 2026 Quizizz · Hệ thống thi trắc nghiệm
+      </footer>
+    </div>
           </div>
         </div>
-      </div>
 
-      {/* MODAL HƯỚNG DẪN KẾT NỐI GOOGLE CLIENT ID THẬT */}
-      {showConfigModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-150">
-            <div className="flex items-start justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2.5">
-                <GoogleIcon className="w-6 h-6" />
-                <h3 className="text-sm font-bold text-slate-800">
-                  Cấu hình Google OAuth Client ID
-                </h3>
-              </div>
-              <button
-                onClick={() => setShowConfigModal(false)}
-                className="w-7 h-7 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-700 cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="py-4 space-y-3.5 text-xs text-slate-600">
-              <p>
-                Để bật cửa sổ <strong>Đăng nhập Google thật</strong> của chính Google (không phải giả lập), bạn cần dán <strong>OAuth Client ID</strong> từ Google Cloud Console vào đây:
-              </p>
-
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1.5 font-mono text-[11px]">
-                <div className="font-bold text-slate-700">Các bước lấy miễn phí trong 1 phút:</div>
-                <ol className="list-decimal list-inside space-y-1 text-slate-600">
-                  <li>Truy cập <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer" className="text-blue-600 underline font-semibold">Google Cloud Console - Credentials</a></li>
-                  <li>Bấm <strong>Create Credentials</strong> → chọn <strong>OAuth Client ID</strong> (Web application)</li>
-                  <li>Thêm vào Authorized JavaScript origins:
-                    <div className="mt-1 bg-white p-1 rounded border border-slate-200 text-purple-700 font-bold select-all">
-                      https://hoangvutracnghiem.vercel.app
-                    </div>
-                  </li>
-                  <li>Sao chép <strong>Client ID</strong> (dạng: <code className="text-pink-600">xxx...apps.googleusercontent.com</code>) và dán vào bên dưới:</li>
-                </ol>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Google Client ID của bạn:
-                </label>
-                <input
-                  type="text"
-                  value={tempClientId}
-                  onChange={(e) => setTempClientId(e.target.value)}
-                  placeholder="VD: 123456789-abcdef.apps.googleusercontent.com"
-                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl outline-none focus:border-purple-600 font-mono"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setShowConfigModal(false)}
-                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveGoogleClientId}
-                className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer transition-colors"
-              >
-                Lưu & Kích hoạt Google thật
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* FOOTER BẢN QUYỀN */}
+        {/* FOOTER BẢN QUYỀN */}
       <footer className="py-4 text-center text-xs text-slate-400">
         © 2026 Quizizz · Hệ thống thi trắc nghiệm
       </footer>
