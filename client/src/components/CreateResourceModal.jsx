@@ -14,7 +14,8 @@ import {
   Radio, 
   CheckSquare, 
   ToggleLeft, 
-  GripHorizontal, 
+  GripHorizontal,
+  GripVertical, 
   Edit3, 
   PenTool, 
   X, 
@@ -47,7 +48,67 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
     !(initialExam?.questions && initialExam.questions.length > 0)
   );
 
-  // Modal / Drawer Nhập từ tài liệu & AI
+  // Quản lý kéo thả sắp xếp lại thứ tự câu hỏi
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
+  const [reorderToast, setReorderToast] = useState(null); // { message: string, visible: boolean }
+
+  // Xử lý khi bắt đầu kéo 1 câu hỏi
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    // Đặt dataTransfer để tương thích trình duyệt
+    try {
+      e.dataTransfer.setData('text/plain', index.toString());
+    } catch {}
+  };
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverIndex !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDrop = (e, targetIndex) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === targetIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    const updatedQuestions = [...questions];
+    const [movedQuestion] = updatedQuestions.splice(draggedIndex, 1);
+    updatedQuestions.splice(targetIndex, 0, movedQuestion);
+
+    const fromNum = draggedIndex + 1;
+    const toNum = targetIndex + 1;
+
+    setQuestions(updatedQuestions);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+
+    // Bật popup thông báo thành công
+    setReorderToast({
+      message: `Đã chuyển Câu ${fromNum} sang vị trí Câu ${toNum} thành công!`,
+      from: fromNum,
+      to: toNum
+    });
+
+    // Tự động tắt sau 3 giây
+    setTimeout(() => {
+      setReorderToast(null);
+    }, 3200);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+    // Modal / Drawer Nhập từ tài liệu & AI
   const [showImportModal, setShowImportModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
 
@@ -651,17 +712,41 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
             </div>
           ) : (
             <div className="space-y-4">
-              {questions.map((q, idx) => (
+              {questions.map((q, idx) => {
+                const isDragging = draggedIndex === idx;
+                const isOver = dragOverIndex === idx && draggedIndex !== idx;
+
+                return (
                 <div 
-                  key={q.id || idx} 
-                  className="p-4 bg-slate-50/60 hover:bg-pink-50/10 border border-slate-200 hover:border-[#d82a7a]/60 rounded-2xl transition-all shadow-2xs group"
+                  key={q.id || idx}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, idx)}
+                  onDragOver={(e) => handleDragOver(e, idx)}
+                  onDrop={(e) => handleDrop(e, idx)}
+                  onDragEnd={handleDragEnd}
+                  className={`p-4 rounded-2xl transition-all shadow-2xs group relative border ${
+                    isDragging 
+                      ? 'opacity-40 scale-[0.98] border-dashed border-[#d82a7a] bg-pink-50/50' 
+                      : isOver
+                        ? 'border-2 border-[#d82a7a] bg-pink-50/30 shadow-md transform translate-y-1'
+                        : 'bg-slate-50/60 hover:bg-pink-50/10 border-slate-200 hover:border-[#d82a7a]/60 hover:shadow-xs'
+                  } cursor-grab active:cursor-grabbing`}
+                  title="Nhấn giữ và kéo để đổi thứ tự câu hỏi"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div 
                       onClick={() => setEditingQuestion(q)}
                       className="flex items-start gap-3 min-w-0 pr-4 flex-1 cursor-pointer"
                     >
-                      <span className="w-6 h-6 rounded-lg bg-slate-200 group-hover:bg-[#d82a7a] group-hover:text-white text-slate-700 font-bold flex items-center justify-center text-xs shrink-0 transition-colors mt-0.5">
+                      {/* Nút cầm nắm kéo thả trực quan */}
+                      <div 
+                        className="text-slate-400 group-hover:text-[#d82a7a] mt-1 shrink-0 cursor-grab active:cursor-grabbing p-0.5 hover:bg-slate-200 rounded"
+                        title="Kéo thả để sắp xếp"
+                      >
+                        <GripVertical className="w-4 h-4" />
+                      </div>
+
+                      <span className="w-6 h-6 rounded-lg bg-slate-200 group-hover:bg-[#d82a7a] group-hover:text-white text-slate-700 font-bold flex items-center justify-center text-xs shrink-0 transition-colors mt-0.5 shadow-2xs">
                         {idx + 1}
                       </span>
                       <div className="flex-1">
@@ -697,7 +782,8 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
                   {/* HIỂN THỊ ĐẦY ĐỦ CÁC ĐÁP ÁN CỦA CÂU HỎI */}
                   {renderQuestionOptionsPreview(q)}
                 </div>
-              ))}
+              );
+              })}
             </div>
           )}
         </div>
@@ -889,6 +975,26 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
           </div>
         </div>
       )}
+
+      {/* POPUP THÔNG BÁO HOÀN TẤT THAY ĐỔI THỨ TỰ CÂU HỎI */}
+      {reorderToast && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 bg-slate-900/95 text-white text-xs font-semibold rounded-2xl shadow-2xl border border-slate-700 backdrop-blur-md animate-in slide-in-from-bottom-5 duration-200">
+          <div className="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
+            <CheckCircle2 className="w-4 h-4" />
+          </div>
+          <div className="flex-1">
+            <p className="font-bold text-white text-xs">{reorderToast.message}</p>
+            <p className="text-[10.5px] text-slate-400 mt-0.5">Thứ tự các câu hỏi đã được lưu tự động.</p>
+          </div>
+          <button 
+            onClick={() => setReorderToast(null)} 
+            className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
     </div>
   );
 }
