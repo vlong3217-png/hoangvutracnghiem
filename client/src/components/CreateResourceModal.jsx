@@ -689,9 +689,8 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-bold text-slate-900 uppercase tracking-tight">
-                Danh sách câu hỏi trong đề ({questions.length})
+                {questions.length} câu hỏi
               </h3>
-              <span className="text-xs text-slate-400 hidden sm:inline">• Hiển thị đầy đủ nội dung câu hỏi và các phương án</span>
             </div>
             
             <button
