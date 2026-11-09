@@ -29,6 +29,14 @@ export default function App() {
       roleName: "Sinh viên"
     },
     {
+      id: "user-admin-vlong",
+      name: "Long Hoàng Vũ",
+      email: "vlong3217@gmail.com",
+      password: "123",
+      role: "admin",
+      roleName: "Admin"
+    },
+    {
       id: "user-admin",
       name: "Quản trị viên",
       email: "admin@test.com",
