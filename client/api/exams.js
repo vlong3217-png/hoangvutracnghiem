@@ -46,16 +46,18 @@ export default async function handler(req, res) {
         ]);
 
         if (Array.isArray(questions) && questions.length > 0) {
-          for (const q of questions) {
+          for (let qIdx = 0; qIdx < questions.length; qIdx++) {
+            const q = questions[qIdx];
             await client.query(`
-              INSERT INTO questions (id, exam_id, question_text, type, options, correct_answer, data)
-              VALUES ($1, $2, $3, $4, $5, $6, $7)
+              INSERT INTO questions (id, exam_id, question_text, type, options, correct_answer, data, sort_order)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
               ON CONFLICT (exam_id, id) DO UPDATE SET
                 question_text = EXCLUDED.question_text,
                 type = EXCLUDED.type,
                 options = EXCLUDED.options,
                 correct_answer = EXCLUDED.correct_answer,
-                data = EXCLUDED.data
+                data = EXCLUDED.data,
+                sort_order = EXCLUDED.sort_order
             `, [
               String(q.id),
               examId,
@@ -63,6 +65,21 @@ export default async function handler(req, res) {
               q.type || 'single',
               JSON.stringify(q.options || []),
               JSON.stringify(q.correctAnswer ?? null),
+              JSON.stringify({
+                parts: q.parts || null,
+                categories: q.categories || null,
+                items: q.items || null,
+                sentences: q.sentences || null,
+                draggableItems: q.draggableItems || null,
+                blanks: q.blanks || null,
+                sampleAnswer: q.sampleAnswer || null,
+                criteria: q.criteria || q.rubric || null,
+                maxScore: q.maxScore || null,
+                explanation: q.explanation || null
+              }),
+              qIdx
+            ]);
+          }
               JSON.stringify({
                 parts: q.parts || null,
                 categories: q.categories || null,
@@ -120,10 +137,11 @@ export default async function handler(req, res) {
 
         if (Array.isArray(questions)) {
           await client.query('DELETE FROM questions WHERE exam_id = $1', [id]);
-          for (const q of questions) {
+          for (let qIdx = 0; qIdx < questions.length; qIdx++) {
+            const q = questions[qIdx];
             await client.query(`
-              INSERT INTO questions (id, exam_id, question_text, type, options, correct_answer, data)
-              VALUES ($1, $2, $3, $4, $5, $6, $7)
+              INSERT INTO questions (id, exam_id, question_text, type, options, correct_answer, data, sort_order)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             `, [
               String(q.id),
               id,
@@ -131,6 +149,21 @@ export default async function handler(req, res) {
               q.type || 'single',
               JSON.stringify(q.options || []),
               JSON.stringify(q.correctAnswer ?? null),
+              JSON.stringify({
+                parts: q.parts || null,
+                categories: q.categories || null,
+                items: q.items || null,
+                sentences: q.sentences || null,
+                draggableItems: q.draggableItems || null,
+                blanks: q.blanks || null,
+                sampleAnswer: q.sampleAnswer || null,
+                criteria: q.criteria || q.rubric || null,
+                maxScore: q.maxScore || null,
+                explanation: q.explanation || null
+              }),
+              qIdx
+            ]);
+          }
               JSON.stringify({
                 parts: q.parts || null,
                 categories: q.categories || null,
@@ -175,7 +208,7 @@ export default async function handler(req, res) {
       }
 
       const exam = examRes.rows[0];
-      const questionsRes = await pool.query('SELECT * FROM questions WHERE exam_id = $1 ORDER BY id ASC', [id]);
+      const questionsRes = await pool.query('SELECT * FROM questions WHERE exam_id = $1 ORDER BY COALESCE(sort_order, 0) ASC, created_at ASC', [id]);
 
       const questions = questionsRes.rows.map(q => {
         const extraData = q.data || {};

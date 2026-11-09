@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Play, 
-  Edit3, 
+  Edit3,
+  GripVertical,
   Copy, 
   CheckCircle2, 
   Radio, 
@@ -26,6 +27,66 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
   const [isFullEditMode, setIsFullEditMode] = useState(false); // Mở trang chỉnh sửa toàn diện (giống Thêm tài nguyên)
   const [showAddModal, setShowAddModal] = useState(false);
   const [copiedSuccess, setCopiedSuccess] = useState(false);
+
+  // Quản lý kéo thả sắp xếp lại thứ tự câu hỏi tại trang Chi tiết
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
+  const [reorderToast, setReorderToast] = useState(null);
+
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    try {
+      e.dataTransfer.setData('text/plain', index.toString());
+    } catch {}
+  };
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverIndex !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDrop = async (e, targetIndex) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === targetIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    const updatedQuestions = [...questions];
+    const [movedQuestion] = updatedQuestions.splice(draggedIndex, 1);
+    updatedQuestions.splice(targetIndex, 0, movedQuestion);
+
+    const fromNum = draggedIndex + 1;
+    const toNum = targetIndex + 1;
+
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+
+    // Cập nhật ngay lập tức vào state cha và Backend Neon
+    if (onUpdateExam) {
+      await onUpdateExam({
+        ...exam,
+        questions: updatedQuestions,
+        totalQuestions: updatedQuestions.length
+      });
+    }
+
+    // Popup thông báo
+    setReorderToast({
+      message: `Đã chuyển Câu ${fromNum} sang vị trí Câu ${toNum} và lưu thành công!`
+    });
+    setTimeout(() => setReorderToast(null), 3200);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
 
   // Chức năng đổi tên đề thi trực tiếp
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -406,16 +467,36 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
 
           <div className="space-y-6">
             {questions.map((q, idx) => {
+              const isDragging = draggedIndex === idx;
+              const isOver = dragOverIndex === idx && draggedIndex !== idx;
+
               return (
                 <div 
-                  key={q.id}
-                  className="bg-white border border-slate-200 rounded-2xl p-5 hover:border-slate-300 transition-all shadow-2xs group relative"
+                  key={q.id || idx}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, idx)}
+                  onDragOver={(e) => handleDragOver(e, idx)}
+                  onDrop={(e) => handleDrop(e, idx)}
+                  onDragEnd={handleDragEnd}
+                  className={`rounded-2xl p-5 transition-all shadow-2xs group relative border ${
+                    isDragging
+                      ? 'opacity-40 scale-[0.98] border-dashed border-[#d82a7a] bg-pink-50/50'
+                      : isOver
+                        ? 'border-2 border-[#d82a7a] bg-pink-50/30 shadow-md transform translate-y-1'
+                        : 'bg-white border-slate-200 hover:border-[#d82a7a]/60 hover:shadow-xs'
+                  } cursor-grab active:cursor-grabbing`}
+                  title="Nhấn giữ và kéo để đổi thứ tự câu hỏi"
                 >
                   {/* Top Bar câu hỏi: STT. NHIỀU LỰA CHỌN • 30 giây • 1 điểm + CỤM NÚT XEM TRƯỚC / CHỈNH SỬA / XÓA */}
                   <div className="flex items-center justify-between text-xs text-slate-400 mb-3">
-                    <span className="font-semibold uppercase tracking-wider text-slate-500">
-                      {idx + 1}. {q.type === 'multiple' ? 'NHIỀU LỰA CHỌN' : q.type === 'true_false' ? 'ĐÚNG / SAI' : 'NHIỀU LỰA CHỌN'} • 30 giây • 1 điểm
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <div className="text-slate-400 group-hover:text-[#d82a7a] cursor-grab active:cursor-grabbing p-0.5 hover:bg-slate-100 rounded" title="Kéo thả để sắp xếp">
+                        <GripVertical className="w-4 h-4" />
+                      </div>
+                      <span className="font-semibold uppercase tracking-wider text-slate-500">
+                        {idx + 1}. {q.type === 'multiple' ? 'NHIỀU LỰA CHỌN' : q.type === 'true_false' ? 'ĐÚNG / SAI' : 'NHIỀU LỰA CHỌN'} • 30 giây • 1 điểm
+                      </span>
+                    </div>
 
                     {/* Cụm nút hành động bên phải từng câu: Chỉnh sửa và Xóa (Bỏ nút Xem trước thừa) */}
                     <div className="flex items-center gap-3">
@@ -606,6 +687,26 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
           </div>
         </div>
       )}
+
+      {/* POPUP THÔNG BÁO HOÀN TẤT THAY ĐỔI THỨ TỰ CÂU HỎI */}
+      {reorderToast && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 bg-slate-900/95 text-white text-xs font-semibold rounded-2xl shadow-2xl border border-slate-700 backdrop-blur-md animate-in slide-in-from-bottom-5 duration-200">
+          <div className="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
+            <CheckCircle2 className="w-4 h-4" />
+          </div>
+          <div className="flex-1">
+            <p className="font-bold text-white text-xs">{reorderToast.message}</p>
+            <p className="text-[10.5px] text-slate-400 mt-0.5">Thứ tự các câu hỏi đã được lưu tự động vào CSDL.</p>
+          </div>
+          <button 
+            onClick={() => setReorderToast(null)} 
+            className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
     </div>
   );
 }

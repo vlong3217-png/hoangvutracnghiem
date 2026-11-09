@@ -51,7 +51,8 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
   // Quản lý kéo thả sắp xếp lại thứ tự câu hỏi
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
-  const [reorderToast, setReorderToast] = useState(null); // { message: string, visible: boolean }
+  const [reorderToast, setReorderToast] = useState(null);
+  const [isSaving, setIsSaving] = useState(false); // { message: string, visible: boolean }
 
   // Xử lý khi bắt đầu kéo 1 câu hỏi
   const handleDragStart = (e, index) => {
@@ -90,9 +91,28 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
     setDraggedIndex(null);
     setDragOverIndex(null);
 
+    // Tự động đồng bộ ngay vào CSDL và hệ thống
+    if (onSaveExam) {
+      const autoSavedExam = {
+        ...initialExam,
+        id: initialExam?.id || `exam-${Date.now()}`,
+        title: examTitle.trim() || 'Bài Quiz không có tiêu đề',
+        subject: subject || 'Khoa học',
+        level: level || 'Đại học',
+        difficulty: level || 'Đại học',
+        duration: Number(duration) || 30,
+        durationMinutes: Number(duration) || 30,
+        shuffleQuestions: Boolean(shuffleQuestions),
+        shuffleAnswers: Boolean(shuffleAnswers),
+        totalQuestions: updatedQuestions.length,
+        questions: updatedQuestions
+      };
+      onSaveExam(autoSavedExam).catch(err => console.warn('Lỗi lưu ngầm:', err));
+    }
+
     // Bật popup thông báo thành công
     setReorderToast({
-      message: `Đã chuyển Câu ${fromNum} sang vị trí Câu ${toNum} thành công!`,
+      message: `Đã chuyển Câu ${fromNum} sang vị trí Câu ${toNum} và lưu thành công!`,
       from: fromNum,
       to: toNum
     });
@@ -499,9 +519,40 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
       questions
     };
 
-    if (onSaveExam) {
+    try {
+      setIsSaving(true);
+      if (onSaveExam) {
+        await onSaveExam(savedExam);
+      }
+      alert('🎉 Đã lưu bài thi và cập nhật toàn bộ thứ tự câu hỏi thành công!');
+      if (onBack) onBack();
+    } catch (err) {
+      alert('Lỗi lưu bài thi: ' + err.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Khi bấm nút quay lại ArrowLeft -> cũng lưu lại đề thi nếu đã có câu hỏi
+  const handleBackWithSave = async () => {
+    if (onSaveExam && questions.length > 0) {
+      const savedExam = {
+        ...initialExam,
+        id: initialExam?.id || `exam-${Date.now()}`,
+        title: examTitle.trim() || 'Bài Quiz không có tiêu đề',
+        subject: subject || 'Khoa học',
+        level: level || 'Đại học',
+        difficulty: level || 'Đại học',
+        duration: Number(duration) || 30,
+        durationMinutes: Number(duration) || 30,
+        shuffleQuestions: Boolean(shuffleQuestions),
+        shuffleAnswers: Boolean(shuffleAnswers),
+        totalQuestions: questions.length,
+        questions
+      };
       await onSaveExam(savedExam);
     }
+    if (onBack) onBack();
   };
 
   return (
@@ -511,7 +562,7 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
         <div className="flex items-center gap-3">
           {/* Nút quay lại bo tròn viền xám mỏng */}
           <button 
-            onClick={onBack}
+            onClick={handleBackWithSave}
             className="w-8 h-8 rounded-lg border border-slate-200 hover:border-slate-300 bg-white flex items-center justify-center text-slate-600 hover:text-slate-900 transition-colors shadow-2xs"
             title="Quay lại danh sách"
           >
@@ -545,7 +596,7 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
             className="flex items-center gap-1.5 px-4 py-1.5 bg-[#d82a7a] hover:bg-[#c2226b] text-white text-xs font-bold rounded-lg shadow-xs transition-colors"
           >
             <FileText className="w-3.5 h-3.5" />
-            <span>Xuất bản</span>
+            <span>{isSaving ? "Đang lưu..." : initialExam ? "Lưu thay đổi" : "Xuất bản"}</span>
           </button>
         </div>
       </header>
