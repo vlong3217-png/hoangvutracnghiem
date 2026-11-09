@@ -125,7 +125,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
     setAnsweredState(null);
     setMultiSelectedOpts(Array.isArray(selectedAnswers[currentQ.id]) ? selectedAnswers[currentQ.id] : []);
 
-    if (currentQ.type === 'true_false_multi') {
+    if (currentQ.type === 'true_false_multi' || currentQ.type === 'true_false') {
       setActivePartId(currentQ.parts?.[0]?.id || 'A');
       setMultiTfAnswers(selectedAnswers[currentQ.id] || {});
     } else if (currentQ.type === 'categorize') {
@@ -199,7 +199,12 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
     const partObj = (currentQ.parts || []).find(p => p.id === partId);
     if (!partObj) return;
 
-    const isPartCorrect = partObj.correct === boolValue;
+    // Đồng bộ chính xác với QuestionEditor và CreateResourceModal: part.isCorrect (hoặc fallback part.correct)
+    const expectedBool = partObj.isCorrect !== undefined
+      ? Boolean(partObj.isCorrect)
+      : (partObj.correct !== undefined ? Boolean(partObj.correct) : true);
+
+    const isPartCorrect = expectedBool === Boolean(boolValue);
 
     const updated = {
       ...multiTfAnswers,
@@ -617,7 +622,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
   const hasAnsweredCurrent = Boolean(
     answeredState ||
     selectedAnswers[currentQ.id] ||
-    (currentQ.type === 'true_false_multi' && Object.keys(multiTfAnswers).length >= (currentQ.parts || []).length) ||
+    ((currentQ.type === 'true_false_multi' || currentQ.type === 'true_false') && Object.keys(multiTfAnswers).length >= (currentQ.parts || []).length) ||
     (currentQ.type === 'categorize' && unassignedItems.length === 0) ||
     (currentQ.type === 'drag_drop' && Object.keys(sentenceSlots).length >= (currentQ.sentences || []).length) ||
     (currentQ.type === 'essay' && essayAnswer.trim().length > 0) ||
@@ -639,7 +644,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
           </div>
 
           <span className="flex items-center gap-1 px-2 py-0.5 sm:px-3 sm:py-1 bg-teal-500 text-slate-900 font-bold text-[11px] sm:text-xs rounded-lg shadow-sm">
-            {currentQ.type === 'true_false_multi'
+            {(currentQ.type === 'true_false_multi' || currentQ.type === 'true_false')
               ? 'Đúng / Sai'
               : currentQ.type === 'categorize'
                 ? 'Phân loại'
@@ -712,37 +717,22 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
       >
 
         {/* ============================================================== */}
-        {/* TRƯỜNG HỢP A: DẠNG ĐÚNG/SAI NHIỀU PHẦN (RỘNG RÃI TOÀN MÀN HÌNH) */}
+        {/* TRƯỜNG HỢP A: DẠNG ĐÚNG/SAI NHIỀU PHẦN (RỘNG RÃI TOÀN MÀN HÌNH, TỐI ƯU CẢ MOBILE & PC) */}
         {/* ============================================================== */}
-        {currentQ.type === 'true_false_multi' && (
-          <div className="w-full max-w-7xl px-2 sm:px-6 flex gap-5 h-full max-h-[84vh]">
+        {(currentQ.type === 'true_false_multi' || currentQ.type === 'true_false') && (
+          <div className="w-full max-w-7xl px-2 sm:px-6 flex flex-col sm:flex-row gap-3 sm:gap-5 h-full max-h-[84vh]">
 
-            {/* CỘT SUB-SIDEBAR BÊN TRÁI: DÃY NÚT A, B, C, D VUÔNG */}
-            <div className="w-14 flex flex-col gap-2.5 shrink-0">
+            {/* DÃY NÚT A, B, C, D: Nằm ngang ở trên khi xem Mobile, nằm dọc cột trái khi xem Máy tính */}
+            <div className="flex sm:flex-col gap-2 shrink-0 justify-center sm:justify-start items-center">
               {(currentQ.parts || []).map((part) => {
                 const isActive = activePartId === part.id;
                 const isAnswered = multiTfAnswers[part.id] !== undefined;
-
-                // Kiểm tra xem câu hiện tại đã hoàn thành hay chưa
-                const hasAnsweredCurrent = Boolean(
-                  answeredState ||
-                  selectedAnswers[currentQ.id] ||
-                  (currentQ.type === 'true_false_multi' && Object.keys(multiTfAnswers).length >= (currentQ.parts || []).length) ||
-                  (currentQ.type === 'categorize' && unassignedItems.length === 0) ||
-                  (currentQ.type === 'drag_drop' && Object.keys(sentenceSlots).length >= (currentQ.sentences || []).length) ||
-                  (currentQ.type === 'essay' && essayAnswer.trim().length > 0) ||
-                  ((currentQ.type === 'short_answer' || currentQ.type === 'fill_blank') && (
-                    currentQ.blanks
-                      ? currentQ.blanks.every(b => (clozeAnswers[b.id] || '').trim().length > 0)
-                      : shortInputText.trim().length > 0
-                  ))
-                );
 
                 return (
                   <button
                     key={part.id}
                     onClick={() => setActivePartId(part.id)}
-                    className={`w-12 h-12 rounded-xl font-black text-base flex items-center justify-center border-2 transition-all cursor-pointer ${isActive
+                    className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl font-black text-sm sm:text-base flex items-center justify-center border-2 transition-all cursor-pointer ${isActive
                         ? 'bg-white text-slate-900 border-white shadow-xl ring-4 ring-white/40 scale-105'
                         : isAnswered
                           ? 'bg-[#43143c] text-white border-white/40 hover:border-white'
@@ -754,65 +744,65 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
                 );
               })}
 
-              {/* Nút mũi tên cuộn lên */}
+              {/* Nút mũi tên cuộn lên (chỉ hiện trên màn hình desktop) */}
               <button
                 onClick={() => setActivePartId((currentQ.parts || [])[0]?.id || 'A')}
                 title="Lên phần đầu tiên"
-                className="w-12 h-12 mt-auto rounded-xl bg-[#240520] hover:bg-[#3d0f36] border border-white/15 flex items-center justify-center text-slate-300 cursor-pointer"
+                className="hidden sm:flex w-12 h-12 mt-auto rounded-xl bg-[#240520] hover:bg-[#3d0f36] border border-white/15 items-center justify-center text-slate-300 cursor-pointer"
               >
                 <ArrowUp className="w-5 h-5" />
               </button>
             </div>
 
-            {/* KHU VỰC NỘI DUNG CHÍNH BÊN PHẢI (MỞ RỘNG) */}
-            <div className="flex-1 flex flex-col justify-between gap-5 overflow-y-auto pr-1">
+            {/* KHU VỰC NỘI DUNG CHÍNH (MỞ RỘNG TOÀN DIỆN) */}
+            <div className="flex-1 flex flex-col justify-between gap-3 sm:gap-5 overflow-y-auto pr-1">
 
               {/* Box 1: ĐỀ BÀI CÂU HỎI CHÍNH Ở TRÊN (TRONG SUỐT MỜ NHẸ) */}
-              <div className="bg-black/35 backdrop-blur-md border border-white/15 rounded-3xl p-6 sm:p-7 text-center shadow-2xl relative shrink-0">
-                <span className="text-xs text-slate-400 block font-mono mb-1.5">
+              <div className="bg-black/35 backdrop-blur-md border border-white/15 rounded-2xl sm:rounded-3xl p-4 sm:p-7 text-center shadow-2xl relative shrink-0">
+                <span className="text-[11px] sm:text-xs text-slate-400 block font-mono mb-1">
                   {currentIdx + 1}/{questions.length}
                 </span>
-                <h2 className="text-base sm:text-xl md:text-2xl font-normal text-white leading-relaxed">
+                <h2 className="text-sm sm:text-xl md:text-2xl font-normal text-white leading-relaxed">
                   {currentQ.question}
                 </h2>
               </div>
 
               {/* Pill nhỏ ngăn cách: PHẦN A / PHẦN B / PHẦN C / PHẦN D */}
-              <div className="flex justify-center -my-2 relative z-10">
-                <span className="px-5 py-1.5 rounded-full bg-[#4a1240]/80 backdrop-blur-xs border border-white/20 text-xs sm:text-sm font-medium text-slate-100 uppercase tracking-widest shadow-md">
+              <div className="flex justify-center -my-1 sm:-my-2 relative z-10">
+                <span className="px-4 py-1 sm:px-5 sm:py-1.5 rounded-full bg-[#4a1240]/80 backdrop-blur-xs border border-white/20 text-xs sm:text-sm font-medium text-slate-100 uppercase tracking-widest shadow-md">
                   {activePartObj?.label || `PHẦN ${activePartId}`}
                 </span>
               </div>
 
-              {/* Box 2: NỘI DUNG CÂU PHÁT BIỂU CỤ THỂ CỦA PHẦN ĐANG CHỌN (TRONG SUỐT MỜ NHẸ) */}
-              <div className="bg-black/35 backdrop-blur-md border border-white/15 rounded-3xl p-8 sm:p-10 text-center shadow-2xl flex items-center justify-center min-h-[160px] flex-1">
-                <p className="text-lg sm:text-2xl md:text-3xl font-normal text-white leading-relaxed max-w-4xl">
+              {/* Box 2: NỘI DUNG CÂU PHÁT BIỂU CỤ THỂ CỦA PHẦN ĐANG CHỌN */}
+              <div className="bg-black/35 backdrop-blur-md border border-white/15 rounded-2xl sm:rounded-3xl p-5 sm:p-10 text-center shadow-2xl flex items-center justify-center min-h-[100px] sm:min-h-[160px] flex-1">
+                <p className="text-base sm:text-2xl md:text-3xl font-normal text-white leading-relaxed max-w-4xl">
                   {activePartObj?.text}
                 </p>
               </div>
 
               {/* Box 3: 2 NÚT ĐÁP ÁN LỚN: [ĐÚNG] VÀ [SAI] MỞ RỘNG TOÀN DIỆN */}
-              <div className="grid grid-cols-2 gap-5 shrink-0">
+              <div className="grid grid-cols-2 gap-3 sm:gap-5 shrink-0">
                 <button
                   onClick={() => handleSelectTrueFalsePart(activePartId, true)}
-                  className={`h-24 sm:h-28 md:h-32 rounded-3xl text-white font-black text-2xl sm:text-3xl shadow-2xl border-2 transition-all active:scale-[0.98] flex items-center justify-center gap-3 cursor-pointer ${multiTfAnswers[activePartId] === true
+                  className={`h-16 sm:h-24 md:h-28 rounded-2xl sm:rounded-3xl text-white font-black text-xl sm:text-3xl shadow-2xl border-2 transition-all active:scale-[0.98] flex items-center justify-center gap-2 sm:gap-3 cursor-pointer ${multiTfAnswers[activePartId] === true
                       ? 'bg-[#9cb800] border-white ring-4 ring-white/50'
                       : 'bg-[#9cb800] hover:bg-[#8ca500] border-[#819900]'
                     }`}
                 >
                   <span>ĐÚNG</span>
-                  {multiTfAnswers[activePartId] === true && <Check className="w-8 h-8 stroke-[3]" />}
+                  {multiTfAnswers[activePartId] === true && <Check className="w-6 h-6 sm:w-8 sm:h-8 stroke-[3]" />}
                 </button>
 
                 <button
                   onClick={() => handleSelectTrueFalsePart(activePartId, false)}
-                  className={`h-24 sm:h-28 md:h-32 rounded-3xl text-white font-black text-2xl sm:text-3xl shadow-2xl border-2 transition-all active:scale-[0.98] flex items-center justify-center gap-3 cursor-pointer ${multiTfAnswers[activePartId] === false
+                  className={`h-16 sm:h-24 md:h-28 rounded-2xl sm:rounded-3xl text-white font-black text-xl sm:text-3xl shadow-2xl border-2 transition-all active:scale-[0.98] flex items-center justify-center gap-2 sm:gap-3 cursor-pointer ${multiTfAnswers[activePartId] === false
                       ? 'bg-[#9b51e0] border-white ring-4 ring-white/50'
                       : 'bg-[#9b51e0] hover:bg-[#8c40d1] border-[#7d32c3]'
                     }`}
                 >
                   <span>SAI</span>
-                  {multiTfAnswers[activePartId] === false && <Check className="w-8 h-8 stroke-[3]" />}
+                  {multiTfAnswers[activePartId] === false && <Check className="w-6 h-6 sm:w-8 sm:h-8 stroke-[3]" />}
                 </button>
               </div>
 

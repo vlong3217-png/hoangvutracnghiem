@@ -32,11 +32,14 @@ export default function ExamResult({ exam, result, onRetry, onGoHome }) {
       const correctList = [...(q.correctAnswer || [])].sort();
       const userList = Array.isArray(userAns) ? [...userAns].sort() : [];
       isCorrect = JSON.stringify(correctList) === JSON.stringify(userList);
-    } else if (q.type === 'true_false_multi') {
+    } else if (q.type === 'true_false_multi' || q.type === 'true_false') {
       const subAns = userAns || {};
       const parts = q.parts || [];
-      const correctParts = parts.filter(p => subAns[p.id] === p.correct);
-      isCorrect = correctParts.length === parts.length;
+      const correctParts = parts.filter(p => {
+        const expected = p.isCorrect !== undefined ? Boolean(p.isCorrect) : (p.correct !== undefined ? Boolean(p.correct) : true);
+        return Boolean(subAns[p.id]) === expected;
+      });
+      isCorrect = parts.length > 0 && correctParts.length === parts.length;
     } else if (q.type === 'short_answer' || q.type === 'fill_blank') {
       if (q.blanks && q.blanks.length > 0) {
         const clozeAns = typeof userAns === 'object' ? (userAns || {}) : {};
@@ -329,6 +332,40 @@ export default function ExamResult({ exam, result, onRetry, onGoHome }) {
                                       {isCorrectChoice && <Check className="w-2.5 h-2.5 text-white stroke-[3]" />}
                                     </div>
                                     <span>{opt.text}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (q.type === 'true_false_multi' || q.type === 'true_false') && q.parts ? (
+                            <div className="space-y-1.5 pl-1">
+                              {q.parts.map(part => {
+                                const userPick = (q.userAns || {})[part.id];
+                                const expected = part.isCorrect !== undefined ? Boolean(part.isCorrect) : Boolean(part.correct);
+                                const isPartRight = userPick !== undefined && Boolean(userPick) === expected;
+
+                                return (
+                                  <div 
+                                    key={part.id}
+                                    className={`flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs font-semibold rounded-lg p-2 border ${
+                                      isPartRight ? 'border-emerald-200 bg-emerald-50/70 text-emerald-900' : 'border-rose-200 bg-rose-50/70 text-rose-900'
+                                    }`}
+                                  >
+                                    <div className="flex items-start gap-2">
+                                      <span className="font-bold shrink-0">{part.id}.</span>
+                                      <span>{part.text}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-[11px] shrink-0 font-bold self-end sm:self-auto">
+                                      <span className={userPick === undefined ? 'text-slate-500' : isPartRight ? 'text-emerald-700' : 'text-rose-600'}>
+                                        Bạn: {userPick === true ? 'ĐÚNG' : userPick === false ? 'SAI' : 'Chưa chọn'}
+                                      </span>
+                                      <span className="text-slate-400">|</span>
+                                      <span className="text-emerald-700">Đ.Án: {expected ? 'ĐÚNG' : 'SAI'}</span>
+                                      {isPartRight ? (
+                                        <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[3]" />
+                                      ) : (
+                                        <X className="w-3.5 h-3.5 text-rose-600 stroke-[3]" />
+                                      )}
+                                    </div>
                                   </div>
                                 );
                               })}
