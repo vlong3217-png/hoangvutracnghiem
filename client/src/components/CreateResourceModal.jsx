@@ -403,10 +403,26 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
     return (
       <QuestionEditor
         question={editingQuestion}
-        onSave={(updatedQ) => {
+        onSave={async (updatedQ) => {
           const updated = questions.map(q => q.id === updatedQ.id ? updatedQ : q);
           setQuestions(updated);
           setEditingQuestion(null);
+          if (onSaveExam && initialExam?.id) {
+            const autoSavedExam = {
+              ...initialExam,
+              title: examTitle.trim() || 'Bài Quiz không có tiêu đề',
+              subject,
+              level,
+              difficulty: level,
+              duration: Number(duration) || 30,
+              durationMinutes: Number(duration) || 30,
+              shuffleQuestions: Boolean(shuffleQuestions),
+              shuffleAnswers: Boolean(shuffleAnswers),
+              totalQuestions: updated.length,
+              questions: updated
+            };
+            await onSaveExam(autoSavedExam).catch(err => console.warn('Lỗi lưu ngầm:', err));
+          }
         }}
         onCancel={() => setEditingQuestion(null)}
       />
@@ -640,10 +656,20 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
 
           <button 
             onClick={handlePublish}
-            className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 bg-[#d82a7a] hover:bg-[#c2226b] text-white text-xs font-bold rounded-lg shadow-xs transition-colors"
+            disabled={isSaving}
+            className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 bg-[#d82a7a] hover:bg-[#c2226b] disabled:opacity-75 text-white text-xs font-bold rounded-lg shadow-xs transition-colors cursor-pointer"
           >
-            <FileText className="w-3.5 h-3.5" />
-            <span>{isSaving ? "Đang lưu..." : initialExam ? "Lưu" : "Xuất bản"}</span>
+            {isSaving ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Đang lưu...</span>
+              </>
+            ) : (
+              <>
+                <FileText className="w-3.5 h-3.5" />
+                <span>{initialExam ? "Lưu" : "Xuất bản"}</span>
+              </>
+            )}
           </button>
         </div>
       </header>

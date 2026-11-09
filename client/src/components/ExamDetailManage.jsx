@@ -17,7 +17,8 @@ import {
   Settings,
   Shuffle,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  Loader2
 } from 'lucide-react';
 import QuestionEditor from './QuestionEditor';
 import CreateResourceModal from './CreateResourceModal';
@@ -49,6 +50,7 @@ const getQuestionTypeName = (type) => {
 export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExam, onAddExam }) {
   const [internalExam, setInternalExam] = useState(exam);
   const [isLoadingDetail, setIsLoadingDetail] = useState(!exam.questions || exam.questions.length === 0);
+  const [isProcessingAction, setIsProcessingAction] = useState(null); // 'Đang tải câu hỏi...', 'Đang lưu câu hỏi...', 'Đang xóa câu hỏi...'
 
   useEffect(() => {
     if (!exam.questions || exam.questions.length === 0) {
@@ -57,6 +59,8 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
         if (full && full.questions) {
           setInternalExam(full);
         }
+      }).catch(err => {
+        console.warn('Lỗi tải chi tiết đề thi:', err);
       }).finally(() => {
         setIsLoadingDetail(false);
       });
@@ -112,12 +116,22 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
     setDragOverIndex(null);
 
     // Cập nhật ngay lập tức vào state cha và Backend Neon
-    if (onUpdateExam) {
-      await onUpdateExam({
-        ...exam,
+    setIsProcessingAction('Đang lưu thứ tự câu hỏi...');
+    try {
+      setInternalExam(prev => ({
+        ...prev,
         questions: updatedQuestions,
         totalQuestions: updatedQuestions.length
-      });
+      }));
+      if (onUpdateExam) {
+        await onUpdateExam({
+          ...exam,
+          questions: updatedQuestions,
+          totalQuestions: updatedQuestions.length
+        });
+      }
+    } finally {
+      setIsProcessingAction(null);
     }
 
     // Popup thông báo
@@ -144,12 +158,22 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
     const toNum = toIndex + 1;
 
     // Cập nhật ngay lập tức vào state cha và Backend Neon
-    if (onUpdateExam) {
-      await onUpdateExam({
-        ...exam,
+    setIsProcessingAction('Đang lưu thứ tự câu hỏi...');
+    try {
+      setInternalExam(prev => ({
+        ...prev,
         questions: updatedQuestions,
         totalQuestions: updatedQuestions.length
-      });
+      }));
+      if (onUpdateExam) {
+        await onUpdateExam({
+          ...exam,
+          questions: updatedQuestions,
+          totalQuestions: updatedQuestions.length
+        });
+      }
+    } finally {
+      setIsProcessingAction(null);
     }
 
     // Popup thông báo
@@ -180,23 +204,28 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
     setDetailShuffleAnswers(exam.shuffleAnswers ?? false);
   }, [exam]);
 
-  const handleSaveSettings = () => {
-    if (onUpdateExam) {
-      onUpdateExam({
-        ...exam,
-        subject: detailSubject,
-        level: detailLevel,
-        difficulty: detailLevel,
-        duration: Number(detailDuration) || 30,
-        durationMinutes: Number(detailDuration) || 30,
-        shuffleQuestions: detailShuffleQuestions,
-        shuffleAnswers: detailShuffleAnswers
-      });
+  const handleSaveSettings = async () => {
+    setIsProcessingAction('Đang lưu cài đặt bài thi...');
+    try {
+      if (onUpdateExam) {
+        await onUpdateExam({
+          ...exam,
+          subject: detailSubject,
+          level: detailLevel,
+          difficulty: detailLevel,
+          duration: Number(detailDuration) || 30,
+          durationMinutes: Number(detailDuration) || 30,
+          shuffleQuestions: detailShuffleQuestions,
+          shuffleAnswers: detailShuffleAnswers
+        });
+      }
+    } finally {
+      setIsProcessingAction(null);
+      setShowSettingsModal(false);
     }
-    setShowSettingsModal(false);
   };
 
-  const handleSaveTitle = () => {
+  const handleSaveTitle = async () => {
     if (!tempTitle.trim()) {
       setTempTitle(exam.title || '');
       setIsEditingTitle(false);
@@ -207,8 +236,14 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
         ...exam,
         title: tempTitle.trim()
       };
-      if (onUpdateExam) {
-        onUpdateExam(updated);
+      setIsProcessingAction('Đang cập nhật tên đề thi...');
+      try {
+        setInternalExam(prev => ({ ...prev, title: tempTitle.trim() }));
+        if (onUpdateExam) {
+          await onUpdateExam(updated);
+        }
+      } finally {
+        setIsProcessingAction(null);
       }
     }
     setIsEditingTitle(false);
@@ -246,6 +281,21 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
   const totalQuestions = questions.length;
   const totalPoints = totalQuestions;
 
+  // HIỂN THỊ MÀN HÌNH "ĐANG TẢI CÂU HỎI..." KHI MỞ ĐỀ THI
+  if (isLoadingDetail) {
+    return (
+      <div className="flex-1 bg-white min-h-[calc(100vh-64px)] flex flex-col items-center justify-center p-8 select-none">
+        <div className="flex flex-col items-center gap-3.5 p-8 rounded-2xl border border-slate-100 bg-slate-50/50 shadow-2xs max-w-sm text-center">
+          <div className="w-10 h-10 rounded-full border-4 border-pink-100 border-t-[#d82a7a] animate-spin"></div>
+          <div>
+            <h4 className="text-sm font-bold text-slate-800">Đang tải câu hỏi...</h4>
+            <p className="text-xs text-slate-400 mt-1">Đang đồng bộ dữ liệu đề thi từ CSDL đám mây</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // NẾU BẤM VÀO "CHỈNH SỬA" -> MỞ TRANG TOÀN DIỆN (GIỐNG THÊM TÀI NGUYÊN KÈM CÁC DẠNG CÂU HỎI VÀ CÂU HỎI ĐÃ CÓ)
   if (isFullEditMode) {
     return (
@@ -253,11 +303,16 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
         initialExam={internalExam}
         onBack={() => setIsFullEditMode(false)}
         onSaveExam={async (updatedExam) => {
-          setInternalExam(updatedExam);
-          if (onUpdateExam) {
-            await onUpdateExam(updatedExam);
+          setIsProcessingAction('Đang lưu thay đổi...');
+          try {
+            setInternalExam(updatedExam);
+            if (onUpdateExam) {
+              await onUpdateExam(updatedExam);
+            }
+          } finally {
+            setIsProcessingAction(null);
+            setIsFullEditMode(false);
           }
-          setIsFullEditMode(false);
         }}
       />
     );
@@ -268,13 +323,23 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
     return (
       <QuestionEditor
         question={editingQuestion}
-        onSave={(updatedQ) => {
-          const updatedQuestions = questions.map(q => q.id === updatedQ.id ? updatedQ : q);
-          onUpdateExam({
-            ...exam,
-            questions: updatedQuestions
-          });
-          setEditingQuestion(null);
+        onSave={async (updatedQ) => {
+          setIsProcessingAction('Đang lưu câu hỏi...');
+          try {
+            const updatedQuestions = questions.map(q => q.id === updatedQ.id ? updatedQ : q);
+            const updatedExam = {
+              ...exam,
+              questions: updatedQuestions,
+              totalQuestions: updatedQuestions.length
+            };
+            setInternalExam(updatedExam);
+            if (onUpdateExam) {
+              await onUpdateExam(updatedExam);
+            }
+          } finally {
+            setEditingQuestion(null);
+            setIsProcessingAction(null);
+          }
         }}
         onCancel={() => setEditingQuestion(null)}
       />
@@ -285,7 +350,7 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
     setShowAnswer(prev => !prev);
   };
 
-  const handleAddQuestionSubmit = (e) => {
+  const handleAddQuestionSubmit = async (e) => {
     e.preventDefault();
     if (!newQuestionText.trim()) return;
 
@@ -304,31 +369,50 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
       totalQuestions: questions.length + 1
     };
 
-    onUpdateExam(updatedExam);
-    setShowAddModal(false);
-    setNewQuestionText('');
-    setNewOptions([
-      { id: 'A', text: '' },
-      { id: 'B', text: '' },
-      { id: 'C', text: '' },
-      { id: 'D', text: '' }
-    ]);
-    setNewCorrectAnswer('A');
-    setNewExplanation('');
+    setIsProcessingAction('Đang thêm câu hỏi...');
+    try {
+      setInternalExam(updatedExam);
+      if (onUpdateExam) {
+        await onUpdateExam(updatedExam);
+      }
+    } finally {
+      setIsProcessingAction(null);
+      setShowAddModal(false);
+      setNewQuestionText('');
+      setNewOptions([
+        { id: 'A', text: '' },
+        { id: 'B', text: '' },
+        { id: 'C', text: '' },
+        { id: 'D', text: '' }
+      ]);
+      setNewCorrectAnswer('A');
+      setNewExplanation('');
+    }
   };
 
-  const handleDeleteQuestion = (qId) => {
+  const handleDeleteQuestion = async (qId) => {
     if (questions.length <= 1) {
       alert("Đề thi cần có ít nhất 1 câu hỏi!");
       return;
     }
     if (window.confirm("Bạn có chắc chắn muốn xóa câu hỏi này?")) {
-      const updatedExam = {
-        ...exam,
-        questions: questions.filter(q => q.id !== qId),
-        totalQuestions: questions.length - 1
-      };
-      onUpdateExam(updatedExam);
+      setIsProcessingAction('Đang xóa câu hỏi...');
+      try {
+        const updatedQuestions = questions.filter(q => q.id !== qId);
+        const updatedExam = {
+          ...exam,
+          questions: updatedQuestions,
+          totalQuestions: updatedQuestions.length
+        };
+        setInternalExam(updatedExam);
+        if (onUpdateExam) {
+          await onUpdateExam(updatedExam);
+        }
+      } catch (err) {
+        alert("Lỗi khi xóa câu hỏi: " + (err.message || err));
+      } finally {
+        setIsProcessingAction(null);
+      }
     }
   };
 
@@ -853,6 +937,14 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
           >
             ✕
           </button>
+        </div>
+      )}
+
+      {/* THÔNG BÁO TRẠNG THÁI XỬ LÝ (ĐANG TẢI... / ĐANG LƯU... / ĐANG XÓA...) */}
+      {isProcessingAction && (
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-2 bg-slate-900/95 text-white text-xs font-semibold rounded-full shadow-2xl border border-slate-700/80 backdrop-blur-md animate-in fade-in slide-in-from-top-3 duration-200">
+          <Loader2 className="w-4 h-4 animate-spin text-[#d82a7a]" />
+          <span>{isProcessingAction}</span>
         </div>
       )}
 

@@ -31,6 +31,7 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
   // Đề thi đang xem chi tiết (quản lý từng câu hỏi theo ảnh mẫu)
   const [selectedExamDetail, setSelectedExamDetail] = useState(null);
   const [loadingDetailId, setLoadingDetailId] = useState(null);
+  const [deletingExamId, setDeletingExamId] = useState(null);
 
   // Khi click vào xem chi tiết đề thi: Tải đầy đủ danh sách câu hỏi từ CSDL Backend nếu chưa có
   const handleOpenExamDetail = async (exam) => {
@@ -397,7 +398,16 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
                         <h3 className="text-xs sm:text-sm font-bold text-slate-800 truncate group-hover:text-[#d82a7a] transition-colors flex items-center gap-2">
                           <span>{exam.title}</span>
                           {loadingDetailId === exam.id && (
-                            <span className="text-[10px] text-amber-600 font-normal">Đang tải...</span>
+                            <span className="inline-flex items-center gap-1 text-[11px] text-[#d82a7a] font-semibold bg-pink-50 px-2 py-0.5 rounded-full border border-pink-200">
+                              <Loader2 className="w-3 h-3 animate-spin text-[#d82a7a]" />
+                              <span>Đang tải...</span>
+                            </span>
+                          )}
+                          {deletingExamId === exam.id && (
+                            <span className="inline-flex items-center gap-1 text-[11px] text-rose-600 font-semibold bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                              <Loader2 className="w-3 h-3 animate-spin text-rose-500" />
+                              <span>Đang xóa...</span>
+                            </span>
                           )}
                         </h3>
                         <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5 flex-wrap">
@@ -465,14 +475,20 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
                               Quản lý câu hỏi
                             </button>
                             <button
-                              onClick={() => {
-                                onDeleteExam(exam.id);
+                              disabled={deletingExamId === exam.id}
+                              onClick={async () => {
                                 setOpenDropdownId(null);
+                                setDeletingExamId(exam.id);
+                                try {
+                                  await onDeleteExam(exam.id);
+                                } finally {
+                                  setDeletingExamId(null);
+                                }
                               }}
-                              className="w-full px-3.5 py-2.5 text-left hover:bg-rose-50 text-rose-600 flex items-center gap-2 cursor-pointer transition-colors border-t border-slate-100"
+                              className="w-full px-3.5 py-2.5 text-left hover:bg-rose-50 text-rose-600 disabled:opacity-50 flex items-center gap-2 cursor-pointer transition-colors border-t border-slate-100"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
-                              Xóa hoạt động
+                              <span>{deletingExamId === exam.id ? 'Đang xóa...' : 'Xóa hoạt động'}</span>
                             </button>
                           </div>
                         )}
@@ -668,6 +684,14 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {/* THÔNG BÁO XỬ LÝ (ĐANG XÓA ĐỀ THI...) */}
+      {deletingExamId && (
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-2 bg-slate-900/95 text-white text-xs font-semibold rounded-full shadow-2xl border border-slate-700/80 backdrop-blur-md animate-in fade-in slide-in-from-top-3 duration-200">
+          <Loader2 className="w-4 h-4 animate-spin text-rose-400" />
+          <span>Đang xóa đề thi...</span>
         </div>
       )}
     </div>

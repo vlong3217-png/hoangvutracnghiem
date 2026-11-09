@@ -22,7 +22,8 @@ import {
   Upload,
   Link as LinkIcon,
   X,
-  Palette
+  Palette,
+  Loader2
 } from 'lucide-react';
 
 // Danh sách các dạng câu hỏi hiện có trong hệ thống
@@ -148,6 +149,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
   const [isSymbolPickerOpen, setIsSymbolPickerOpen] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Modal thêm ảnh cho từng đáp án
   const [optionImageTargetIdx, setOptionImageTargetIdx] = useState(null);
@@ -456,46 +458,53 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
   };
 
   // Lưu câu hỏi
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!questionText.trim()) {
       alert("Vui lòng nhập nội dung câu hỏi!");
       return;
     }
 
-    const updatedQuestion = {
-      ...question,
-      question: questionText,
-      type: questionType,
-      timeLimit: Number(timeLimit) || 30,
-      points: Number(points) || 1,
-      explanation: explanation,
-      image: imageUrl || undefined,
-      video: videoUrl || undefined
-    };
+    setIsSaving(true);
+    try {
+      const updatedQuestion = {
+        ...question,
+        question: questionText,
+        type: questionType,
+        timeLimit: Number(timeLimit) || 30,
+        points: Number(points) || 1,
+        explanation: explanation,
+        image: imageUrl || undefined,
+        video: videoUrl || undefined
+      };
 
-    if (questionType === 'single') {
-      updatedQuestion.options = options;
-      updatedQuestion.correctAnswer = correctAnswers[0] || options[0]?.id || 'A';
-    } else if (questionType === 'multiple') {
-      updatedQuestion.options = options;
-      updatedQuestion.correctAnswer = correctAnswers;
-    } else if (questionType === 'true_false_multi') {
-      updatedQuestion.parts = tfParts;
-    } else if (questionType === 'short_answer') {
-      updatedQuestion.correctAnswer = shortAnswer;
-    } else if (questionType === 'essay') {
-      updatedQuestion.sampleAnswer = sampleAnswer;
-      updatedQuestion.criteria = criteria;
-      updatedQuestion.maxScore = points || 10;
-    } else if (questionType === 'categorize') {
-      updatedQuestion.categories = categories;
-      updatedQuestion.items = categoryItems;
-    } else if (questionType === 'drag_drop') {
-      updatedQuestion.sentences = sentences;
-      updatedQuestion.draggableItems = draggableItems;
+      if (questionType === 'single') {
+        updatedQuestion.options = options;
+        updatedQuestion.correctAnswer = correctAnswers[0] || options[0]?.id || 'A';
+      } else if (questionType === 'multiple') {
+        updatedQuestion.options = options;
+        updatedQuestion.correctAnswer = correctAnswers;
+      } else if (questionType === 'true_false_multi') {
+        updatedQuestion.parts = tfParts;
+      } else if (questionType === 'short_answer') {
+        updatedQuestion.correctAnswer = shortAnswer;
+      } else if (questionType === 'essay') {
+        updatedQuestion.sampleAnswer = sampleAnswer;
+        updatedQuestion.criteria = criteria;
+        updatedQuestion.maxScore = points || 10;
+      } else if (questionType === 'categorize') {
+        updatedQuestion.categories = categories;
+        updatedQuestion.items = categoryItems;
+      } else if (questionType === 'drag_drop') {
+        updatedQuestion.sentences = sentences;
+        updatedQuestion.draggableItems = draggableItems;
+      }
+
+      await onSave(updatedQuestion);
+    } catch (err) {
+      alert("Lỗi khi lưu câu hỏi: " + (err.message || err));
+    } finally {
+      setIsSaving(false);
     }
-
-    onSave(updatedQuestion);
   };
 
   // Lấy thông tin dạng câu hỏi hiện tại
@@ -682,10 +691,20 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
           {/* Nút LƯU MÀU TÍM */}
           <button
             onClick={handleSave}
-            className="px-3 sm:px-5 py-1.5 bg-[#78398e] hover:bg-[#632977] text-white text-xs font-bold rounded-lg flex items-center gap-1 sm:gap-1.5 shadow-xs transition-colors cursor-pointer shrink-0"
+            disabled={isSaving}
+            className="px-3 sm:px-5 py-1.5 bg-[#78398e] hover:bg-[#632977] disabled:opacity-75 text-white text-xs font-bold rounded-lg flex items-center gap-1 sm:gap-1.5 shadow-xs transition-colors cursor-pointer shrink-0"
           >
-            <Save className="w-3.5 h-3.5" />
-            <span>Lưu</span>
+            {isSaving ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Đang lưu...</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-3.5 h-3.5" />
+                <span>Lưu</span>
+              </>
+            )}
           </button>
         </div>
       </div>
