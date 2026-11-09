@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Mail, Asterisk, Eye, EyeOff, AlertCircle, ShieldCheck, KeyRound, ExternalLink, HelpCircle } from 'lucide-react';
 import { loginUser, registerUser } from '../services/api';
 import QuizizzLogo from './QuizizzLogo';
-
 // Biểu tượng Google chuẩn vector 4 màu chính thức
 function GoogleIcon({ className = "w-5 h-5" }) {
   return (
@@ -26,7 +25,6 @@ function GoogleIcon({ className = "w-5 h-5" }) {
     </svg>
   );
 }
-
 // Giải mã JWT credential token từ Google OAuth
 function parseJwt(token) {
   try {
@@ -43,31 +41,26 @@ function parseJwt(token) {
     return null;
   }
 }
-
 export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
   const [emailOrUser, setEmailOrUser] = useState('student@test.com');
   const [password, setPassword] = useState('123');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
   // Chế độ đăng ký tài khoản
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [name, setName] = useState('');
   const [regRole, setRegRole] = useState('student');
-
   // Quản lý Google Client ID
   const defaultClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || localStorage.getItem('QUIZIZZ_GOOGLE_CLIENT_ID') || '249147434256-tlu69jjva0l5gl7sorsh05b7rlbmembo.apps.googleusercontent.com';
   const [googleClientId, setGoogleClientId] = useState(defaultClientId);
   const [googleStatus, setGoogleStatus] = useState('');
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-
   // Xử lý khi nhận được token từ Google OAuth thật
   const handleGoogleCredentialResponse = async (response) => {
     setIsGoogleLoading(true);
     setGoogleStatus('Đang xác thực thông tin tài khoản Google...');
     setError('');
-
     const payload = parseJwt(response.credential);
     if (!payload || !payload.email) {
       setError('Không thể đọc thông tin tài khoản từ Google. Vui lòng thử lại!');
@@ -75,20 +68,15 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
       setGoogleStatus('');
       return;
     }
-
     const email = payload.email.toLowerCase().trim();
     const fullName = payload.name || 'Long Hoàng Vũ';
-
     // KIỂM TRA PHÂN QUYỀN: Chỉ cho phép Admin vlong3217@gmail.com
     if (email !== 'vlong3217@gmail.com') {
-      setError(
-        `⛔ Tài khoản Google "${payload.email}" không có quyền Quản trị viên! Đăng nhập bằng Google chỉ dành riêng cho Admin (vlong3217@gmail.com). Sinh viên vui lòng đăng nhập bằng biểu mẫu bên dưới.`
-      );
+      setError('⛔ Tài khoản này không có quyền Quản trị viên. Đăng nhập Google chỉ dành riêng cho Admin.');
       setIsGoogleLoading(false);
       setGoogleStatus('');
       return;
     }
-
     // Đăng nhập thành công với quyền Admin
     const adminUser = {
       id: "user-admin-vlong",
@@ -99,14 +87,11 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
       picture: payload.picture,
       authProvider: "google"
     };
-
     onLogin(adminUser);
   };
-
   // Khởi tạo Google Identity Services khi có googleClientId
   useEffect(() => {
     if (!googleClientId) return;
-
     const checkGsi = () => {
       if (window.google?.accounts?.id) {
         try {
@@ -115,7 +100,6 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
             callback: handleGoogleCredentialResponse,
             auto_select: false
           });
-
           // Render nút Google thật chuẩn vào container nếu có
           const btnDiv = document.getElementById('googleRealButtonContainer');
           if (btnDiv) {
@@ -136,14 +120,11 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
         setTimeout(checkGsi, 300);
       }
     };
-
     checkGsi();
   }, [googleClientId]);
-
   // Bấm nút "Đăng nhập bằng Google"
   const handleTriggerGoogleLogin = () => {
     setError('');
-
     // Dùng Google OAuth2 Token Client để luôn mở popup đăng nhập chính thức của Google
     if (window.google?.accounts?.oauth2) {
       try {
@@ -163,7 +144,7 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
                 if (userInfo && userInfo.email) {
                   const email = userInfo.email.toLowerCase().trim();
                   if (email !== 'vlong3217@gmail.com') {
-                    setError(`⛔ Tài khoản Google "${userInfo.email}" không có quyền Quản trị viên! Chỉ dành cho vlong3217@gmail.com.`);
+      setError('⛔ Tài khoản này không có quyền Quản trị viên. Đăng nhập Google chỉ dành riêng cho Admin.');
                     setIsGoogleLoading(false);
                     setGoogleStatus('');
                     return;
@@ -213,11 +194,9 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
       setError("Đang kết nối tới dịch vụ Google, vui lòng tải lại trang nếu chờ quá lâu!");
     }
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
     if (isRegisterMode) {
       if (!name.trim() || !emailOrUser.trim() || !password.trim()) {
         setError('Vui lòng điền đầy đủ các thông tin bắt buộc.');
@@ -231,12 +210,10 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
         role: regRole
       });
       setLoading(false);
-
       if (!res.success) {
         setError(res.message || 'Lỗi khi đăng ký tài khoản.');
         return;
       }
-
       onRegister({
         ...res.user,
         roleName: res.user.role === 'admin' ? 'Admin' : 'Sinh viên'
@@ -245,29 +222,24 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
       setLoading(true);
       const res = await loginUser(emailOrUser, password);
       setLoading(false);
-
       if (!res.success) {
         const found = registeredUsers.find(
           u => (u.email.toLowerCase() === emailOrUser.toLowerCase() || u.name.toLowerCase() === emailOrUser.toLowerCase()) && 
                u.password === password
         );
-
         if (!found) {
           setError(res.message || 'Email/Tên người dùng hoặc mật khẩu không chính xác!');
           return;
         }
-
         onLogin(found);
         return;
       }
-
       onLogin({
         ...res.user,
         roleName: res.user.role === 'admin' ? 'Admin' : 'Sinh viên'
       });
     }
   };
-
   return (
     <div className="min-h-screen bg-white relative flex flex-col justify-between font-sans select-none overflow-x-hidden">
       {/* 1. LOGO GÓC TRÊN BÊN TRÁI QUIZIZZ */}
@@ -277,7 +249,6 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
           Quizizz
         </span>
       </div>
-
       {/* 2. BACKGROUND CÁC CARD MINH HỌA NGHỆ THUẬT HAI BÊN */}
       <div className="hidden lg:block absolute left-4 top-1/2 -translate-y-1/2 w-64 opacity-60 pointer-events-none select-none space-y-4">
         <div className="bg-amber-50/70 border border-amber-200/60 rounded-xl p-3 shadow-2xs transform -rotate-3 scale-95">
@@ -285,7 +256,6 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
           <div className="w-32 h-1.5 bg-slate-200 rounded mb-1.5"></div>
           <div className="w-24 h-1.5 bg-slate-200 rounded"></div>
         </div>
-
         <div className="bg-purple-50/60 border border-purple-200/60 rounded-xl p-3 shadow-2xs transform rotate-2">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-7 h-7 rounded-lg bg-purple-200 flex items-center justify-center text-[10px] font-bold text-purple-700">AI</div>
@@ -295,7 +265,6 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
             <div className="w-6 h-6 rounded-full bg-purple-300"></div>
           </div>
         </div>
-
         <div className="bg-teal-50/70 border border-teal-200/60 rounded-xl p-3 shadow-2xs transform -rotate-1">
           <div className="w-20 h-2 bg-teal-200 rounded mb-2"></div>
           <div className="h-10 border border-dashed border-teal-300 rounded-lg flex items-center justify-center text-[9px] text-teal-600">
@@ -303,7 +272,6 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
           </div>
         </div>
       </div>
-
       <div className="hidden lg:block absolute right-4 top-1/2 -translate-y-1/2 w-64 opacity-60 pointer-events-none select-none space-y-4">
         <div className="bg-rose-50/70 border border-rose-200/60 rounded-xl p-3 shadow-2xs transform rotate-3">
           <div className="w-20 h-2 bg-rose-200 rounded mb-2"></div>
@@ -311,27 +279,23 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
             x² + 2xy + y²
           </div>
         </div>
-
         <div className="bg-blue-50/60 border border-blue-200/60 rounded-xl p-3 shadow-2xs transform -rotate-2">
           <div className="w-16 h-2 bg-blue-200 rounded mb-2"></div>
           <div className="h-12 bg-slate-100 rounded-lg flex items-center justify-center text-[9px] text-slate-400">
             VIDEO LESSON
           </div>
         </div>
-
         <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-2xs transform rotate-1">
           <div className="w-16 h-2 bg-slate-300 rounded mb-1"></div>
           <div className="w-28 h-1.5 bg-slate-200 rounded"></div>
         </div>
       </div>
-
       {/* 3. KHU VỰC FORM ĐĂNG NHẬP Ở TRUNG TÂM */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-14 z-10">
         <div className="w-full max-w-[430px]">
           <h1 className="text-[26px] font-bold text-center text-slate-900 mb-6 tracking-tight">
             {isRegisterMode ? 'Đăng ký tài khoản' : 'Đăng nhập Quizizz'}
           </h1>
-
           {/* Thông báo lỗi nếu có */}
           {error && (
             <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start gap-2 leading-relaxed animate-in fade-in">
@@ -339,7 +303,6 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
               <span>{error}</span>
             </div>
           )}
-
           {/* NÚT ĐĂNG NHẬP BẰNG GOOGLE THẬT (DÀNH CHO ADMIN) */}
           {!isRegisterMode && (
             <div className="mb-5 space-y-4">
@@ -358,13 +321,11 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
                   </span>
                 </button>
               </div>
-
               {googleStatus && (
                 <p className="text-[11px] text-center text-purple-700 font-semibold animate-pulse">
                   {googleStatus}
                 </p>
               )}
-
               {/* Đường phân cách */}
               <div className="flex items-center gap-3">
                 <div className="flex-1 h-px bg-slate-200"></div>
@@ -375,7 +336,6 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
               </div>
             </div>
           )}
-
           {/* HỘP GỢI Ý ĐĂNG NHẬP MẪU CHO SINH VIÊN */}
           {!isRegisterMode && (
             <div className="mb-4 p-3 bg-pink-50/50 border border-pink-200/70 rounded-xl text-xs text-slate-700 flex items-start gap-2.5 shadow-2xs">
@@ -389,7 +349,6 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
               </div>
             </div>
           )}
-
           <form onSubmit={handleSubmit} className="space-y-4">
             {isRegisterMode && (
               <div>
@@ -408,7 +367,6 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
                 </div>
               </div>
             )}
-
             {/* Input Email / Username */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5 pl-0.5">
@@ -426,7 +384,6 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
                 />
               </div>
             </div>
-
             {/* Input Password */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5 pl-0.5">
@@ -451,7 +408,6 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
                 </button>
               </div>
             </div>
-
             {isRegisterMode && (
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5 pl-0.5">
@@ -467,7 +423,6 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
                 </select>
               </div>
             )}
-
             {/* Nút đăng nhập Sinh viên */}
             <div className="pt-2">
               <button
@@ -479,7 +434,6 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
               </button>
             </div>
           </form>
-
           {/* Quên mật khẩu & Chuyển đổi đăng ký/đăng nhập */}
           <div className="mt-5 text-center space-y-2">
             {!isRegisterMode && (
@@ -491,7 +445,6 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
                 Quên mật khẩu?
               </button>
             )}
-
             <div className="text-xs text-slate-500">
               {isRegisterMode ? (
                 <span>
@@ -517,7 +470,6 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
                 </span>
               )}
             </div>
-
             {/* FOOTER BẢN QUYỀN */}
       <footer className="py-4 text-center text-xs text-slate-400">
         © 2026 Quizizz · Hệ thống thi trắc nghiệm
@@ -525,7 +477,6 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
     </div>
           </div>
         </div>
-
         {/* FOOTER BẢN QUYỀN */}
       <footer className="py-4 text-center text-xs text-slate-400">
         © 2026 Quizizz · Hệ thống thi trắc nghiệm
