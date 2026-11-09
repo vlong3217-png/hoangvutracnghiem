@@ -898,7 +898,8 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
             <div className="bg-[#230620] border-2 border-white/15 rounded-2xl sm:rounded-3xl flex flex-col overflow-hidden shadow-2xl">
               <div className="px-4 py-2.5 sm:px-5 sm:py-3 border-b border-white/10 text-xs sm:text-sm font-black text-slate-200 flex items-center justify-between">
                 <span>Mục cần phân loại ({unassignedItems.length})</span>
-                <span className="text-[11px] text-slate-400 font-normal">Chạm 1 nút để xếp nhanh, hoặc chạm mục rồi chạm cột</span>
+                <span className="text-[11px] text-slate-400 font-normal sm:hidden">Chạm 1 nút để xếp nhanh, hoặc chạm mục rồi chạm cột</span>
+                <span className="text-[11px] text-slate-400 font-normal hidden sm:inline">Kéo thả mục vào cột hoặc click để chọn</span>
               </div>
 
               <div className="p-2.5 sm:p-3.5 overflow-y-auto max-h-[220px]">
@@ -929,8 +930,8 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
                             <span className="text-xs sm:text-sm font-bold flex-1 leading-snug break-words">{item.text}</span>
                           </div>
 
-                          {/* Các nút bấm 1 chạm xếp nhanh vào nhóm */}
-                          <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-slate-100 flex-wrap">
+                          {/* Các nút bấm 1 chạm xếp nhanh vào nhóm (chỉ hiển thị trên thiết bị di động, ẩn trên máy tính) */}
+                          <div className="flex sm:hidden items-center gap-1.5 mt-2 pt-2 border-t border-slate-100 flex-wrap">
                             <span className="text-[10px] text-slate-400 font-medium">Xếp vào:</span>
                             {(currentQ.categories || []).map((cat, cIdx) => (
                               <button
