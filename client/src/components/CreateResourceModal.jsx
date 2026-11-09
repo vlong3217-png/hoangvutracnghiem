@@ -881,8 +881,8 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
                           <span className="font-bold text-slate-900 group-hover:text-[#d82a7a] text-xs sm:text-sm leading-snug transition-colors">
                             {q.question}
                           </span>
-                          <span className="text-[10px] text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded-full shrink-0">
-                            {q.type === 'multiple' ? 'Chọn nhiều' : q.type === 'true_false_multi' ? 'Đúng/Sai' : q.type === 'essay' ? 'Tự luận' : q.type === 'categorize' ? 'Phân loại' : q.type === 'drag_drop' ? 'Kéo thả' : q.type === 'short_answer' ? 'Điền từ' : 'Trắc nghiệm'}
+                          <span className="text-[10px] text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded-full shrink-0 font-medium">
+                            {q.type === 'multiple' ? 'Chọn nhiều đáp án đúng' : q.type === 'true_false_multi' || q.type === 'true_false' ? 'Đúng / Sai theo ý' : q.type === 'essay' ? 'Tự luận' : q.type === 'categorize' ? 'Phân loại vào cột' : q.type === 'drag_drop' ? 'Kéo thả khớp câu / Ghép nối' : q.type === 'short_answer' ? 'Điền từ / Trả lời ngắn' : 'Nhiều lựa chọn (1 đáp án)'}
                           </span>
                         </div>
                       </div>

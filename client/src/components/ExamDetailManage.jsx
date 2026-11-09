@@ -23,6 +23,28 @@ import QuestionEditor from './QuestionEditor';
 import CreateResourceModal from './CreateResourceModal';
 import QuizizzLogo from './QuizizzLogo';
 
+// Helper chuyển đổi tên dạng câu hỏi đồng nhất 100% với hệ thống
+const getQuestionTypeName = (type) => {
+  switch (type) {
+    case 'multiple':
+      return 'Chọn nhiều đáp án đúng';
+    case 'true_false':
+    case 'true_false_multi':
+      return 'Đúng / Sai theo ý';
+    case 'categorize':
+      return 'Phân loại vào cột';
+    case 'drag_drop':
+      return 'Kéo thả khớp câu / Ghép nối';
+    case 'short_answer':
+      return 'Điền từ / Trả lời ngắn';
+    case 'essay':
+      return 'Tự luận (Chấm điểm AI)';
+    case 'single':
+    default:
+      return 'Nhiều lựa chọn (1 đáp án)';
+  }
+};
+
 export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExam, onAddExam }) {
   const [showAnswer, setShowAnswer] = useState(true);
   const [editingQuestion, setEditingQuestion] = useState(null); // Câu hỏi đang được chỉnh sửa
@@ -467,31 +489,8 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
       {/* BODY CHÍNH: Đã bỏ bảng Hành động AI và chữ Cải thiện hoạt động của bạn, mở rộng danh sách câu hỏi toàn màn hình */}
       <div className="pt-6">
         <div className="space-y-6">
-          <div className="flex items-center justify-between text-xs text-slate-500 font-semibold pb-2">
+          <div className="flex items-center justify-between text-xs text-slate-500 font-semibold pb-2 border-b border-slate-100">
             <span>{totalQuestions} câu hỏi • {totalPoints} Điểm</span>
-            
-            <button
-              onClick={() => {
-                const newQ = {
-                  id: Date.now(),
-                  type: 'single',
-                  question: '',
-                  options: [
-                    { id: 'A', text: '' },
-                    { id: 'B', text: '' },
-                    { id: 'C', text: '' },
-                    { id: 'D', text: '' }
-                  ],
-                  correctAnswer: 'A',
-                  explanation: ''
-                };
-                setEditingQuestion(newQ);
-              }}
-              className="text-xs text-[#d82a7a] hover:text-[#b01e60] font-bold flex items-center gap-1"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Thêm câu hỏi mới
-            </button>
           </div>
 
           <div className="space-y-6">
@@ -516,7 +515,7 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
                   } cursor-grab active:cursor-grabbing`}
                   title="Nhấn giữ và kéo để đổi thứ tự câu hỏi"
                 >
-                  {/* Top Bar câu hỏi: STT. NHIỀU LỰA CHỌN • 30 giây • 1 điểm + CỤM NÚT XEM TRƯỚC / CHỈNH SỬA / XÓA */}
+                  {/* Top Bar câu hỏi: STT. TÊN DẠNG CÂU HỎI ĐỒNG BỘ • Thời gian • Điểm + CỤM NÚT SỬA / XÓA */}
                   <div className="flex items-center justify-between text-xs text-slate-400 mb-3">
                     <div className="flex items-center gap-2">
                       {/* Cầm nắm kéo thả Desktop */}
@@ -552,8 +551,8 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
                         </button>
                       </div>
 
-                      <span className="font-semibold uppercase tracking-wider text-slate-500 text-[11px] sm:text-xs">
-                        {idx + 1}. {q.type === 'multiple' ? 'NHIỀU LỰA CHỌN' : q.type === 'true_false' ? 'ĐÚNG / SAI' : 'NHIỀU LỰA CHỌN'} • 30 giây • 1 điểm
+                      <span className="font-semibold text-slate-500 text-[11px] sm:text-xs">
+                        {idx + 1}. <span className="text-slate-800 font-bold uppercase">{getQuestionTypeName(q.type)}</span> • {q.timeLimit ? (q.timeLimit >= 60 ? `${q.timeLimit / 60} PHÚT` : `${q.timeLimit} GIÂY`) : '30 GIÂY'} • {q.points || 1} ĐIỂM
                       </span>
                     </div>
 
@@ -616,6 +615,42 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
                           </div>
                         );
                       })}
+                    </div>
+                  )}
+
+                  {/* ĐÚNG / SAI THEO Ý */}
+                  {(q.type === 'true_false' || q.type === 'true_false_multi') && q.parts && (
+                    <div className="space-y-2 pt-2 text-xs sm:text-sm">
+                      {q.parts.map((part, pIdx) => (
+                        <div key={pIdx} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                          <span className="text-slate-800">{part.id || String.fromCharCode(97 + pIdx)}. {part.text}</span>
+                          {showAnswer && (
+                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                              part.isCorrect ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-rose-100 text-rose-700 border border-rose-200'
+                            }`}>
+                              {part.isCorrect ? 'ĐÚNG' : 'SAI'}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* ĐIỀN TỪ / TRẢ LỜI NGẮN */}
+                  {q.type === 'short_answer' && showAnswer && (
+                    <div className="pt-2 text-xs sm:text-sm flex items-center gap-2">
+                      <span className="text-slate-500 font-medium">Đáp án chuẩn:</span>
+                      <span className="px-3 py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold rounded-lg text-xs">
+                        {typeof q.correctAnswer === 'string' ? q.correctAnswer : JSON.stringify(q.correctAnswer)}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* TỰ LUẬN */}
+                  {q.type === 'essay' && showAnswer && (
+                    <div className="pt-2 text-xs bg-pink-50/40 p-3 rounded-xl border border-pink-100 space-y-1">
+                      {q.sampleAnswer && <div><span className="font-bold text-[#d82a7a]">Dàn ý mẫu:</span> {q.sampleAnswer}</div>}
+                      {q.criteria && <div className="text-slate-500 italic"><span className="font-semibold text-slate-700">Tiêu chí chấm:</span> {q.criteria}</div>}
                     </div>
                   )}
 
