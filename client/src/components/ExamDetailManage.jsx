@@ -654,6 +654,40 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
                     </div>
                   )}
 
+                  {/* PHÂN LOẠI VÀO CỘT */}
+                  {q.type === 'categorize' && q.categories && (
+                    <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                      {q.categories.map((cat, cIdx) => (
+                        <div key={cIdx} className="p-2.5 rounded-xl bg-amber-50/60 border border-amber-200">
+                          <span className="font-bold text-amber-800 block mb-1">Cột: {cat.name || cat.title}</span>
+                          <div className="space-y-1">
+                            {(q.items || []).filter(item => item.categoryId === cat.id).map((item, iIdx) => (
+                              <div key={iIdx} className="px-2 py-1 bg-white border border-amber-200/60 rounded text-slate-700">
+                                • {item.text}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* KÉO THẢ KHỚP CÂU / GHÉP NỐI */}
+                  {q.type === 'drag_drop' && q.sentences && (
+                    <div className="pt-2 space-y-1.5 text-xs">
+                      {q.sentences.map((sent, sIdx) => (
+                        <div key={sIdx} className="p-2.5 rounded-xl bg-rose-50/60 border border-rose-200 flex flex-wrap items-center gap-1.5 text-slate-800">
+                          <span className="font-bold text-rose-700">{sIdx + 1}.</span>
+                          <span>{sent.prefix}</span>
+                          <span className="px-2 py-0.5 bg-rose-100 text-rose-800 border border-rose-300 rounded font-bold">
+                            [{sent.correctWord}]
+                          </span>
+                          <span>{sent.suffix}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   
                 </div>
               );

@@ -227,6 +227,69 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
     ]
   );
 
+  // Trạng thái cho dạng Kéo thả khớp câu / Ghép nối (drag_drop)
+  const [sentences, setSentences] = useState(
+    question.sentences && question.sentences.length > 0
+      ? question.sentences
+      : [
+        { id: 1, prefix: 'Khái niệm 1 là ', correctWord: 'A', suffix: '.' },
+        { id: 2, prefix: 'Khái niệm 2 là ', correctWord: 'B', suffix: '.' }
+      ]
+  );
+  const [draggableItems, setDraggableItems] = useState(
+    question.draggableItems && question.draggableItems.length > 0
+      ? question.draggableItems
+      : ['A', 'B']
+  );
+
+  const handleAddSentence = () => {
+    const nextId = sentences.length + 1;
+    const defaultWord = `Từ khóa ${nextId}`;
+    const newSent = { id: nextId, prefix: `Mệnh đề ${nextId} là `, correctWord: defaultWord, suffix: '.' };
+    setSentences([...sentences, newSent]);
+    if (!draggableItems.some(item => (typeof item === 'object' ? item.text : item) === defaultWord)) {
+      setDraggableItems([...draggableItems, defaultWord]);
+    }
+  };
+
+  const handleRemoveSentence = (idx) => {
+    setSentences(sentences.filter((_, i) => i !== idx));
+  };
+
+  const handleSentenceChange = (idx, field, value) => {
+    const oldWord = sentences[idx].correctWord;
+    const updated = [...sentences];
+    updated[idx] = { ...updated[idx], [field]: value };
+    setSentences(updated);
+
+    if (field === 'correctWord') {
+      const updatedDraggables = draggableItems.map(item => {
+        const itemText = typeof item === 'object' ? item.text : item;
+        if (itemText === oldWord) {
+          return typeof item === 'object' ? { ...item, text: value } : value;
+        }
+        return item;
+      });
+      if (!updatedDraggables.some(item => (typeof item === 'object' ? item.text : item) === value) && value.trim()) {
+        updatedDraggables.push(value);
+      }
+      setDraggableItems(updatedDraggables);
+    }
+  };
+
+  const handleAddDistractor = () => {
+    const t = prompt('Nhập từ khóa gây nhiễu (thử thách thí sinh khi kéo thả):');
+    if (t && t.trim()) {
+      if (!draggableItems.some(item => (typeof item === 'object' ? item.text : item) === t.trim())) {
+        setDraggableItems([...draggableItems, t.trim()]);
+      }
+    }
+  };
+
+  const handleRemoveDraggableItem = (idx) => {
+    setDraggableItems(draggableItems.filter((_, i) => i !== idx));
+  };
+
   // Chuyển đổi dạng câu hỏi
   const handleSelectQuestionType = (typeId) => {
     setQuestionType(typeId);
@@ -241,6 +304,14 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
       setIsMultiCorrect(true);
       if (correctAnswers.length === 1 && options.length > 1) {
         setCorrectAnswers([correctAnswers[0], options[1].id]);
+      }
+    } else if (typeId === 'drag_drop') {
+      if (!sentences || sentences.length === 0) {
+        setSentences([
+          { id: 1, prefix: 'Khái niệm 1 là ', correctWord: 'A', suffix: '.' },
+          { id: 2, prefix: 'Khái niệm 2 là ', correctWord: 'B', suffix: '.' }
+        ]);
+        setDraggableItems(['A', 'B']);
       }
     }
   };
@@ -419,6 +490,9 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
     } else if (questionType === 'categorize') {
       updatedQuestion.categories = categories;
       updatedQuestion.items = categoryItems;
+    } else if (questionType === 'drag_drop') {
+      updatedQuestion.sentences = sentences;
+      updatedQuestion.draggableItems = draggableItems;
     }
 
     onSave(updatedQuestion);
@@ -1138,6 +1212,145 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* DẠNG 7: KÉO THẢ KHỚP CÂU / GHÉP NỐI (drag_drop) */}
+        {questionType === 'drag_drop' && (
+          <div className="bg-[#2d0e2b] border-2 border-[#64245f] rounded-2xl p-5 mb-6 text-white space-y-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
+              <div>
+                <span className="text-xs font-bold text-rose-300 uppercase tracking-wider block">
+                  Danh sách câu ghép nối & từ khóa kéo thả
+                </span>
+                <span className="text-[11px] text-white/50">
+                  Nhập vế trước, từ khóa đúng cần kéo vào ô trống, và vế sau của mỗi câu
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleAddSentence}
+                className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shadow-sm"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Thêm câu mới</span>
+              </button>
+            </div>
+
+            {/* Danh sách các câu */}
+            <div className="space-y-3">
+              {sentences.map((sent, sIdx) => (
+                <div key={sent.id || sIdx} className="bg-white/5 border border-white/15 rounded-xl p-3 sm:p-4 space-y-2.5">
+                  <div className="flex items-center justify-between text-xs font-bold text-rose-300">
+                    <span className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-rose-600 text-white text-[11px] flex items-center justify-center font-bold">
+                        {sIdx + 1}
+                      </span>
+                      <span>Câu ghép {sIdx + 1}</span>
+                    </span>
+                    {sentences.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveSentence(sIdx)}
+                        className="text-white/40 hover:text-rose-400 cursor-pointer text-xs flex items-center gap-1"
+                        title="Xóa câu này"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Xóa</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center">
+                    {/* Vế trước */}
+                    <div className="sm:col-span-4">
+                      <label className="text-[11px] text-white/60 block mb-1">Vế trước ô trống:</label>
+                      <input
+                        type="text"
+                        value={sent.prefix}
+                        onChange={(e) => handleSentenceChange(sIdx, 'prefix', e.target.value)}
+                        placeholder="Ví dụ: Khái niệm 1 là..."
+                        className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-xs sm:text-sm text-white outline-none focus:border-rose-400 font-normal"
+                      />
+                    </div>
+
+                    {/* Từ khóa đúng (ô kéo thả) */}
+                    <div className="sm:col-span-4">
+                      <label className="text-[11px] text-rose-300 font-bold block mb-1">★ Từ khóa đúng (ô trống):</label>
+                      <input
+                        type="text"
+                        value={sent.correctWord}
+                        onChange={(e) => handleSentenceChange(sIdx, 'correctWord', e.target.value)}
+                        placeholder="Ví dụ: Mạng LAN"
+                        className="w-full bg-rose-500/20 border-2 border-rose-400 rounded-lg px-3 py-2 text-xs sm:text-sm text-rose-200 font-bold outline-none focus:border-rose-300"
+                      />
+                    </div>
+
+                    {/* Vế sau */}
+                    <div className="sm:col-span-4">
+                      <label className="text-[11px] text-white/60 block mb-1">Vế sau ô trống:</label>
+                      <input
+                        type="text"
+                        value={sent.suffix}
+                        onChange={(e) => handleSentenceChange(sIdx, 'suffix', e.target.value)}
+                        placeholder="Ví dụ: trong mô hình OSI."
+                        className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-xs sm:text-sm text-white outline-none focus:border-rose-400 font-normal"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Quản lý các thẻ từ khóa kéo thả */}
+            <div className="pt-3 border-t border-white/10">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
+                <div>
+                  <span className="text-xs font-bold text-amber-300 block">
+                    Danh sách thẻ từ khóa thí sinh thấy để kéo thả ({draggableItems.length}):
+                  </span>
+                  <span className="text-[10px] text-white/40">
+                    Bao gồm các từ khóa đúng ở trên, bạn có thể thêm các từ gây nhiễu để tăng độ khó.
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddDistractor}
+                  className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors self-start sm:self-auto shrink-0"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>+ Thêm từ gây nhiễu</span>
+                </button>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {draggableItems.map((item, iIdx) => {
+                  const itemText = typeof item === 'object' ? item.text : item;
+                  const isFromSentence = sentences.some(s => (s.correctWord || '').trim() === itemText.trim());
+                  return (
+                    <div
+                      key={iIdx}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/10 border border-white/20 text-xs font-semibold text-white shadow-2xs"
+                    >
+                      <span>{itemText}</span>
+                      {isFromSentence ? (
+                        <span className="text-[9px] bg-rose-500/50 text-rose-200 px-1.5 py-0.5 rounded font-mono font-bold">Đáp án</span>
+                      ) : (
+                        <span className="text-[9px] bg-amber-500/50 text-amber-200 px-1.5 py-0.5 rounded font-mono font-bold">Gây nhiễu</span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveDraggableItem(iIdx)}
+                        className="text-white/40 hover:text-rose-400 cursor-pointer ml-0.5"
+                        title="Xóa thẻ từ khóa này"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
