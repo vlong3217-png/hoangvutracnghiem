@@ -403,6 +403,7 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
     }
 
     setQuestions([...questions, newQ]);
+    setEditingQuestion(newQ);
   };
 
   // 2. Xử lý tải và đọc file (Word .docx, Excel .xlsx, PDF/Text)
