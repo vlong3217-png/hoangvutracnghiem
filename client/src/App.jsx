@@ -279,9 +279,9 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-white text-slate-800 font-sans flex flex-row antialiased relative">
-      {/* CỘT SIDEBAR TRÁI CHO VAI TRÒ ADMIN (Hiện khi đăng nhập với vai trò Admin và ở ngoài phòng thi) */}
+      {/* CỘT SIDEBAR TRÁI CHO VAI TRÒ ADMIN (Hiện trên máy tính md:flex) */}
       {currentView !== 'room' && currentUser.role === 'admin' && (
-        <aside className="w-16 bg-white border-r border-slate-200 flex flex-col items-center py-4 justify-between shrink-0 z-30 select-none">
+        <aside className="hidden md:flex w-16 bg-white border-r border-slate-200 flex-col items-center py-4 justify-between shrink-0 z-30 select-none">
           <div className="flex flex-col items-center gap-5 w-full">
             {/* Logo Quizizz biểu tượng chữ Q màu hồng */}
             <div 
@@ -292,7 +292,7 @@ export default function App() {
               <QuizizzLogo className="w-8 h-8 text-[#d82a7a]" />
             </div>
 
-            {/* Mục duy nhất: Trang chủ (Gộp Trang chủ + Thư viện làm 1, mở thẳng giao diện danh sách đề thi / hoạt động) */}
+            {/* Mục duy nhất: Trang chủ */}
             <button
               onClick={() => { setCurrentTab('teacher'); handleGoHome(); }}
               className={`flex flex-col items-center gap-1 text-[10px] w-full py-2.5 transition-all cursor-pointer ${
@@ -329,8 +329,36 @@ export default function App() {
         </aside>
       )}
 
+      {/* THANH ĐIỀU HƯỚNG DƯỚI ĐÁY CHO DI ĐỘNG (Mobile Bottom Bar) */}
+      {currentView !== 'room' && currentUser.role === 'admin' && (
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 h-14 bg-white/95 backdrop-blur-md border-t border-slate-200 z-40 flex items-center justify-around px-4 shadow-lg select-none">
+          <button
+            onClick={() => { setCurrentTab('teacher'); handleGoHome(); }}
+            className="flex flex-col items-center justify-center gap-0.5 text-xs text-[#d82a7a] font-bold cursor-pointer"
+          >
+            <QuizizzLogo className="w-5 h-5 text-[#d82a7a]" />
+            <span className="text-[10px]">Trang chủ</span>
+          </button>
+
+          <div className="flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-full text-slate-800 text-xs font-semibold">
+            <div className="w-5 h-5 rounded-full bg-slate-800 text-white text-[10px] flex items-center justify-center font-bold">
+              {currentUser.name.charAt(0)}
+            </div>
+            <span className="max-w-[120px] truncate">{currentUser.name}</span>
+          </div>
+
+          <button
+            onClick={handleLogout}
+            className="flex flex-col items-center justify-center gap-0.5 text-xs text-slate-500 hover:text-rose-600 font-medium cursor-pointer"
+          >
+            <LogOut className="w-4 h-4" />
+            <span className="text-[10px]">Đăng xuất</span>
+          </button>
+        </nav>
+      )}
+
       {/* VÙNG NỘI DUNG CHÍNH (MAIN VIEW) */}
-      <div className="flex-1 flex flex-col min-w-0 bg-white">
+      <div className="flex-1 flex flex-col min-w-0 bg-white pb-14 md:pb-0">
         <main className="flex-1">
           {currentView === 'room' && activeExam && (
             <ExamRoom 

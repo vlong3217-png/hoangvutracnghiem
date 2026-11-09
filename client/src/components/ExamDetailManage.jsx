@@ -15,7 +15,9 @@ import {
   Check,
   X,
   Settings,
-  Shuffle
+  Shuffle,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import QuestionEditor from './QuestionEditor';
 import CreateResourceModal from './CreateResourceModal';
@@ -86,6 +88,33 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
   const handleDragEnd = () => {
     setDraggedIndex(null);
     setDragOverIndex(null);
+  };
+
+  // Di chuyển câu hỏi 1 nấc (Lên / Xuống) tối ưu trên thiết bị di động
+  const handleMoveQuestion = async (fromIndex, toIndex) => {
+    if (toIndex < 0 || toIndex >= questions.length) return;
+
+    const updatedQuestions = [...questions];
+    const [movedQuestion] = updatedQuestions.splice(fromIndex, 1);
+    updatedQuestions.splice(toIndex, 0, movedQuestion);
+
+    const fromNum = fromIndex + 1;
+    const toNum = toIndex + 1;
+
+    // Cập nhật ngay lập tức vào state cha và Backend Neon
+    if (onUpdateExam) {
+      await onUpdateExam({
+        ...exam,
+        questions: updatedQuestions,
+        totalQuestions: updatedQuestions.length
+      });
+    }
+
+    // Popup thông báo
+    setReorderToast({
+      message: `Đã chuyển Câu ${fromNum} sang vị trí Câu ${toNum} và lưu thành công!`
+    });
+    setTimeout(() => setReorderToast(null), 3200);
   };
 
   // Chức năng đổi tên đề thi trực tiếp
@@ -261,7 +290,7 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
   };
 
   return (
-    <div className="flex-1 bg-white min-h-[calc(100vh-64px)] p-6 lg:p-8 overflow-y-auto">
+    <div className="flex-1 bg-white min-h-[calc(100vh-64px)] p-3.5 sm:p-6 lg:p-8 overflow-y-auto">
       {/* Nút quay lại danh sách đề thi */}
       <button 
         onClick={onBack}
@@ -490,10 +519,40 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
                   {/* Top Bar câu hỏi: STT. NHIỀU LỰA CHỌN • 30 giây • 1 điểm + CỤM NÚT XEM TRƯỚC / CHỈNH SỬA / XÓA */}
                   <div className="flex items-center justify-between text-xs text-slate-400 mb-3">
                     <div className="flex items-center gap-2">
-                      <div className="text-slate-400 group-hover:text-[#d82a7a] cursor-grab active:cursor-grabbing p-0.5 hover:bg-slate-100 rounded" title="Kéo thả để sắp xếp">
+                      {/* Cầm nắm kéo thả Desktop */}
+                      <div className="hidden sm:block text-slate-400 group-hover:text-[#d82a7a] cursor-grab active:cursor-grabbing p-0.5 hover:bg-slate-100 rounded" title="Kéo thả để sắp xếp">
                         <GripVertical className="w-4 h-4" />
                       </div>
-                      <span className="font-semibold uppercase tracking-wider text-slate-500">
+
+                      {/* Nút bấm Di chuyển Lên / Xuống 1 chạm cho điện thoại */}
+                      <div className="flex sm:hidden items-center gap-0.5">
+                        <button
+                          type="button"
+                          disabled={idx === 0}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMoveQuestion(idx, idx - 1);
+                          }}
+                          className="p-1 rounded bg-slate-100 disabled:opacity-20 text-slate-700 hover:bg-[#d82a7a] hover:text-white transition-colors"
+                          title="Chuyển lên"
+                        >
+                          <ArrowUp className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={idx === questions.length - 1}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMoveQuestion(idx, idx + 1);
+                          }}
+                          className="p-1 rounded bg-slate-100 disabled:opacity-20 text-slate-700 hover:bg-[#d82a7a] hover:text-white transition-colors"
+                          title="Chuyển xuống"
+                        >
+                          <ArrowDown className="w-3 h-3" />
+                        </button>
+                      </div>
+
+                      <span className="font-semibold uppercase tracking-wider text-slate-500 text-[11px] sm:text-xs">
                         {idx + 1}. {q.type === 'multiple' ? 'NHIỀU LỰA CHỌN' : q.type === 'true_false' ? 'ĐÚNG / SAI' : 'NHIỀU LỰA CHỌN'} • 30 giây • 1 điểm
                       </span>
                     </div>

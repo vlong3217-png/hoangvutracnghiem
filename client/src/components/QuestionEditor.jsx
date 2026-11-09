@@ -432,19 +432,19 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
     <div className="flex-1 bg-white min-h-[calc(100vh-64px)] flex flex-col antialiased select-none">
       
       {/* 1. TOP HEADER TOOLBAR */}
-      <div className="h-14 border-b border-slate-200 px-4 flex items-center justify-between bg-white shrink-0 relative z-30">
-        <div className="flex items-center gap-3">
+      <div className="h-14 border-b border-slate-200 px-2.5 sm:px-4 flex items-center justify-between bg-white shrink-0 relative z-30 gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           {/* Nút quay lại < */}
           <button 
             onClick={onCancel}
             title="Quay lại danh sách câu hỏi"
-            className="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-700 transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-700 transition-colors cursor-pointer shrink-0"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
 
           {/* NÚT DROPDOWN CÁC DẠNG CÂU HỎI HIỆN TẠI CỦA HỆ THỐNG */}
-          <div className="relative">
+          <div className="relative min-w-0">
             <button 
               onClick={() => {
                 setIsTypeDropdownOpen(prev => !prev);
@@ -452,13 +452,13 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                 setIsPointsDropdownOpen(false);
                 setIsSymbolPickerOpen(false);
               }}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-300 hover:border-slate-400 text-xs font-semibold text-slate-700 bg-white transition-all shadow-2xs hover:bg-slate-50 cursor-pointer"
+              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg border border-slate-300 hover:border-slate-400 text-xs font-semibold text-slate-700 bg-white transition-all shadow-2xs hover:bg-slate-50 cursor-pointer max-w-[140px] xs:max-w-[200px] sm:max-w-none"
             >
               <span className={`w-4 h-4 rounded-sm ${currentTypeInfo.iconColor} flex items-center justify-center text-[10px] font-bold shrink-0`}>
                 <CurrentTypeIcon className="w-3 h-3" />
               </span>
-              <span>{currentTypeInfo.name}</span>
-              <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isTypeDropdownOpen ? 'rotate-180' : ''}`} />
+              <span className="truncate">{currentTypeInfo.name}</span>
+              <ChevronDown className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-200 ${isTypeDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {/* Menu Popover danh sách dạng câu hỏi */}
@@ -510,10 +510,8 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
           </div>
         </div>
 
-        {/* CÁC NÚT BÊN PHẢI: Giải thích, Thời gian, Điểm, Hủy, Lưu */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          
-
+        {/* CÁC NÚT BÊN PHẢI: Thời gian, Điểm, Hủy, Lưu */}
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
           {/* DROPDOWN CHỌN THỜI GIAN */}
           <div className="relative">
             <button 
@@ -523,11 +521,12 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                 setIsPointsDropdownOpen(false);
                 setIsSymbolPickerOpen(false);
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 hover:border-slate-400 text-xs font-semibold text-slate-700 bg-white shadow-2xs transition-all hover:bg-slate-50 cursor-pointer"
+              className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg border border-slate-300 hover:border-slate-400 text-xs font-semibold text-slate-700 bg-white shadow-2xs transition-all hover:bg-slate-50 cursor-pointer"
             >
-              <Clock className="w-3.5 h-3.5 text-slate-500" />
-              <span>{timeLimit >= 60 ? `${timeLimit / 60} phút` : `${timeLimit} giây`}</span>
-              <ChevronDown className="w-3 h-3 text-slate-400" />
+              <Clock className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+              <span className="hidden sm:inline">{timeLimit >= 60 ? `${timeLimit / 60} phút` : `${timeLimit} giây`}</span>
+              <span className="sm:hidden">{timeLimit >= 60 ? `${timeLimit / 60}m` : `${timeLimit}s`}</span>
+              <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
             </button>
 
             {isTimeDropdownOpen && (
@@ -566,11 +565,12 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                 setIsTimeDropdownOpen(false);
                 setIsSymbolPickerOpen(false);
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 hover:border-slate-400 text-xs font-semibold text-slate-700 bg-white shadow-2xs transition-all hover:bg-slate-50 cursor-pointer"
+              className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg border border-slate-300 hover:border-slate-400 text-xs font-semibold text-slate-700 bg-white shadow-2xs transition-all hover:bg-slate-50 cursor-pointer"
             >
-              <Check className="w-3.5 h-3.5 text-slate-500" />
-              <span>{points} điểm</span>
-              <ChevronDown className="w-3 h-3 text-slate-400" />
+              <Check className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+              <span className="hidden sm:inline">{points} điểm</span>
+              <span className="sm:hidden">{points}đ</span>
+              <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
             </button>
 
             {isPointsDropdownOpen && (
@@ -600,10 +600,10 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
             )}
           </div>
 
-          {/* Nút Hủy */}
+          {/* Nút Hủy (Ẩn trên mobile vì đã có ArrowLeft) */}
           <button 
             onClick={onCancel}
-            className="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            className="hidden sm:inline-block px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
           >
             Hủy
           </button>
@@ -611,7 +611,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
           {/* Nút LƯU MÀU TÍM */}
           <button 
             onClick={handleSave}
-            className="px-4 sm:px-5 py-1.5 bg-[#78398e] hover:bg-[#632977] text-white text-xs font-bold rounded-lg flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+            className="px-3 sm:px-5 py-1.5 bg-[#78398e] hover:bg-[#632977] text-white text-xs font-bold rounded-lg flex items-center gap-1 sm:gap-1.5 shadow-xs transition-colors cursor-pointer shrink-0"
           >
             <Save className="w-3.5 h-3.5" />
             <span>Lưu</span>
@@ -619,8 +619,8 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
         </div>
       </div>
 
-      {/* 2. THANH FORMAT FONT CHỮ (A, B, I, U, S, X¹, X₁, ∑, f(x)) - BỎ NÚT ĐỊNH DẠNG NÂNG CAO */}
-      <div className="h-10 border-b border-slate-200 px-6 flex items-center justify-between bg-white text-xs text-slate-700 shrink-0 relative z-20">
+      {/* 2. THANH FORMAT FONT CHỮ (A, B, I, U, S, X¹, X₁, ∑, f(x)) - HỖ TRỢ CUỘN NGANG TRÊN MOBILE */}
+      <div className="h-10 border-b border-slate-200 px-3 sm:px-6 flex items-center justify-between bg-white text-xs text-slate-700 shrink-0 relative z-20 overflow-x-auto scrollbar-none">
         <div className="flex items-center gap-3 sm:gap-4 font-serif text-sm">
           {/* Nút A: Xóa / Reset định dạng */}
           <button
@@ -765,23 +765,23 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
       )}
 
       {/* 3. KHÔNG GIAN SOẠN THẢO CHÍNH - TÔNG MÀU TÍM ĐEN HUYỀN BÍ */}
-      <div className="flex-1 bg-[#471842] p-4 sm:p-6 lg:p-8 flex flex-col justify-between overflow-y-auto">
+      <div className="flex-1 bg-[#471842] p-3 sm:p-6 lg:p-8 flex flex-col justify-between overflow-y-auto">
         
         {/* VÙNG NHẬP CÂU HỎI */}
-        <div className="relative bg-[#2d0e2b] border-2 border-[#64245f] rounded-2xl p-6 sm:p-8 mb-6 min-h-[220px] flex flex-col justify-center items-center shadow-lg group">
+        <div className="relative bg-[#2d0e2b] border-2 border-[#64245f] rounded-2xl p-4 pt-12 sm:p-8 mb-4 sm:mb-6 min-h-[160px] sm:min-h-[220px] flex flex-col justify-center items-center shadow-lg group">
           
           {/* CÁC NÚT MEDIA GÓC TRÊN BÊN TRÁI: ẢNH VÀ VIDEO (ĐÃ BỎ NÚT GHI ÂM) */}
-          <div className="absolute top-4 left-4 flex items-center gap-2">
+          <div className="absolute top-3 left-3 sm:top-4 sm:left-4 flex items-center gap-2">
             {/* Nút Thêm Hình ảnh */}
             <button 
               type="button"
               onClick={() => setIsImageModalOpen(true)}
               title="Thêm hình ảnh cho câu hỏi"
-              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors relative cursor-pointer ${
+              className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-colors relative cursor-pointer ${
                 imageUrl ? 'bg-amber-500 text-slate-900' : 'bg-white/10 hover:bg-white/20 text-white'
               }`}
             >
-              <ImageIcon className="w-4 h-4" />
+              <ImageIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="absolute -top-1 -right-1 text-[9px] text-amber-400">⚡</span>
             </button>
 
@@ -790,11 +790,11 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
               type="button"
               onClick={() => setIsVideoModalOpen(true)}
               title="Thêm video minh họa (YouTube / MP4)"
-              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
+              className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
                 videoUrl ? 'bg-rose-500 text-white' : 'bg-white/10 hover:bg-white/20 text-white'
               }`}
             >
-              <Video className="w-4 h-4" />
+              <Video className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
           </div>
 
@@ -804,7 +804,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
               <img 
                 src={imageUrl} 
                 alt="Question Media" 
-                className="max-h-36 rounded-lg border border-white/20 object-contain shadow-md bg-black/20" 
+                className="max-h-28 sm:max-h-36 rounded-lg border border-white/20 object-contain shadow-md bg-black/20" 
               />
               <button
                 type="button"
@@ -820,7 +820,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
           {/* Hiển thị video minh họa nếu có */}
           {videoUrl && (
             <div className="mb-4 relative group/video">
-              <div className="w-72 h-40 bg-black/40 rounded-lg overflow-hidden border border-white/20 flex items-center justify-center">
+              <div className="w-64 sm:w-72 h-36 sm:h-40 bg-black/40 rounded-lg overflow-hidden border border-white/20 flex items-center justify-center">
                 {videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be') ? (
                   <iframe 
                     src={videoUrl.replace('watch?v=', 'embed/')} 
@@ -850,7 +850,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
             onChange={(e) => setQuestionText(e.target.value)}
             placeholder="Nhập nội dung câu hỏi tại đây..."
             rows={2}
-            className="w-full max-w-3xl text-center bg-transparent text-white placeholder-white/30 text-lg md:text-2xl font-bold outline-none resize-none leading-relaxed"
+            className="w-full max-w-3xl text-center bg-transparent text-white placeholder-white/30 text-base sm:text-xl md:text-2xl font-bold outline-none resize-none leading-relaxed"
           />
         </div>
 
@@ -858,12 +858,12 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
         
         {/* DẠNG 1 & 2: TRẮC NGHIỆM 1 HOẶC NHIỀU ĐÁP ÁN (single / multiple) */}
         {(questionType === 'single' || questionType === 'multiple') && (
-          <div className={`grid gap-4 mb-6 ${
+          <div className={`grid gap-3 sm:gap-4 mb-4 sm:mb-6 ${
             isVerticalLayout 
               ? 'grid-cols-1 max-w-xl mx-auto w-full' 
               : options.length <= 4 
               ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4' 
-              : 'grid-cols-2 sm:grid-cols-3'
+              : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
           }`}>
             {options.map((opt, idx) => {
               const color = defaultColors[idx % defaultColors.length];
@@ -872,7 +872,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
               return (
                 <div 
                   key={opt.id}
-                  className={`${color.bg} border-2 ${color.border} rounded-2xl p-4 min-h-[170px] flex flex-col justify-between text-white relative shadow-md transition-all`}
+                  className={`${color.bg} border-2 ${color.border} rounded-2xl p-3 sm:p-4 min-h-[130px] sm:min-h-[170px] flex flex-col justify-between text-white relative shadow-md transition-all`}
                 >
                   {/* Thanh action góc trên thẻ: Icon Xóa, Icon Ảnh + Icon Dấu Tích Chọn Đúng */}
                   <div className="flex items-center justify-between">
@@ -1152,9 +1152,9 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
 
         {/* 5. FOOTER CÔNG CỤ: Toggle Nhiều đáp án đúng & Chuyển bố cục */}
         {(questionType === 'single' || questionType === 'multiple') && (
-          <div className="flex items-center justify-between text-white text-xs pt-3 border-t border-white/10">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 text-white text-xs pt-3 border-t border-white/10">
             {/* Toggle Nhiều đáp án đúng */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between sm:justify-start gap-3">
               <span className="font-semibold">Nhiều đáp án đúng:</span>
               <button
                 type="button"
@@ -1175,7 +1175,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
             <button
               type="button"
               onClick={() => setIsVerticalLayout(prev => !prev)}
-              className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl font-bold flex items-center gap-2 transition-colors cursor-pointer"
+              className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
             >
               {isVerticalLayout ? <Columns className="w-4 h-4" /> : <Rows className="w-4 h-4" />}
               <span>{isVerticalLayout ? 'Chuyển sang bố cục ngang' : 'Chuyển sang bố cục dọc'}</span>

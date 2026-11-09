@@ -24,7 +24,9 @@ import {
   Plus,
   ChevronDown,
   ChevronUp,
-  Shuffle
+  Shuffle,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import { parseQuestionsWithGemini } from '../services/geminiService';
 
@@ -128,6 +130,51 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
     setDragOverIndex(null);
   };
 
+  // Di chuyển câu hỏi 1 nấc (Lên / Xuống) tối ưu trên thiết bị di động
+  const handleMoveQuestion = (fromIndex, toIndex) => {
+    if (toIndex < 0 || toIndex >= questions.length) return;
+
+    const updatedQuestions = [...questions];
+    const [movedQuestion] = updatedQuestions.splice(fromIndex, 1);
+    updatedQuestions.splice(toIndex, 0, movedQuestion);
+
+    const fromNum = fromIndex + 1;
+    const toNum = toIndex + 1;
+
+    setQuestions(updatedQuestions);
+
+    // Tự động đồng bộ ngay vào CSDL và hệ thống
+    if (onSaveExam) {
+      const autoSavedExam = {
+        ...initialExam,
+        id: initialExam?.id || `exam-${Date.now()}`,
+        title: examTitle.trim() || 'Bài Quiz không có tiêu đề',
+        subject: subject || 'Khoa học',
+        level: level || 'Đại học',
+        difficulty: level || 'Đại học',
+        duration: Number(duration) || 30,
+        durationMinutes: Number(duration) || 30,
+        shuffleQuestions: Boolean(shuffleQuestions),
+        shuffleAnswers: Boolean(shuffleAnswers),
+        totalQuestions: updatedQuestions.length,
+        questions: updatedQuestions
+      };
+      onSaveExam(autoSavedExam).catch(err => console.warn('Lỗi lưu ngầm:', err));
+    }
+
+    // Bật popup thông báo thành công
+    setReorderToast({
+      message: `Đã chuyển Câu ${fromNum} sang vị trí Câu ${toNum} và lưu thành công!`,
+      from: fromNum,
+      to: toNum
+    });
+
+    // Tự động tắt sau 3 giây
+    setTimeout(() => {
+      setReorderToast(null);
+    }, 3200);
+  };
+
     // Modal / Drawer Nhập từ tài liệu & AI
   const [showImportModal, setShowImportModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -143,7 +190,7 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
     // 1. Trắc nghiệm 1 đáp án hoặc Nhiều đáp án
     if (q.options && Array.isArray(q.options) && q.options.length > 0) {
       return (
-        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 pl-9">
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 pl-0 sm:pl-9">
           {q.options.map((opt, oIdx) => {
             const isCorrect = Array.isArray(q.correctAnswer)
               ? q.correctAnswer.includes(opt.id) || q.correctAnswer.includes(opt.text)
@@ -173,7 +220,7 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
     // 2. Đúng / Sai theo ý (true_false_multi)
     if (q.parts && Array.isArray(q.parts)) {
       return (
-        <div className="mt-3 space-y-2 pl-9">
+        <div className="mt-3 space-y-2 pl-0 sm:pl-9">
           {q.parts.map((part, pIdx) => (
             <div key={pIdx} className="p-2.5 rounded-xl bg-white border border-slate-200 flex items-center justify-between text-xs shadow-2xs">
               <div className="flex items-center gap-2.5">
@@ -196,7 +243,7 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
     // 3. Phân loại vào cột (categorize)
     if (q.categories && q.items) {
       return (
-        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2.5 pl-9">
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2.5 pl-0 sm:pl-9">
           {q.categories.map((cat, cIdx) => (
             <div key={cIdx} className="p-2.5 bg-white border border-slate-200 rounded-xl text-xs shadow-2xs">
               <div className="font-bold text-slate-800 pb-1.5 mb-2 border-b border-slate-100 flex items-center gap-1.5">
@@ -220,7 +267,7 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
     // 4. Kéo thả ghép nối (drag_drop)
     if (q.sentences) {
       return (
-        <div className="mt-3 space-y-2 pl-9">
+        <div className="mt-3 space-y-2 pl-0 sm:pl-9">
           {q.sentences.map((s, sIdx) => (
             <div key={sIdx} className="p-2.5 bg-white border border-slate-200 rounded-xl text-xs flex items-center gap-2 text-slate-700 shadow-2xs">
               <span>{s.prefix}</span>
@@ -237,7 +284,7 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
     // 5. Điền từ ngắn (short_answer)
     if (q.type === 'short_answer' || q.correctAnswer) {
       return (
-        <div className="mt-3 pl-9 flex items-center gap-2">
+        <div className="mt-3 pl-0 sm:pl-9 flex items-center gap-2">
           <span className="text-xs text-slate-500 font-medium">Đáp án chuẩn:</span>
           <span className="px-3 py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold text-xs rounded-lg shadow-2xs">
             {typeof q.correctAnswer === 'string' ? q.correctAnswer : JSON.stringify(q.correctAnswer)}
@@ -249,7 +296,7 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
     // 6. Tự luận (essay)
     if (q.type === 'essay') {
       return (
-        <div className="mt-3 pl-9 p-3 bg-pink-50/40 border border-pink-100 rounded-xl text-xs text-slate-700 space-y-1">
+        <div className="mt-3 pl-0 sm:pl-9 p-3 bg-pink-50/40 border border-pink-100 rounded-xl text-xs text-slate-700 space-y-1">
           {q.sampleAnswer && (
             <div><span className="font-bold text-[#d82a7a]">Dàn ý đáp án:</span> {q.sampleAnswer}</div>
           )}
@@ -558,61 +605,61 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
   return (
     <div className="min-h-screen bg-[#fafafc] flex flex-col font-sans text-slate-800">
       {/* 1. TOPBAR CHUẨN THEO ẢNH NGƯỜI DÙNG CUNG CẤP */}
-      <header className="bg-white border-b border-slate-200 px-4 sm:px-6 py-2.5 flex items-center justify-between sticky top-0 z-30 shadow-2xs">
-        <div className="flex items-center gap-3">
+      <header className="bg-white border-b border-slate-200 px-3 sm:px-6 py-2.5 flex items-center justify-between sticky top-0 z-30 shadow-2xs">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           {/* Nút quay lại bo tròn viền xám mỏng */}
           <button 
             onClick={handleBackWithSave}
-            className="w-8 h-8 rounded-lg border border-slate-200 hover:border-slate-300 bg-white flex items-center justify-center text-slate-600 hover:text-slate-900 transition-colors shadow-2xs"
+            className="w-8 h-8 rounded-lg border border-slate-200 hover:border-slate-300 bg-white flex items-center justify-center text-slate-600 hover:text-slate-900 transition-colors shadow-2xs shrink-0"
             title="Quay lại danh sách"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
 
           {/* Ô nhập tiêu đề "Bài Quiz không có tiêu đề" */}
-          <div className="relative">
+          <div className="relative min-w-0">
             <input 
               type="text"
               value={examTitle}
               onChange={(e) => setExamTitle(e.target.value)}
               placeholder="Bài Quiz không có tiêu đề"
-              className="px-3.5 py-1.5 bg-white border border-slate-200 hover:border-slate-300 focus:border-[#d82a7a] rounded-lg text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none transition-colors w-56 sm:w-80 shadow-2xs"
+              className="px-2.5 sm:px-3.5 py-1.5 bg-white border border-slate-200 hover:border-slate-300 focus:border-[#d82a7a] rounded-lg text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none transition-colors w-32 xs:w-48 sm:w-80 shadow-2xs truncate"
             />
           </div>
         </div>
 
         {/* Nút Cài đặt & Nút Xuất bản màu hồng cánh sen */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
           <button 
             onClick={() => setShowSettingsModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg transition-colors shadow-2xs"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg transition-colors shadow-2xs"
           >
             <Settings className="w-3.5 h-3.5" />
-            <span>Cài đặt</span>
+            <span className="hidden sm:inline">Cài đặt</span>
           </button>
 
           <button 
             onClick={handlePublish}
-            className="flex items-center gap-1.5 px-4 py-1.5 bg-[#d82a7a] hover:bg-[#c2226b] text-white text-xs font-bold rounded-lg shadow-xs transition-colors"
+            className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 bg-[#d82a7a] hover:bg-[#c2226b] text-white text-xs font-bold rounded-lg shadow-xs transition-colors"
           >
             <FileText className="w-3.5 h-3.5" />
-            <span>{isSaving ? "Đang lưu..." : initialExam ? "Lưu thay đổi" : "Xuất bản"}</span>
+            <span>{isSaving ? "Đang lưu..." : initialExam ? "Lưu" : "Xuất bản"}</span>
           </button>
         </div>
       </header>
 
-            {/* 2. KHUNG NỘI DUNG CHÍNH (CANVAS TRẮNG Ở GIỮA) */}
-      <main className="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-8 flex flex-col space-y-5">
+      {/* 2. KHUNG NỘI DUNG CHÍNH (CANVAS TRẮNG Ở GIỮA) */}
+      <main className="flex-1 max-w-5xl w-full mx-auto p-3 sm:p-8 flex flex-col space-y-4 sm:space-y-5">
         {/* NÚT "NHẬP TỪ TÀI LIỆU (AI PHÂN TÍCH)" ĐỒNG BỘ NỀN TRẮNG VIỀN XÁM NHẸ */}
-        <div className="p-4 bg-white border border-slate-200 rounded-2xl flex items-center justify-between gap-4 shadow-2xs">
-          <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 text-[#d82a7a] flex items-center justify-center shadow-2xs shrink-0">
-              <Sparkles className="w-5 h-5 text-[#d82a7a]" />
+        <div className="p-3 sm:p-4 bg-white border border-slate-200 rounded-2xl flex items-center justify-between gap-3 sm:gap-4 shadow-2xs">
+          <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-100 border border-slate-200 text-[#d82a7a] flex items-center justify-center shadow-2xs shrink-0">
+              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-[#d82a7a]" />
             </div>
-            <div>
-              <h2 className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-2">
-                <span>Nhập câu hỏi từ tệp (Word, Excel, PDF)</span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-pink-50 text-[#d82a7a] border border-pink-100">
+            <div className="min-w-0">
+              <h2 className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                <span className="truncate">Nhập câu hỏi từ tệp (Word, Excel, PDF)</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-pink-50 text-[#d82a7a] border border-pink-100 shrink-0">
                   AI Hỗ trợ
                 </span>
               </h2>
@@ -624,10 +671,11 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
 
           <button
             onClick={() => setShowImportModal(true)}
-            className="px-4 py-2 bg-[#d82a7a] hover:bg-[#c2226b] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all shrink-0 hover:scale-[1.02] cursor-pointer"
+            className="px-3 sm:px-4 py-2 bg-[#d82a7a] hover:bg-[#c2226b] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all shrink-0 hover:scale-[1.02] cursor-pointer"
           >
             <Upload className="w-3.5 h-3.5 text-white" />
-            <span>Tải tệp & Phân tích</span>
+            <span className="hidden xs:inline">Tải tệp & Phân tích</span>
+            <span className="xs:hidden">Tải tệp</span>
           </button>
         </div>
 
@@ -789,12 +837,40 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
                       onClick={() => setEditingQuestion(q)}
                       className="flex items-start gap-3 min-w-0 pr-4 flex-1 cursor-pointer"
                     >
-                      {/* Nút cầm nắm kéo thả trực quan */}
+                      {/* Nút cầm nắm kéo thả trực quan (Desktop) */}
                       <div 
-                        className="text-slate-400 group-hover:text-[#d82a7a] mt-1 shrink-0 cursor-grab active:cursor-grabbing p-0.5 hover:bg-slate-200 rounded"
+                        className="hidden sm:block text-slate-400 group-hover:text-[#d82a7a] mt-1 shrink-0 cursor-grab active:cursor-grabbing p-0.5 hover:bg-slate-200 rounded"
                         title="Kéo thả để sắp xếp"
                       >
                         <GripVertical className="w-4 h-4" />
+                      </div>
+
+                      {/* Nút bấm Di chuyển Lên / Xuống 1 chạm tiện lợi trên điện thoại */}
+                      <div className="flex sm:hidden flex-col gap-0.5 shrink-0 mt-0.5">
+                        <button
+                          type="button"
+                          disabled={idx === 0}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMoveQuestion(idx, idx - 1);
+                          }}
+                          className="p-1 rounded bg-slate-200/80 disabled:opacity-20 text-slate-700 hover:bg-[#d82a7a] hover:text-white transition-colors"
+                          title="Chuyển lên"
+                        >
+                          <ArrowUp className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={idx === questions.length - 1}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMoveQuestion(idx, idx + 1);
+                          }}
+                          className="p-1 rounded bg-slate-200/80 disabled:opacity-20 text-slate-700 hover:bg-[#d82a7a] hover:text-white transition-colors"
+                          title="Chuyển xuống"
+                        >
+                          <ArrowDown className="w-3 h-3" />
+                        </button>
                       </div>
 
                       <span className="w-6 h-6 rounded-lg bg-slate-200 group-hover:bg-[#d82a7a] group-hover:text-white text-slate-700 font-bold flex items-center justify-center text-xs shrink-0 transition-colors mt-0.5 shadow-2xs">
