@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Mail, Asterisk, Eye, EyeOff, AlertCircle, UserPlus, X, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Mail, Asterisk, Eye, EyeOff, AlertCircle, ShieldCheck, KeyRound, ExternalLink, HelpCircle } from 'lucide-react';
 import { loginUser, registerUser } from '../services/api';
 import QuizizzLogo from './QuizizzLogo';
 
@@ -27,6 +27,23 @@ function GoogleIcon({ className = "w-5 h-5" }) {
   );
 }
 
+// Giải mã JWT credential token từ Google OAuth
+function parseJwt(token) {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch {
+    return null;
+  }
+}
+
 export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
   const [emailOrUser, setEmailOrUser] = useState('student@test.com');
   const [password, setPassword] = useState('123');
@@ -34,16 +51,165 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Chế độ đăng ký tài khoản (nếu cần)
+  // Chế độ đăng ký tài khoản
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [name, setName] = useState('');
   const [regRole, setRegRole] = useState('student');
 
-  // Modal Đăng nhập bằng Google (chỉ dành cho Admin: vlong3217@gmail.com)
-  const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
-  const [googleError, setGoogleError] = useState('');
-  const [showOtherAccountInput, setShowOtherAccountInput] = useState(false);
-  const [otherGoogleEmail, setOtherGoogleEmail] = useState('');
+  // Quản lý Google Client ID
+  const defaultClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || localStorage.getItem('QUIZIZZ_GOOGLE_CLIENT_ID') || '';
+  const [googleClientId, setGoogleClientId] = useState(defaultClientId);
+  const [showConfigModal, setShowConfigModal] = useState(false);
+  const [tempClientId, setTempClientId] = useState(defaultClientId);
+  const [googleStatus, setGoogleStatus] = useState('');
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  // Xử lý khi nhận được token từ Google OAuth thật
+  const handleGoogleCredentialResponse = async (response) => {
+    setIsGoogleLoading(true);
+    setGoogleStatus('Đang xác thực thông tin tài khoản Google...');
+    setError('');
+
+    const payload = parseJwt(response.credential);
+    if (!payload || !payload.email) {
+      setError('Không thể đọc thông tin tài khoản từ Google. Vui lòng thử lại!');
+      setIsGoogleLoading(false);
+      setGoogleStatus('');
+      return;
+    }
+
+    const email = payload.email.toLowerCase().trim();
+    const fullName = payload.name || 'Long Hoàng Vũ';
+
+    // KIỂM TRA PHÂN QUYỀN: Chỉ cho phép Admin vlong3217@gmail.com
+    if (email !== 'vlong3217@gmail.com') {
+      setError(
+        `⛔ Tài khoản Google "${payload.email}" không có quyền Quản trị viên! Đăng nhập bằng Google chỉ dành riêng cho Admin (vlong3217@gmail.com). Sinh viên vui lòng đăng nhập bằng biểu mẫu bên dưới.`
+      );
+      setIsGoogleLoading(false);
+      setGoogleStatus('');
+      return;
+    }
+
+    // Đăng nhập thành công với quyền Admin
+    const adminUser = {
+      id: "user-admin-vlong",
+      name: fullName,
+      email: email,
+      role: "admin",
+      roleName: "Admin",
+      picture: payload.picture,
+      authProvider: "google"
+    };
+
+    onLogin(adminUser);
+  };
+
+  // Khởi tạo Google Identity Services khi có googleClientId
+  useEffect(() => {
+    if (!googleClientId) return;
+
+    const checkGsi = () => {
+      if (window.google?.accounts?.id) {
+        try {
+          window.google.accounts.id.initialize({
+            client_id: googleClientId,
+            callback: handleGoogleCredentialResponse,
+            auto_select: false
+          });
+
+          // Render nút Google thật chuẩn vào container nếu có
+          const btnDiv = document.getElementById('googleRealButtonContainer');
+          if (btnDiv) {
+            btnDiv.innerHTML = '';
+            window.google.accounts.id.renderButton(btnDiv, {
+              theme: 'outline',
+              size: 'large',
+              width: '100%',
+              text: 'continue_with',
+              shape: 'rectangular',
+              logo_alignment: 'center'
+            });
+          }
+        } catch (err) {
+          console.warn("Lỗi khởi tạo Google GSI:", err);
+        }
+      } else {
+        setTimeout(checkGsi, 300);
+      }
+    };
+
+    checkGsi();
+  }, [googleClientId]);
+
+  // Bấm nút "Đăng nhập bằng Google"
+  const handleTriggerGoogleLogin = () => {
+    setError('');
+
+    // Nếu chưa có Client ID trong env hoặc localStorage, mở popup hướng dẫn nhập Client ID
+    if (!googleClientId) {
+      setShowConfigModal(true);
+      return;
+    }
+
+    // Nếu đã có SDK và Client ID, kích hoạt Google Prompt popup
+    if (window.google?.accounts?.id) {
+      try {
+        window.google.accounts.id.prompt((notification) => {
+          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+            // Mở token client fallback nếu prompt bị chặn
+            const client = window.google.accounts.oauth2.initTokenClient({
+              client_id: googleClientId,
+              scope: 'email profile openid',
+              callback: async (tokenResponse) => {
+                if (tokenResponse && tokenResponse.access_token) {
+                  try {
+                    const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                      headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
+                    });
+                    const userInfo = await userInfoRes.json();
+                    if (userInfo && userInfo.email) {
+                      const email = userInfo.email.toLowerCase().trim();
+                      if (email !== 'vlong3217@gmail.com') {
+                        setError(`⛔ Tài khoản Google "${userInfo.email}" không có quyền Quản trị viên! Chỉ dành cho vlong3217@gmail.com.`);
+                        return;
+                      }
+                      onLogin({
+                        id: "user-admin-vlong",
+                        name: userInfo.name || "Long Hoàng Vũ",
+                        email: email,
+                        role: "admin",
+                        roleName: "Admin",
+                        picture: userInfo.picture,
+                        authProvider: "google"
+                      });
+                    }
+                  } catch (e) {
+                    setError("Lỗi lấy thông tin Google User: " + e.message);
+                  }
+                }
+              }
+            });
+            client.requestAccessToken();
+          }
+        });
+      } catch {
+        setShowConfigModal(true);
+      }
+    } else {
+      setShowConfigModal(true);
+    }
+  };
+
+  const handleSaveGoogleClientId = () => {
+    if (!tempClientId.trim()) {
+      alert("Vui lòng nhập Google OAuth Client ID từ Google Cloud Console!");
+      return;
+    }
+    localStorage.setItem('QUIZIZZ_GOOGLE_CLIENT_ID', tempClientId.trim());
+    setGoogleClientId(tempClientId.trim());
+    setShowConfigModal(false);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -99,30 +265,6 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
     }
   };
 
-  // Xử lý đăng nhập Google dành riêng cho Admin (vlong3217@gmail.com)
-  const handleGoogleAdminLogin = (accountEmail = 'vlong3217@gmail.com') => {
-    const emailNormalized = accountEmail.trim().toLowerCase();
-
-    if (emailNormalized !== 'vlong3217@gmail.com') {
-      setGoogleError(
-        `Tài khoản Google "${accountEmail}" không có quyền Quản trị viên! Đăng nhập bằng Google chỉ dành riêng cho Admin (vlong3217@gmail.com). Sinh viên vui lòng đăng nhập bằng biểu mẫu bên dưới.`
-      );
-      return;
-    }
-
-    const adminUser = {
-      id: "user-admin-vlong",
-      name: "Long Hoàng Vũ",
-      email: "vlong3217@gmail.com",
-      role: "admin",
-      roleName: "Admin",
-      authProvider: "google"
-    };
-
-    setIsGoogleModalOpen(false);
-    onLogin(adminUser);
-  };
-
   return (
     <div className="min-h-screen bg-white relative flex flex-col justify-between font-sans select-none overflow-x-hidden">
       {/* 1. LOGO GÓC TRÊN BÊN TRÁI QUIZIZZ */}
@@ -133,7 +275,7 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
         </span>
       </div>
 
-      {/* 2. BACKGROUND CÁC CARD MINH HỌA NGHỆ THUẬT HAI BÊN (DECORATION) */}
+      {/* 2. BACKGROUND CÁC CARD MINH HỌA NGHỆ THUẬT HAI BÊN */}
       <div className="hidden lg:block absolute left-4 top-1/2 -translate-y-1/2 w-64 opacity-60 pointer-events-none select-none space-y-4">
         <div className="bg-amber-50/70 border border-amber-200/60 rounded-xl p-3 shadow-2xs transform -rotate-3 scale-95">
           <div className="w-16 h-2 bg-amber-200 rounded mb-2"></div>
@@ -183,37 +325,42 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
       {/* 3. KHU VỰC FORM ĐĂNG NHẬP Ở TRUNG TÂM */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-14 z-10">
         <div className="w-full max-w-[430px]">
-          {/* Tiêu đề "Đăng nhập" */}
           <h1 className="text-[26px] font-bold text-center text-slate-900 mb-6 tracking-tight">
             {isRegisterMode ? 'Đăng ký tài khoản' : 'Đăng nhập Quizizz'}
           </h1>
 
           {/* Thông báo lỗi nếu có */}
           {error && (
-            <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
+            <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start gap-2 leading-relaxed animate-in fade-in">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-500 mt-0.5" />
               <span>{error}</span>
             </div>
           )}
 
-          {/* NÚT ĐĂNG NHẬP BẰNG GOOGLE (DÀNH CHO ADMIN) */}
+          {/* NÚT ĐĂNG NHẬP BẰNG GOOGLE THẬT (DÀNH CHO ADMIN) */}
           {!isRegisterMode && (
             <div className="mb-5 space-y-4">
-              <button
-                type="button"
-                onClick={() => {
-                  setGoogleError('');
-                  setShowOtherAccountInput(false);
-                  setIsGoogleModalOpen(true);
-                }}
-                className="w-full py-2.5 px-4 bg-white hover:bg-slate-50 active:bg-slate-100 border border-slate-300 hover:border-slate-400 rounded-xl font-bold text-xs sm:text-sm text-slate-700 flex items-center justify-center gap-2.5 transition-all shadow-xs cursor-pointer group"
-              >
-                <GoogleIcon className="w-5 h-5 shrink-0" />
-                <span>Đăng nhập bằng Google</span>
-                <span className="text-[10px] font-semibold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full ml-0.5">
-                  Admin
-                </span>
-              </button>
+              {/* Nơi render nút Google GSI thật nếu có Client ID */}
+              <div id="googleRealButtonContainer" className="w-full min-h-[44px]">
+                <button
+                  type="button"
+                  onClick={handleTriggerGoogleLogin}
+                  disabled={isGoogleLoading}
+                  className="w-full py-2.5 px-4 bg-white hover:bg-slate-50 active:bg-slate-100 border border-slate-300 hover:border-slate-400 rounded-xl font-bold text-xs sm:text-sm text-slate-700 flex items-center justify-center gap-2.5 transition-all shadow-xs cursor-pointer group"
+                >
+                  <GoogleIcon className="w-5 h-5 shrink-0" />
+                  <span>Đăng nhập bằng Google</span>
+                  <span className="text-[10px] font-semibold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full ml-0.5">
+                    Admin
+                  </span>
+                </button>
+              </div>
+
+              {googleStatus && (
+                <p className="text-[11px] text-center text-purple-700 font-semibold animate-pulse">
+                  {googleStatus}
+                </p>
+              )}
 
               {/* Đường phân cách */}
               <div className="flex items-center gap-3">
@@ -241,7 +388,6 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Nếu đang ở chế độ đăng ký */}
             {isRegisterMode && (
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5 pl-0.5">
@@ -260,7 +406,7 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
               </div>
             )}
 
-            {/* Input 1: Nhập địa chỉ email hoặc tên người dùng */}
+            {/* Input Email / Username */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5 pl-0.5">
                 Nhập địa chỉ email hoặc tên người dùng
@@ -278,7 +424,7 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
               </div>
             </div>
 
-            {/* Input 2: Nhập mật khẩu của bạn */}
+            {/* Input Password */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5 pl-0.5">
                 Nhập mật khẩu của bạn
@@ -296,14 +442,13 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="text-slate-400 hover:text-slate-600 focus:outline-none p-0.5"
+                  className="text-slate-400 hover:text-slate-600 focus:outline-none p-0.5 cursor-pointer"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
-            {/* Nếu đang đăng ký: chọn vai trò */}
             {isRegisterMode && (
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5 pl-0.5">
@@ -312,7 +457,7 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
                 <select
                   value={regRole}
                   onChange={(e) => setRegRole(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs text-slate-800 border border-slate-300 rounded-xl outline-none focus:border-[#d82a7a] bg-white"
+                  className="w-full px-3.5 py-2.5 text-xs text-slate-800 border border-slate-300 rounded-xl outline-none focus:border-[#d82a7a] bg-white cursor-pointer"
                 >
                   <option value="student">Sinh viên (Làm bài thi & xem kết quả)</option>
                   <option value="admin">Quản trị viên (Admin - Quản lý toàn diện)</option>
@@ -320,7 +465,7 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
               </div>
             )}
 
-            {/* Nút bấm "Tiếp tục" màu hồng fuchsia / magenta đặc trưng */}
+            {/* Nút đăng nhập Sinh viên */}
             <div className="pt-2">
               <button
                 type="submit"
@@ -369,114 +514,88 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
                 </span>
               )}
             </div>
+
+            {/* Nút cấu hình Google Client ID nếu cần thay đổi */}
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setShowConfigModal(true)}
+                className="text-[11px] text-slate-400 hover:text-slate-600 underline cursor-pointer"
+              >
+                ⚙️ {googleClientId ? 'Thay đổi Google Client ID' : 'Cấu hình Google Client ID'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* MODAL ĐĂNG NHẬP BẰNG GOOGLE CHUẨN (DÀNH RIÊNG CHO ADMIN) */}
-      {isGoogleModalOpen && (
+      {/* MODAL HƯỚNG DẪN KẾT NỐI GOOGLE CLIENT ID THẬT */}
+      {showConfigModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-150">
-            {/* Header Google */}
-            <div className="flex items-start justify-between pb-4 border-b border-slate-100">
-              <div className="flex items-center gap-3">
-                <GoogleIcon className="w-7 h-7 shrink-0" />
-                <div>
-                  <h3 className="text-base font-bold text-slate-900 leading-snug">
-                    Đăng nhập bằng Google
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Chọn tài khoản Google để vào quyền Quản trị viên
-                  </p>
-                </div>
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-150">
+            <div className="flex items-start justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <GoogleIcon className="w-6 h-6" />
+                <h3 className="text-sm font-bold text-slate-800">
+                  Cấu hình Google OAuth Client ID
+                </h3>
               </div>
-              <button 
-                onClick={() => setIsGoogleModalOpen(false)}
-                className="w-7 h-7 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-700 cursor-pointer transition-colors"
+              <button
+                onClick={() => setShowConfigModal(false)}
+                className="w-7 h-7 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-700 cursor-pointer"
               >
-                <X className="w-4 h-4" />
+                ✕
               </button>
             </div>
 
-            {/* Thông báo lỗi nếu chọn tài khoản khác */}
-            {googleError && (
-              <div className="my-3.5 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start gap-2 leading-relaxed animate-in fade-in">
-                <AlertCircle className="w-4 h-4 shrink-0 text-rose-500 mt-0.5" />
-                <span>{googleError}</span>
-              </div>
-            )}
+            <div className="py-4 space-y-3.5 text-xs text-slate-600">
+              <p>
+                Để bật cửa sổ <strong>Đăng nhập Google thật</strong> của chính Google (không phải giả lập), bạn cần dán <strong>OAuth Client ID</strong> từ Google Cloud Console vào đây:
+              </p>
 
-            {/* Danh sách tài khoản Google */}
-            <div className="py-4 space-y-3">
-              {/* 1. Tài khoản Admin chính thức: vlong3217@gmail.com */}
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1.5 font-mono text-[11px]">
+                <div className="font-bold text-slate-700">Các bước lấy miễn phí trong 1 phút:</div>
+                <ol className="list-decimal list-inside space-y-1 text-slate-600">
+                  <li>Truy cập <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer" className="text-blue-600 underline font-semibold">Google Cloud Console - Credentials</a></li>
+                  <li>Bấm <strong>Create Credentials</strong> → chọn <strong>OAuth Client ID</strong> (Web application)</li>
+                  <li>Thêm vào Authorized JavaScript origins:
+                    <div className="mt-1 bg-white p-1 rounded border border-slate-200 text-purple-700 font-bold select-all">
+                      https://hoangvutracnghiem.vercel.app
+                    </div>
+                  </li>
+                  <li>Sao chép <strong>Client ID</strong> (dạng: <code className="text-pink-600">xxx...apps.googleusercontent.com</code>) và dán vào bên dưới:</li>
+                </ol>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Google Client ID của bạn:
+                </label>
+                <input
+                  type="text"
+                  value={tempClientId}
+                  onChange={(e) => setTempClientId(e.target.value)}
+                  placeholder="VD: 123456789-abcdef.apps.googleusercontent.com"
+                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl outline-none focus:border-purple-600 font-mono"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
               <button
                 type="button"
-                onClick={() => handleGoogleAdminLogin('vlong3217@gmail.com')}
-                className="w-full p-3.5 border-2 border-purple-200 hover:border-purple-500 bg-purple-50/40 hover:bg-purple-50/80 rounded-2xl flex items-center justify-between transition-all cursor-pointer group text-left shadow-2xs"
+                onClick={() => setShowConfigModal(false)}
+                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
               >
-                <div className="flex items-center gap-3 min-w-0">
-                  {/* Avatar chữ L màu tím */}
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 text-white font-black text-sm flex items-center justify-center shrink-0 shadow-xs">
-                    L
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-xs font-bold text-slate-900 group-hover:text-purple-700 transition-colors truncate">
-                      Long Hoàng Vũ
-                    </div>
-                    <div className="text-[11px] text-slate-500 font-mono truncate">
-                      vlong3217@gmail.com
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1.5 shrink-0 pl-2">
-                  <span className="flex items-center gap-1 text-[10px] font-bold text-purple-700 bg-white border border-purple-200 px-2 py-0.5 rounded-full shadow-2xs">
-                    <ShieldCheck className="w-3 h-3 text-purple-600" />
-                    Admin
-                  </span>
-                </div>
+                Hủy
               </button>
-
-              {/* 2. Lựa chọn tài khoản Google khác */}
-              {!showOtherAccountInput ? (
-                <button
-                  type="button"
-                  onClick={() => setShowOtherAccountInput(true)}
-                  className="w-full p-3 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-2xl flex items-center gap-3 text-left transition-colors cursor-pointer text-xs font-semibold text-slate-700"
-                >
-                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center shrink-0 text-slate-500">
-                    <UserPlus className="w-4 h-4" />
-                  </div>
-                  <span>Sử dụng một tài khoản Google khác</span>
-                </button>
-              ) : (
-                <div className="p-3.5 border border-slate-200 rounded-2xl space-y-2.5 bg-slate-50/50">
-                  <label className="block text-xs font-bold text-slate-700">
-                    Nhập địa chỉ email Google:
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="email"
-                      value={otherGoogleEmail}
-                      onChange={(e) => setOtherGoogleEmail(e.target.value)}
-                      placeholder="vd: tenban@gmail.com"
-                      className="flex-1 px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl outline-none focus:border-purple-600"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleGoogleAdminLogin(otherGoogleEmail)}
-                      className="px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl cursor-pointer transition-colors shrink-0"
-                    >
-                      Đăng nhập
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Footer lưu ý bảo mật */}
-            <div className="pt-3 border-t border-slate-100 text-[11px] text-slate-400 leading-relaxed text-center">
-              Để tiếp tục, Google sẽ chia sẻ tên, địa chỉ email của bạn với Quizizz để xác thực phân quyền Quản trị viên.
+              <button
+                type="button"
+                onClick={handleSaveGoogleClientId}
+                className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer transition-colors"
+              >
+                Lưu & Kích hoạt Google thật
+              </button>
             </div>
           </div>
         </div>
