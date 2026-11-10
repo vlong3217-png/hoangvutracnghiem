@@ -1316,7 +1316,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
                 disabled={multiSelectedOpts.length === 0 || Boolean(answeredState)}
                 className="px-4 py-2 sm:px-6 sm:py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 disabled:opacity-30 disabled:cursor-not-allowed text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-lg transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2"
               >
-                Gửi câu trả lời ({multiSelectedOpts.length})
+                Gửi câu trả lời
               </button>
             ) : (currentQ.type === 'short_answer' || currentQ.type === 'fill_blank') ? (
               <button
