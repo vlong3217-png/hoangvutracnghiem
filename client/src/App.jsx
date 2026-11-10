@@ -5,7 +5,6 @@ import ExamList from './components/ExamList';
 import ExamRoom from './components/ExamRoom';
 import ExamResult from './components/ExamResult';
 import TeacherManage from './components/TeacherManage';
-import AdminManage from './components/AdminManage';
 import LoginPage from './components/LoginPage';
 import QuizizzLogo from './components/QuizizzLogo';
 import { 
@@ -258,36 +257,6 @@ export default function App() {
     }
   };
 
-  const handleUpdateUserRole = (userId, newRole) => {
-    const roleNameMap = {
-      student: 'Sinh viên',
-      admin: 'Admin'
-    };
-    setUsers(users.map(u => u.id === userId ? { ...u, role: newRole, roleName: roleNameMap[newRole] } : u));
-    if (currentUser && currentUser.id === userId) {
-      setCurrentUser(prev => ({ ...prev, role: newRole, roleName: roleNameMap[newRole] }));
-    }
-  };
-
-  const handleDeleteUser = (userId) => {
-    if (users.length <= 1) {
-      alert("Không thể xóa tài khoản cuối cùng!");
-      return;
-    }
-    if (window.confirm("Bạn có chắc chắn muốn xóa tài khoản này?")) {
-      const remaining = users.filter(u => u.id !== userId);
-      setUsers(remaining);
-      if (currentUser && currentUser.id === userId) {
-        setCurrentUser(null);
-        navigate('/login');
-      }
-    }
-  };
-
-  const handleAddUser = (newUser) => {
-    setUsers([...users, newUser]);
-  };
-
   const handleSelectExam = (exam) => {
     setActiveExam(exam);
     navigate(`/exam/${exam.id}`);
@@ -339,7 +308,6 @@ export default function App() {
   }
 
   const canAccessManagement = currentUser.role === 'admin';
-  const canAccessAdmin = currentUser.role === 'admin';
 
   return (
     <div className="min-h-screen bg-white text-slate-800 font-sans flex flex-row antialiased relative">
@@ -356,7 +324,7 @@ export default function App() {
               <QuizizzLogo className="w-8 h-8 text-[#d82a7a]" />
             </div>
 
-            {/* Mục: Trang chủ (Quản lý đề thi) */}
+            {/* Mục duy nhất: Trang chủ (Quản lý đề thi) */}
             <button
               onClick={() => navigate('/manage')}
               className={`flex flex-col items-center gap-1 text-[10px] w-full py-2.5 transition-all cursor-pointer ${
@@ -369,22 +337,6 @@ export default function App() {
               <Home className="w-5 h-5 text-[#d82a7a]" />
               <span className="scale-90 font-bold">Trang chủ</span>
             </button>
-
-            {/* Mục: Quản trị tài khoản */}
-            {canAccessAdmin && (
-              <button
-                onClick={() => navigate('/admin')}
-                className={`flex flex-col items-center gap-1 text-[10px] w-full py-2.5 transition-all cursor-pointer ${
-                  location.pathname === '/admin'
-                    ? 'text-slate-900 font-bold border-l-2 border-[#d82a7a] bg-pink-50/20'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-                title="Quản trị người dùng & Phân quyền"
-              >
-                <Users className="w-5 h-5 text-slate-600" />
-                <span className="scale-90 font-bold">Tài khoản</span>
-              </button>
-            )}
           </div>
 
           {/* Dưới cùng: Avatar Admin & Nút Đăng xuất */}
@@ -421,18 +373,6 @@ export default function App() {
             <QuizizzLogo className="w-5 h-5 text-[#d82a7a]" />
             <span className="text-[10px]">Trang chủ</span>
           </button>
-
-          {canAccessAdmin && (
-            <button
-              onClick={() => navigate('/admin')}
-              className={`flex flex-col items-center justify-center gap-0.5 text-xs font-medium cursor-pointer ${
-                location.pathname === '/admin' ? 'text-[#d82a7a] font-bold' : 'text-slate-500'
-              }`}
-            >
-              <Users className="w-4 h-4" />
-              <span className="text-[10px]">Tài khoản</span>
-            </button>
-          )}
 
           <div className="flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-full text-slate-800 text-xs font-semibold">
             <div className="w-5 h-5 rounded-full bg-slate-800 text-white text-[10px] flex items-center justify-center font-bold">
@@ -487,23 +427,6 @@ export default function App() {
                     onPlayExam={handleSelectExam}
                     onUpdateExam={handleUpdateExam}
                     isLoading={isLoadingExams}
-                  />
-                ) : (
-                  <Navigate to="/exams" replace />
-                )
-              } 
-            />
-
-            {/* Quản trị tài khoản người dùng */}
-            <Route 
-              path="/admin" 
-              element={
-                canAccessAdmin ? (
-                  <AdminManage 
-                    users={users} 
-                    onUpdateUserRole={handleUpdateUserRole} 
-                    onDeleteUser={handleDeleteUser} 
-                    onAddUser={handleAddUser} 
                   />
                 ) : (
                   <Navigate to="/exams" replace />
