@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Play, 
   Edit3,
@@ -48,6 +49,7 @@ const getQuestionTypeName = (type) => {
 };
 
 export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExam, onAddExam }) {
+  const navigate = useNavigate();
   const [internalExam, setInternalExam] = useState(exam);
   const [isLoadingDetail, setIsLoadingDetail] = useState(!exam.questions || exam.questions.length === 0);
   const [isProcessingAction, setIsProcessingAction] = useState(null); // 'Đang tải câu hỏi...', 'Đang lưu câu hỏi...', 'Đang xóa câu hỏi...'
@@ -544,7 +546,7 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
       <div className="flex items-center justify-between py-4 border-b border-slate-100 flex-wrap gap-3">
         <div className="flex items-center gap-2.5">
           <button 
-            onClick={() => setIsFullEditMode(true)}
+            onClick={() => navigate(`/manage/edit/${exam.id}`)}
             className="px-3.5 py-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
             title="Mở trang chỉnh sửa và thêm các dạng câu hỏi mới cho đề thi"
           >

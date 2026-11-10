@@ -5,6 +5,8 @@ import ExamList from './components/ExamList';
 import ExamRoom from './components/ExamRoom';
 import ExamResult from './components/ExamResult';
 import TeacherManage from './components/TeacherManage';
+import ExamDetailManage from './components/ExamDetailManage';
+import CreateResourceModal from './components/CreateResourceModal';
 import LoginPage from './components/LoginPage';
 import QuizizzLogo from './components/QuizizzLogo';
 import { 
@@ -83,6 +85,174 @@ function ExamRoomRoute({ onBack, onSubmitExam, isOpeningExam }) {
       exam={examData}
       onSubmitExam={onSubmitExam}
       onBack={onBack}
+    />
+  );
+}
+
+// Wrapper component cho route xem chi tiết đề thi: /manage/exam/:examId
+function ExamDetailRoute({ onPlayExam, onUpdateExam, onAddExam }) {
+  const { examId } = useParams();
+  const navigate = useNavigate();
+  const [examData, setExamData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    setIsLoading(true);
+    setLoadError(null);
+
+    fetchExamById(examId)
+      .then(full => {
+        if (!isMounted) return;
+        if (full && full.id) {
+          setExamData(full);
+        } else {
+          setLoadError('Không tìm thấy bài thi hoặc bài thi đã bị xóa.');
+        }
+      })
+      .catch(err => {
+        if (!isMounted) return;
+        setLoadError(err.message || 'Lỗi khi tải dữ liệu bài thi.');
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+
+    return () => { isMounted = false; };
+  }, [examId]);
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 bg-white min-h-[calc(100vh-64px)] flex flex-col items-center justify-center p-8 select-none">
+        <div className="flex flex-col items-center gap-3.5 p-8 rounded-2xl border border-slate-100 bg-slate-50/50 shadow-2xs max-w-sm text-center">
+          <div className="w-10 h-10 rounded-full border-4 border-pink-100 border-t-[#d82a7a] animate-spin"></div>
+          <div>
+            <h4 className="text-sm font-bold text-slate-800">Đang tải đề thi...</h4>
+            <p className="text-xs text-slate-400 mt-1">Đang đồng bộ dữ liệu câu hỏi từ CSDL</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError || !examData) {
+    return (
+      <div className="flex-1 bg-white min-h-[calc(100vh-64px)] flex flex-col items-center justify-center p-8 text-center">
+        <div className="w-14 h-14 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center text-xl font-bold mb-3 border border-rose-100">
+          ✕
+        </div>
+        <h4 className="text-sm font-bold text-slate-800 mb-1">Không tìm thấy đề thi</h4>
+        <p className="text-xs text-slate-500 mb-5">{loadError || 'Đề thi không tồn tại.'}</p>
+        <button
+          onClick={() => navigate('/manage')}
+          className="px-4 py-2 bg-[#d82a7a] hover:bg-[#c2226b] text-white text-xs font-bold rounded-xl shadow-xs"
+        >
+          Quay lại Quản lý
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <ExamDetailManage
+      exam={examData}
+      onBack={() => navigate('/manage')}
+      onPlayExam={onPlayExam}
+      onUpdateExam={async (updated) => {
+        setExamData(updated);
+        if (onUpdateExam) await onUpdateExam(updated);
+      }}
+      onAddExam={onAddExam}
+    />
+  );
+}
+
+// Wrapper component cho route chỉnh sửa toàn diện đề thi: /manage/edit/:examId
+function ExamEditRoute({ onUpdateExam }) {
+  const { examId } = useParams();
+  const navigate = useNavigate();
+  const [examData, setExamData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    setIsLoading(true);
+    setLoadError(null);
+
+    fetchExamById(examId)
+      .then(full => {
+        if (!isMounted) return;
+        if (full && full.id) {
+          setExamData(full);
+        } else {
+          setLoadError('Không tìm thấy bài thi để chỉnh sửa.');
+        }
+      })
+      .catch(err => {
+        if (!isMounted) return;
+        setLoadError(err.message || 'Lỗi khi tải dữ liệu bài thi.');
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+
+    return () => { isMounted = false; };
+  }, [examId]);
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 bg-white min-h-[calc(100vh-64px)] flex flex-col items-center justify-center p-8 select-none">
+        <div className="flex flex-col items-center gap-3.5 p-8 rounded-2xl border border-slate-100 bg-slate-50/50 shadow-2xs max-w-sm text-center">
+          <div className="w-10 h-10 rounded-full border-4 border-pink-100 border-t-[#d82a7a] animate-spin"></div>
+          <div>
+            <h4 className="text-sm font-bold text-slate-800">Đang tải trang chỉnh sửa...</h4>
+            <p className="text-xs text-slate-400 mt-1">Vui lòng chờ trong giây lát</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError || !examData) {
+    return (
+      <div className="flex-1 bg-white min-h-[calc(100vh-64px)] flex flex-col items-center justify-center p-8 text-center">
+        <h4 className="text-sm font-bold text-slate-800 mb-1">Không thể mở trang chỉnh sửa</h4>
+        <p className="text-xs text-slate-500 mb-5">{loadError || 'Đề thi không tồn tại.'}</p>
+        <button
+          onClick={() => navigate('/manage')}
+          className="px-4 py-2 bg-[#d82a7a] hover:bg-[#c2226b] text-white text-xs font-bold rounded-xl shadow-xs"
+        >
+          Quay lại Quản lý
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <CreateResourceModal
+      initialExam={examData}
+      onBack={() => navigate(`/manage/exam/${examId}`)}
+      onSaveExam={async (updated) => {
+        setExamData(updated);
+        if (onUpdateExam) await onUpdateExam(updated);
+      }}
+    />
+  );
+}
+
+// Wrapper component cho route tạo đề thi mới: /manage/create
+function ExamCreateRoute({ onAddExam }) {
+  const navigate = useNavigate();
+
+  return (
+    <CreateResourceModal
+      onBack={() => navigate('/manage')}
+      onSaveExam={async (newExam) => {
+        if (onAddExam) await onAddExam(newExam);
+        navigate('/manage');
+      }}
     />
   );
 }
@@ -424,6 +594,50 @@ export default function App() {
                   <Navigate to="/exams" replace />
                 )
               } 
+            />
+
+            {/* Chi tiết đề thi & danh sách câu hỏi: /manage/exam/:examId */}
+            <Route
+              path="/manage/exam/:examId"
+              element={
+                canAccessManagement ? (
+                  <ExamDetailRoute
+                    onPlayExam={handleSelectExam}
+                    onUpdateExam={handleUpdateExam}
+                    onAddExam={handleAddExam}
+                  />
+                ) : (
+                  <Navigate to="/exams" replace />
+                )
+              }
+            />
+
+            {/* Chỉnh sửa toàn diện đề thi: /manage/edit/:examId */}
+            <Route
+              path="/manage/edit/:examId"
+              element={
+                canAccessManagement ? (
+                  <ExamEditRoute
+                    onUpdateExam={handleUpdateExam}
+                  />
+                ) : (
+                  <Navigate to="/exams" replace />
+                )
+              }
+            />
+
+            {/* Tạo đề thi mới: /manage/create */}
+            <Route
+              path="/manage/create"
+              element={
+                canAccessManagement ? (
+                  <ExamCreateRoute
+                    onAddExam={handleAddExam}
+                  />
+                ) : (
+                  <Navigate to="/exams" replace />
+                )
+              }
             />
 
             {/* Phòng làm bài thi theo ID: /exam/:examId */}

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { fetchExamById } from '../services/api';
 import { 
   Plus, 
@@ -22,6 +23,7 @@ import CreateResourceModal from './CreateResourceModal';
 import QuizizzLogo from './QuizizzLogo';
 
 export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayExam, onUpdateExam, isLoading }) {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('created'); // 'created' | 'history' | 'shared' | 'all'
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedExams, setSelectedExams] = useState([]);
@@ -33,26 +35,9 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
   const [loadingDetailId, setLoadingDetailId] = useState(null);
   const [deletingExamId, setDeletingExamId] = useState(null);
 
-  // Khi click vào xem chi tiết đề thi: Tải đầy đủ danh sách câu hỏi từ CSDL Backend nếu chưa có
-  const handleOpenExamDetail = async (exam) => {
-    if (exam.questions && exam.questions.length > 0) {
-      setSelectedExamDetail(exam);
-      return;
-    }
-
-    setLoadingDetailId(exam.id);
-    try {
-      const fullExam = await fetchExamById(exam.id);
-      if (fullExam && fullExam.questions) {
-        setSelectedExamDetail(fullExam);
-      } else {
-        setSelectedExamDetail(exam);
-      }
-    } catch {
-      setSelectedExamDetail(exam);
-    } finally {
-      setLoadingDetailId(null);
-    }
+  // Khi click vào xem chi tiết đề thi: Điều hướng sang route /manage/exam/:id
+  const handleOpenExamDetail = (exam) => {
+    navigate(`/manage/exam/${exam.id}`);
   };
 
   // Form state tạo đề thi
@@ -207,7 +192,7 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
           
           <nav className="space-y-1">
             <button
-              onClick={() => setShowCreateModal(true)}
+              onClick={() => navigate('/manage/create')}
               className="w-full flex items-center gap-3 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition-colors text-left"
             >
               <Edit3 className="w-4 h-4 text-slate-500" />
@@ -303,7 +288,7 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
           <h1 className="text-base sm:text-xl font-bold text-slate-900 tracking-tight truncate">Được tạo bởi tôi</h1>
           
           <button
-            onClick={() => setShowCreateModal(true)}
+            onClick={() => navigate('/manage/create')}
             className="px-3 sm:px-4 py-2 bg-[#d82a7a] hover:bg-[#c2226b] text-white text-xs font-bold rounded-lg flex items-center gap-1.5 shadow-xs transition-colors"
           >
             <Plus className="w-4 h-4" />
