@@ -34,7 +34,6 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [answeredState, setAnsweredState] = useState(null);
   const [shortInputText, setShortInputText] = useState('');
-  const [playMode, setPlayMode] = useState('practice');
   const [showInstantAnswer, setShowInstantAnswer] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
@@ -681,23 +680,6 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
               <span>Đã bỏ qua ({skippedQuestionIds.length})</span>
             </button>
           )}
-
-          <div className="hidden md:flex items-center bg-black/20 p-1 rounded-xl border border-white/10 text-xs font-semibold backdrop-blur-xs">
-            <button
-              onClick={() => setPlayMode('practice')}
-              className={`px-3 py-1 rounded-lg transition-all ${playMode === 'practice' ? 'bg-[#58174f]/70 text-white shadow-xs font-bold' : 'text-slate-400 hover:text-white'
-                }`}
-            >
-              Chế độ chơi theo cá nhân
-            </button>
-            <button
-              onClick={() => setPlayMode('test')}
-              className={`px-3 py-1 rounded-lg transition-all ${playMode === 'test' ? 'bg-[#58174f]/70 text-white shadow-xs font-bold' : 'text-slate-400 hover:text-white'
-                }`}
-            >
-              Chế độ kiểm tra
-            </button>
-          </div>
 
           <button
             onClick={() => setShowExitConfirm(true)}
