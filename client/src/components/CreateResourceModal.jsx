@@ -588,7 +588,11 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
         await onSaveExam(savedExam);
       }
       alert('🎉 Đã lưu bài thi và cập nhật toàn bộ thứ tự câu hỏi thành công!');
-      if (onBack) onBack();
+      // Nếu là tạo đề mới từ đầu (!initialExam) thì mới đóng quay ra ngoài,
+      // còn nếu đang chỉnh sửa đề thi đã có (initialExam) thì giữ nguyên ở trang chỉnh sửa
+      if (!initialExam && onBack) {
+        onBack();
+      }
     } catch (err) {
       alert('Lỗi lưu bài thi: ' + err.message);
     } finally {
