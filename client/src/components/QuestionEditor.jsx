@@ -234,8 +234,8 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
     question.sentences && question.sentences.length > 0
       ? question.sentences
       : [
-        { id: 1, prefix: 'Khái niệm 1 là ', correctWord: 'A', suffix: '.' },
-        { id: 2, prefix: 'Khái niệm 2 là ', correctWord: 'B', suffix: '.' }
+        { id: 1, prefix: 'Khái niệm 1 là ', correctWord: 'A', suffix: '' },
+        { id: 2, prefix: 'Khái niệm 2 là ', correctWord: 'B', suffix: '' }
       ]
   );
   const [draggableItems, setDraggableItems] = useState(
@@ -247,7 +247,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
   const handleAddSentence = () => {
     const nextId = sentences.length + 1;
     const defaultWord = `Từ khóa ${nextId}`;
-    const newSent = { id: nextId, prefix: `Mệnh đề ${nextId} là `, correctWord: defaultWord, suffix: '.' };
+    const newSent = { id: nextId, prefix: `Mệnh đề ${nextId} là `, correctWord: defaultWord, suffix: '' };
     setSentences([...sentences, newSent]);
     if (!draggableItems.some(item => (typeof item === 'object' ? item.text : item) === defaultWord)) {
       setDraggableItems([...draggableItems, defaultWord]);
@@ -310,8 +310,8 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
     } else if (typeId === 'drag_drop') {
       if (!sentences || sentences.length === 0) {
         setSentences([
-          { id: 1, prefix: 'Khái niệm 1 là ', correctWord: 'A', suffix: '.' },
-          { id: 2, prefix: 'Khái niệm 2 là ', correctWord: 'B', suffix: '.' }
+          { id: 1, prefix: 'Khái niệm 1 là ', correctWord: 'A', suffix: '' },
+          { id: 2, prefix: 'Khái niệm 2 là ', correctWord: 'B', suffix: '' }
         ]);
         setDraggableItems(['A', 'B']);
       }
@@ -1244,7 +1244,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                   Danh sách câu ghép nối & từ khóa kéo thả
                 </span>
                 <span className="text-[11px] text-white/50">
-                  Nhập vế trước, từ khóa đúng cần kéo vào ô trống, và vế sau của mỗi câu
+                  Nhập vế trước và từ khóa đúng cần kéo vào ô trống của mỗi câu
                 </span>
               </div>
               <button
@@ -1281,9 +1281,9 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center">
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
                     {/* Vế trước */}
-                    <div className="sm:col-span-4">
+                    <div className="sm:col-span-6">
                       <label className="text-[11px] text-white/60 block mb-1">Vế trước ô trống:</label>
                       <input
                         type="text"
@@ -1295,7 +1295,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                     </div>
 
                     {/* Từ khóa đúng (ô kéo thả) */}
-                    <div className="sm:col-span-4">
+                    <div className="sm:col-span-6">
                       <label className="text-[11px] text-rose-300 font-bold block mb-1">★ Từ khóa đúng (ô trống):</label>
                       <input
                         type="text"
@@ -1303,18 +1303,6 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                         onChange={(e) => handleSentenceChange(sIdx, 'correctWord', e.target.value)}
                         placeholder="Ví dụ: Mạng LAN"
                         className="w-full bg-rose-500/20 border-2 border-rose-400 rounded-lg px-3 py-2 text-xs sm:text-sm text-rose-200 font-bold outline-none focus:border-rose-300"
-                      />
-                    </div>
-
-                    {/* Vế sau */}
-                    <div className="sm:col-span-4">
-                      <label className="text-[11px] text-white/60 block mb-1">Vế sau ô trống:</label>
-                      <input
-                        type="text"
-                        value={sent.suffix}
-                        onChange={(e) => handleSentenceChange(sIdx, 'suffix', e.target.value)}
-                        placeholder="Ví dụ: trong mô hình OSI."
-                        className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-xs sm:text-sm text-white outline-none focus:border-rose-400 font-normal"
                       />
                     </div>
                   </div>

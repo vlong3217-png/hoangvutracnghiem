@@ -473,8 +473,8 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
       ];
     } else if (typeId === 'drag_drop') {
       newQ.sentences = [
-        { id: 1, prefix: 'Khái niệm 1 là ', correctWord: 'A', suffix: '.' },
-        { id: 2, prefix: 'Khái niệm 2 là ', correctWord: 'B', suffix: '.' }
+        { id: 1, prefix: 'Khái niệm 1 là ', correctWord: 'A', suffix: '' },
+        { id: 2, prefix: 'Khái niệm 2 là ', correctWord: 'B', suffix: '' }
       ];
       newQ.draggableItems = ['A', 'B'];
     } else if (typeId === 'short_answer') {
