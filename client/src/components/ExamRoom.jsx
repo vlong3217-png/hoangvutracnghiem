@@ -712,6 +712,35 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
               <h2 className="text-sm sm:text-xl md:text-2xl font-normal text-white leading-relaxed">
                 {currentQ.question}
               </h2>
+
+              {/* Ảnh minh họa câu hỏi nếu có */}
+              {currentQ.image && (
+                <div className="mt-3 flex justify-center">
+                  <img
+                    src={currentQ.image}
+                    alt="Question visual"
+                    className="max-h-48 sm:max-h-64 rounded-xl border border-white/20 shadow-lg object-contain bg-black/40"
+                  />
+                </div>
+              )}
+
+              {/* Video minh họa câu hỏi nếu có */}
+              {currentQ.video && (
+                <div className="mt-3 flex justify-center">
+                  <div className="max-w-md w-full aspect-video rounded-xl overflow-hidden border border-white/20 shadow-lg bg-black">
+                    {currentQ.video.includes('youtube.com') || currentQ.video.includes('youtu.be') ? (
+                      <iframe
+                        src={currentQ.video.replace('watch?v=', 'embed/').replace('youtu.be/', 'www.youtube.com/embed/')}
+                        title="Video minh họa"
+                        className="w-full h-full"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <video src={currentQ.video} controls className="w-full h-full object-contain" />
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Pill nhỏ ngăn cách: Phần 1 / Phần 2 / Phần 3 / Phần 4 */}
@@ -769,6 +798,27 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
               <h2 className="text-sm sm:text-lg md:text-xl font-bold text-white leading-relaxed">
                 {currentQ.question}
               </h2>
+              {currentQ.image && (
+                <div className="mt-2.5 flex justify-center">
+                  <img src={currentQ.image} alt="Visual" className="max-h-40 rounded-xl border border-white/20 object-contain" />
+                </div>
+              )}
+              {currentQ.video && (
+                <div className="mt-2.5 flex justify-center">
+                  <div className="max-w-md w-full aspect-video rounded-xl overflow-hidden border border-white/20 shadow-lg bg-black">
+                    {currentQ.video.includes('youtube.com') || currentQ.video.includes('youtu.be') ? (
+                      <iframe
+                        src={currentQ.video.replace('watch?v=', 'embed/').replace('youtu.be/', 'www.youtube.com/embed/')}
+                        title="Video"
+                        className="w-full h-full"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <video src={currentQ.video} controls className="w-full h-full object-contain" />
+                    )}
+                  </div>
+                </div>
+              )}
               {selectedCategorizeItem && (
                 <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 bg-[#d82a7a]/20 border border-[#d82a7a] text-pink-200 text-xs font-bold rounded-full animate-pulse">
                   <span>Đang chọn: <strong>"{selectedCategorizeItem.text}"</strong></span>
@@ -917,6 +967,27 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
                 <h2 className="text-sm sm:text-xl font-black text-slate-200">
                   {currentQ.question}
                 </h2>
+                {currentQ.image && (
+                  <div className="mt-2.5 flex justify-center">
+                    <img src={currentQ.image} alt="Visual" className="max-h-40 rounded-xl border border-white/20 object-contain" />
+                  </div>
+                )}
+                {currentQ.video && (
+                  <div className="mt-2.5 flex justify-center">
+                    <div className="max-w-md w-full aspect-video rounded-xl overflow-hidden border border-white/20 shadow-lg bg-black">
+                      {currentQ.video.includes('youtube.com') || currentQ.video.includes('youtu.be') ? (
+                        <iframe
+                          src={currentQ.video.replace('watch?v=', 'embed/').replace('youtu.be/', 'www.youtube.com/embed/')}
+                          title="Video"
+                          className="w-full h-full"
+                          allowFullScreen
+                        />
+                      ) : (
+                        <video src={currentQ.video} controls className="w-full h-full object-contain" />
+                      )}
+                    </div>
+                  </div>
+                )}
                 <p className="text-[11px] sm:text-xs text-slate-400 mt-1">
                   Chạm vào từ khóa bên dưới để tự động điền vào chỗ trống, hoặc kéo thả vào ô.
                 </p>
@@ -1034,6 +1105,35 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
               <h2 className="text-base sm:text-2xl md:text-3xl font-normal text-white leading-relaxed max-w-6xl mx-auto">
                 {currentQ.question}
               </h2>
+
+              {/* Ảnh minh họa câu hỏi nếu có */}
+              {currentQ.image && (
+                <div className="mt-3 flex justify-center">
+                  <img
+                    src={currentQ.image}
+                    alt="Question visual"
+                    className="max-h-48 sm:max-h-64 rounded-xl border border-white/20 shadow-lg object-contain bg-black/40"
+                  />
+                </div>
+              )}
+
+              {/* Video minh họa câu hỏi nếu có */}
+              {currentQ.video && (
+                <div className="mt-3 flex justify-center">
+                  <div className="max-w-md w-full aspect-video rounded-xl overflow-hidden border border-white/20 shadow-lg bg-black">
+                    {currentQ.video.includes('youtube.com') || currentQ.video.includes('youtu.be') ? (
+                      <iframe
+                        src={currentQ.video.replace('watch?v=', 'embed/').replace('youtu.be/', 'www.youtube.com/embed/')}
+                        title="Video minh họa"
+                        className="w-full h-full"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <video src={currentQ.video} controls className="w-full h-full object-contain" />
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* LƯỚI 4 CARD ĐÁP ÁN: FULL CHIỀU NGANG, CHIỀU CAO VỪA VẶN THANH THOÁT */}
@@ -1094,6 +1194,14 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
                         </div>
                       )}
 
+                      {/* Ảnh minh họa của từng đáp án nếu có */}
+                      {opt.image && (
+                        <img
+                          src={opt.image}
+                          alt="Option visual"
+                          className="max-h-16 sm:max-h-24 max-w-full rounded-lg object-contain mb-1.5 border border-white/20 shadow-xs"
+                        />
+                      )}
                       <span className="leading-snug">{opt.text}</span>
                     </button>
                   </div>
@@ -1113,6 +1221,28 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
               <span className="text-[11px] sm:text-xs text-slate-400 block font-mono mb-2">
                 {currentIdx + 1}/{questions.length}
               </span>
+
+              {currentQ.image && (
+                <div className="mb-3 flex justify-center">
+                  <img src={currentQ.image} alt="Visual" className="max-h-40 rounded-xl border border-white/20 object-contain" />
+                </div>
+              )}
+              {currentQ.video && (
+                <div className="mb-3 flex justify-center">
+                  <div className="max-w-md w-full aspect-video rounded-xl overflow-hidden border border-white/20 shadow-lg bg-black">
+                    {currentQ.video.includes('youtube.com') || currentQ.video.includes('youtu.be') ? (
+                      <iframe
+                        src={currentQ.video.replace('watch?v=', 'embed/').replace('youtu.be/', 'www.youtube.com/embed/')}
+                        title="Video"
+                        className="w-full h-full"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <video src={currentQ.video} controls className="w-full h-full object-contain" />
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Nếu là dạng Đục lỗ (có mảng blanks và template) */}
               {currentQ.blanks && currentQ.template ? (
@@ -1194,6 +1324,28 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
               <h2 className="text-sm sm:text-xl md:text-2xl font-normal text-white leading-relaxed max-w-4xl mx-auto">
                 {currentQ.question}
               </h2>
+
+              {currentQ.image && (
+                <div className="mt-3 flex justify-center">
+                  <img src={currentQ.image} alt="Visual" className="max-h-48 rounded-xl border border-white/20 object-contain" />
+                </div>
+              )}
+              {currentQ.video && (
+                <div className="mt-3 flex justify-center">
+                  <div className="max-w-md w-full aspect-video rounded-xl overflow-hidden border border-white/20 shadow-lg bg-black">
+                    {currentQ.video.includes('youtube.com') || currentQ.video.includes('youtu.be') ? (
+                      <iframe
+                        src={currentQ.video.replace('watch?v=', 'embed/').replace('youtu.be/', 'www.youtube.com/embed/')}
+                        title="Video"
+                        className="w-full h-full"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <video src={currentQ.video} controls className="w-full h-full object-contain" />
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Khung Soạn thảo tự luận TO RỘNG */}

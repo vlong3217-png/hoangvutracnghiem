@@ -240,7 +240,12 @@ app.put('/api/exams/:id', async (req, res) => {
             blanks: q.blanks || null,
             sampleAnswer: q.sampleAnswer || null,
             criteria: q.criteria || q.rubric || null,
-            maxScore: q.maxScore || null
+            maxScore: q.maxScore || null,
+            explanation: q.explanation || null,
+            image: q.image || null,
+            video: q.video || null,
+            timeLimit: q.timeLimit || null,
+            points: q.points || null
           }),
           qIdx
         ]);

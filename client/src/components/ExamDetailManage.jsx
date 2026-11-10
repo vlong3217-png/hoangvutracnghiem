@@ -684,16 +684,33 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
                     </div>
                   </div>
 
-                  {/* Nội dung đề bài & Hình ảnh */}
-                  <div className="flex items-start gap-4 mb-5">
-                    {q.image && (
-                      <div className="w-24 h-20 rounded-xl overflow-hidden border border-slate-200 shrink-0 bg-slate-900 flex items-center justify-center">
-                        <img src={q.image} alt="Thumbnail" className="w-full h-full object-cover" />
+                  {/* Nội dung đề bài & Hình ảnh / Video */}
+                  <div className="flex flex-col gap-3 mb-5">
+                    <div className="flex items-start gap-4">
+                      {q.image && (
+                        <div className="w-24 h-20 rounded-xl overflow-hidden border border-slate-200 shrink-0 bg-slate-900 flex items-center justify-center">
+                          <img src={q.image} alt="Thumbnail" className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                      <h3 className="text-sm md:text-base font-bold text-slate-900 leading-relaxed">
+                        {q.question}
+                      </h3>
+                    </div>
+
+                    {q.video && (
+                      <div className="max-w-md w-full rounded-xl overflow-hidden border border-slate-200 aspect-video bg-black shadow-xs">
+                        {q.video.includes('youtube.com') || q.video.includes('youtu.be') ? (
+                          <iframe
+                            src={q.video.replace('watch?v=', 'embed/').replace('youtu.be/', 'www.youtube.com/embed/')}
+                            title="Video minh họa"
+                            className="w-full h-full"
+                            allowFullScreen
+                          />
+                        ) : (
+                          <video src={q.video} controls className="w-full h-full object-contain" />
+                        )}
                       </div>
                     )}
-                    <h3 className="text-sm md:text-base font-bold text-slate-900 leading-relaxed">
-                      {q.question}
-                    </h3>
                   </div>
 
                   {/* DANH SÁCH PHƯƠNG ÁN (GRID 2 CỘT) */}

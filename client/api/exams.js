@@ -75,7 +75,11 @@ export default async function handler(req, res) {
                 sampleAnswer: q.sampleAnswer || null,
                 criteria: q.criteria || q.rubric || null,
                 maxScore: q.maxScore || null,
-                explanation: q.explanation || null
+                explanation: q.explanation || null,
+                image: q.image || null,
+                video: q.video || null,
+                timeLimit: q.timeLimit || null,
+                points: q.points || null
               }),
               qIdx
             ]);
@@ -145,7 +149,11 @@ export default async function handler(req, res) {
                 sampleAnswer: q.sampleAnswer || null,
                 criteria: q.criteria || q.rubric || null,
                 maxScore: q.maxScore || null,
-                explanation: q.explanation || null
+                explanation: q.explanation || null,
+                image: q.image || null,
+                video: q.video || null,
+                timeLimit: q.timeLimit || null,
+                points: q.points || null
               }),
               qIdx
             ]);
