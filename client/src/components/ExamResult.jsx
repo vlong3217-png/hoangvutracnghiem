@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { 
   RotateCcw, 
   Search, 
-  ShoppingBag, 
   Sparkles, 
   Flame, 
   Clock, 
@@ -11,7 +10,6 @@ import {
   Maximize2, 
   HelpCircle,
   ExternalLink,
-  ChevronRight,
   Award
 } from 'lucide-react';
 
@@ -123,11 +121,8 @@ export default function ExamResult({ exam, result, onRetry, onGoHome }) {
       </header>
 
       {/* 2. BODY KHÔNG GIAN KẾT QUẢ CUỘN ĐƯỢC CHUẨN THEO ẢNH */}
-      <main className="flex-1 overflow-y-auto px-4 py-4 md:px-8 max-w-6xl w-full mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 pb-12">
-          
-          {/* CỘT TRÁI (8 CỘT): KẾT QUẢ CHÍNH & DANH SÁCH CÂU HỎI */}
-          <div className="lg:col-span-8 space-y-4">
+      <main className="flex-1 overflow-y-auto px-4 py-4 md:px-8 max-w-4xl w-full mx-auto">
+        <div className="space-y-4 pb-12">
             
             {/* CARD 1: BANNER ĐIỂM SỐ & CHÚC MỪNG CHÍNH */}
             <div className="bg-[#2b0827] border-2 border-white/10 rounded-3xl p-6 sm:p-7 relative overflow-hidden shadow-2xl">
@@ -184,7 +179,7 @@ export default function ExamResult({ exam, result, onRetry, onGoHome }) {
                     </div>
                   </div>
 
-                  {/* Nút hành động: [Chơi lại], [Tìm bài kiểm tra mới], [Cửa hàng] */}
+                  {/* Nút hành động: [Chơi lại], [Tìm bài kiểm tra mới] */}
                   <div className="flex flex-wrap items-center gap-2.5">
                     <button
                       onClick={onRetry}
@@ -200,19 +195,6 @@ export default function ExamResult({ exam, result, onRetry, onGoHome }) {
                     >
                       <span>Tìm bài kiểm tra mới</span>
                     </button>
-
-                    <button
-                      onClick={() => alert("Cửa hàng vật phẩm và avatar Quizizz!")}
-                      className="px-4 py-2 bg-white text-slate-900 hover:bg-slate-100 font-extrabold text-xs sm:text-sm rounded-xl shadow-md transition-all active:scale-95 flex items-center gap-1.5 ml-auto cursor-pointer"
-                    >
-                      <span>Cửa hàng</span>
-                    </button>
-                  </div>
-
-                  {/* Badge kiếm xu */}
-                  <div className="mt-3.5 flex items-center gap-1.5 text-[11px] text-amber-300 font-bold">
-                    <span>🪙</span>
-                    <span>Kiếm lên đến 690 đồng xu</span>
                   </div>
                 </div>
 
@@ -448,62 +430,6 @@ export default function ExamResult({ exam, result, onRetry, onGoHome }) {
                 })}
               </div>
             </div>
-
-          </div>
-
-          {/* CỘT PHẢI (4 CỘT): BANNER QUẢNG CÁO QUESTS & FORUM SINH VIÊN */}
-          <div className="lg:col-span-4 space-y-4">
-            
-            {/* CARD SIDEBAR 1: QUESTS (Kiếm hàng ngàn xu) */}
-            <div className="bg-gradient-to-b from-[#3d1a08] to-[#250d03] border-2 border-amber-500/30 rounded-3xl p-6 text-center shadow-2xl relative overflow-hidden flex flex-col items-center justify-between min-h-[220px]">
-              <div className="text-[11px] font-bold text-amber-200">
-                Kiếm hàng ngàn xu với
-              </div>
-
-              {/* Logo QUESTS chữ vàng 3D cực lớn */}
-              <div className="my-3 text-4xl sm:text-5xl font-black text-amber-400 tracking-wider drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)] scale-110">
-                QUESTS
-              </div>
-
-              {/* Đồng xu vàng bay lơ lửng */}
-              <div className="absolute top-4 left-4 text-xl opacity-75">🪙</div>
-              <div className="absolute bottom-10 right-4 text-xl opacity-75">🪙</div>
-
-              <button
-                onClick={() => alert("Tham gia nhiệm vụ Quests")}
-                className="mt-2 text-xs font-black text-amber-300 hover:text-white flex items-center gap-1 transition-colors cursor-pointer"
-              >
-                <span>Đi thôi!</span>
-                <ChevronRight className="w-4 h-4 stroke-[3]" />
-              </button>
-
-              <div className="flex gap-1.5 mt-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-white"></span>
-                <span className="w-1.5 h-1.5 rounded-full bg-white/40"></span>
-                <span className="w-1.5 h-1.5 rounded-full bg-white/40"></span>
-              </div>
-            </div>
-
-            {/* CARD SIDEBAR 2: DIỄN ĐÀN SINH VIÊN QUIZIZZ */}
-            <div className="bg-[#181126] border-2 border-white/10 rounded-3xl p-5 shadow-2xl flex flex-col justify-between">
-              <div className="text-xs font-black text-white mb-3">
-                Kết nối, học hỏi và tham gia!
-              </div>
-
-              {/* Tranh minh họa sinh viên hoạt hình trò chuyện */}
-              <div className="bg-[#241a38] rounded-2xl p-4 flex items-center justify-center text-4xl mb-3 shadow-inner">
-                🧑‍🎓👩‍💻👨‍🏫
-              </div>
-
-              <button
-                onClick={() => alert("Diễn đàn cộng đồng sinh viên")}
-                className="w-full py-2.5 bg-black/50 hover:bg-black/70 text-white font-extrabold text-xs rounded-xl border border-white/10 transition-colors text-center cursor-pointer"
-              >
-                Tham gia diễn đàn sinh viên Quizizz
-              </button>
-            </div>
-
-          </div>
 
         </div>
       </main>
