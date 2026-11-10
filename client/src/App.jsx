@@ -107,14 +107,6 @@ export default function App() {
       password: "123",
       role: "admin",
       roleName: "Admin"
-    },
-    {
-      id: "user-admin",
-      name: "Quản trị viên",
-      email: "admin@test.com",
-      password: "123",
-      role: "admin",
-      roleName: "Admin"
     }
   ]);
   
