@@ -758,29 +758,68 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
             </div>
 
             {/* Box 3: 2 NÚT ĐÁP ÁN LỚN: [ĐÚNG] VÀ [SAI] MỞ RỘNG TOÀN DIỆN */}
-            <div className="grid grid-cols-2 gap-3 sm:gap-5 shrink-0">
-              <button
-                onClick={() => handleSelectTrueFalsePart(activePartObj?.id || activePartId, true)}
-                className={`h-16 sm:h-24 md:h-28 rounded-2xl sm:rounded-3xl text-white font-black text-xl sm:text-3xl shadow-2xl border-2 transition-all active:scale-[0.98] flex items-center justify-center gap-2 sm:gap-3 cursor-pointer ${multiTfAnswers[activePartObj?.id || activePartId] === true
-                    ? 'bg-[#9cb800] border-white ring-4 ring-white/50'
-                    : 'bg-[#9cb800] hover:bg-[#8ca500] border-[#819900]'
-                  }`}
-              >
-                <span>ĐÚNG</span>
-                {multiTfAnswers[activePartObj?.id || activePartId] === true && <Check className="w-6 h-6 sm:w-8 sm:h-8 stroke-[3]" />}
-              </button>
+            {(() => {
+              const currentPartKey = activePartObj?.id || activePartId;
+              const userSelectedVal = multiTfAnswers[currentPartKey]; // true | false | undefined
+              const expectedVal = activePartObj?.isCorrect !== undefined
+                ? Boolean(activePartObj.isCorrect)
+                : (activePartObj?.correct !== undefined ? Boolean(activePartObj.correct) : true);
 
-              <button
-                onClick={() => handleSelectTrueFalsePart(activePartObj?.id || activePartId, false)}
-                className={`h-16 sm:h-24 md:h-28 rounded-2xl sm:rounded-3xl text-white font-black text-xl sm:text-3xl shadow-2xl border-2 transition-all active:scale-[0.98] flex items-center justify-center gap-2 sm:gap-3 cursor-pointer ${multiTfAnswers[activePartObj?.id || activePartId] === false
-                    ? 'bg-[#9b51e0] border-white ring-4 ring-white/50'
-                    : 'bg-[#9b51e0] hover:bg-[#8c40d1] border-[#7d32c3]'
-                  }`}
-              >
-                <span>SAI</span>
-                {multiTfAnswers[activePartObj?.id || activePartId] === false && <Check className="w-6 h-6 sm:w-8 sm:h-8 stroke-[3]" />}
-              </button>
-            </div>
+              // Xử lý màu sắc khi đã có kết quả answeredState (giống hệt dạng trắc nghiệm 4 đáp án):
+              // - Ô người dùng chọn: nếu đúng thì xanh lá (#1cb059), nếu sai thì đỏ (#e53e3e)
+              // - Ô đáp án đúng mà người dùng không chọn: sáng xanh lá (#1cb059) để người học biết
+              // - Ô còn lại: mờ đi (opacity-35)
+              let trueBtnBg = 'bg-[#9cb800] hover:bg-[#8ca500] border-[#819900]';
+              let falseBtnBg = 'bg-[#9b51e0] hover:bg-[#8c40d1] border-[#7d32c3]';
+              let trueExtra = '';
+              let falseExtra = '';
+
+              if (answeredState) {
+                // 1. Nút ĐÚNG
+                if (userSelectedVal === true) {
+                  trueBtnBg = expectedVal === true ? 'bg-[#1cb059] border-white' : 'bg-[#e53e3e] border-white';
+                  trueExtra = 'shadow-2xl scale-[1.01] sm:scale-[1.02] z-10';
+                } else if (expectedVal === true) {
+                  trueBtnBg = 'bg-[#1cb059] border-white';
+                  trueExtra = 'shadow-2xl scale-[1.01] sm:scale-[1.02] z-10';
+                } else {
+                  trueExtra = 'opacity-35 scale-[0.98]';
+                }
+
+                // 2. Nút SAI
+                if (userSelectedVal === false) {
+                  falseBtnBg = expectedVal === false ? 'bg-[#1cb059] border-white' : 'bg-[#e53e3e] border-white';
+                  falseExtra = 'shadow-2xl scale-[1.01] sm:scale-[1.02] z-10';
+                } else if (expectedVal === false) {
+                  falseBtnBg = 'bg-[#1cb059] border-white';
+                  falseExtra = 'shadow-2xl scale-[1.01] sm:scale-[1.02] z-10';
+                } else {
+                  falseExtra = 'opacity-35 scale-[0.98]';
+                }
+              }
+
+              return (
+                <div className="grid grid-cols-2 gap-3 sm:gap-5 shrink-0">
+                  <button
+                    disabled={Boolean(answeredState)}
+                    onClick={() => handleSelectTrueFalsePart(currentPartKey, true)}
+                    className={`h-16 sm:h-24 md:h-28 rounded-2xl sm:rounded-3xl text-white font-black text-xl sm:text-3xl shadow-2xl border-2 transition-all active:scale-[0.98] flex items-center justify-center gap-2 sm:gap-3 cursor-pointer ${trueBtnBg} ${trueExtra}`}
+                  >
+                    <span>ĐÚNG</span>
+                    {userSelectedVal === true && <Check className="w-6 h-6 sm:w-8 sm:h-8 stroke-[3]" />}
+                  </button>
+
+                  <button
+                    disabled={Boolean(answeredState)}
+                    onClick={() => handleSelectTrueFalsePart(currentPartKey, false)}
+                    className={`h-16 sm:h-24 md:h-28 rounded-2xl sm:rounded-3xl text-white font-black text-xl sm:text-3xl shadow-2xl border-2 transition-all active:scale-[0.98] flex items-center justify-center gap-2 sm:gap-3 cursor-pointer ${falseBtnBg} ${falseExtra}`}
+                  >
+                    <span>SAI</span>
+                    {userSelectedVal === false && <Check className="w-6 h-6 sm:w-8 sm:h-8 stroke-[3]" />}
+                  </button>
+                </div>
+              );
+            })()}
 
           </div>
         )}
