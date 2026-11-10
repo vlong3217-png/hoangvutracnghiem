@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { fetchExams, fetchExamById, submitExamResult, updateExamApi, deleteExamApi, createExamApi } from './services/api';
 import ExamList from './components/ExamList';
 import ExamRoom from './components/ExamRoom';
@@ -18,7 +19,79 @@ import {
   HelpCircle 
 } from 'lucide-react';
 
+// Wrapper component để xử lý route /exam/:id trực tiếp (khi truy cập hoặc F5 trang bài thi)
+function ExamRoomRoute({ onBack, onSubmitExam, isOpeningExam }) {
+  const { examId } = useParams();
+  const [examData, setExamData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    setIsLoading(true);
+    setLoadError(null);
+
+    fetchExamById(examId)
+      .then(full => {
+        if (!isMounted) return;
+        if (full && full.id) {
+          setExamData(full);
+        } else {
+          setLoadError('Không tìm thấy bài thi hoặc bài thi đã bị xóa.');
+        }
+      })
+      .catch(err => {
+        if (!isMounted) return;
+        setLoadError(err.message || 'Lỗi khi tải dữ liệu bài thi.');
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+
+    return () => { isMounted = false; };
+  }, [examId]);
+
+  if (isLoading || isOpeningExam) {
+    return (
+      <div className="fixed inset-0 z-50 bg-[#160413] flex flex-col items-center justify-center text-white">
+        <div className="w-12 h-12 rounded-full border-4 border-white/20 border-t-[#d82a7a] animate-spin mb-3"></div>
+        <p className="text-sm font-bold tracking-wide">Đang tải đề thi...</p>
+        <p className="text-xs text-white/70 mt-1">Đang đồng bộ dữ liệu câu hỏi từ CSDL</p>
+      </div>
+    );
+  }
+
+  if (loadError || !examData) {
+    return (
+      <div className="fixed inset-0 z-50 bg-[#160413] flex flex-col items-center justify-center text-white p-6 text-center">
+        <div className="w-16 h-16 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center text-2xl font-bold mb-4 border border-rose-500/30">
+          ✕
+        </div>
+        <h3 className="text-lg font-bold text-white mb-2">Không thể tải bài thi</h3>
+        <p className="text-xs text-slate-300 max-w-sm mb-6">{loadError || 'Đề thi không tồn tại.'}</p>
+        <button
+          onClick={onBack}
+          className="px-5 py-2.5 bg-[#d82a7a] hover:bg-[#c2226b] text-white text-xs font-bold rounded-xl transition-colors cursor-pointer shadow-md"
+        >
+          Quay lại Thư viện
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <ExamRoom
+      exam={examData}
+      onSubmitExam={onSubmitExam}
+      onBack={onBack}
+    />
+  );
+}
+
 export default function App() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [users, setUsers] = useState([
     {
       id: "user-student",
@@ -59,6 +132,8 @@ export default function App() {
   const [exams, setExams] = useState([]);
   const [isLoadingExams, setIsLoadingExams] = useState(true);
   const [isOpeningExam, setIsOpeningExam] = useState(false);
+  const [activeExam, setActiveExam] = useState(null);
+  const [examResult, setExamResult] = useState(null);
 
   // Tải danh sách đề thi thời gian thực từ Neon PostgreSQL Backend
   useEffect(() => {
@@ -78,22 +153,6 @@ export default function App() {
     loadExamsFromDatabase();
   }, []);
 
-  const [currentTab, setCurrentTab] = useState(() => {
-    try {
-      const savedUser = localStorage.getItem('QUIZIZZ_CURRENT_USER') || localStorage.getItem('WAYGROUND_CURRENT_USER');
-      if (savedUser) {
-        const u = JSON.parse(savedUser);
-        return u.role === 'admin' ? 'teacher' : 'exams';
-      }
-      return 'exams';
-    } catch {
-      return 'exams';
-    }
-  }); // 'exams' | 'teacher' | 'admin' | 'reports' | 'students'
-  const [currentView, setCurrentView] = useState('list'); // 'list' | 'room' | 'result'
-  const [activeExam, setActiveExam] = useState(null);
-  const [examResult, setExamResult] = useState(null);
-
   // Lưu thông tin người dùng mỗi khi đăng nhập thành công
   useEffect(() => {
     if (currentUser) {
@@ -104,12 +163,13 @@ export default function App() {
     }
   }, [currentUser]);
 
-  // KHI ĐANG THI HOẶC Ở TRANG KẾT QUẢ: NẾU BẤM F5 / LOAD LẠI TRANG
-  // -> HIỆN POPUP CẢNH BÁO CỦA TRÌNH DUYỆT "Bạn có muốn rời khỏi trang này không?"
-  // -> NẾU RỜI ĐI THÌ TỰ ĐỘNG CHUYỂN VỀ TRANG CHỦ (LIST)
+  // Cảnh báo khi người dùng đang thi mà cố đóng/tải lại tab
+  const isExamRoomPath = location.pathname.startsWith('/exam/');
+  const isResultPath = location.pathname.startsWith('/result');
+
   useEffect(() => {
     const handleBeforeUnload = (e) => {
-      if (currentView === 'room' || currentView === 'result') {
+      if (isExamRoomPath || isResultPath) {
         e.preventDefault();
         e.returnValue = 'Bạn có muốn thoát khỏi phòng thi? Mọi tiến trình bài làm có thể bị gián đoạn.';
         return e.returnValue;
@@ -118,36 +178,32 @@ export default function App() {
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [currentView]);
+  }, [isExamRoomPath, isResultPath]);
 
   const handleLogin = (user) => {
     setCurrentUser(user);
-    // Nếu là admin thì vào thẳng màn hình quản lý hoạt động/đề thi
     if (user.role === 'admin') {
-      setCurrentTab('teacher');
+      navigate('/manage');
     } else {
-      setCurrentTab('exams');
+      navigate('/exams');
     }
-    setCurrentView('list');
   };
 
   const handleRegister = (newUser) => {
     setUsers(prev => [...prev, newUser]);
     setCurrentUser(newUser);
     if (newUser.role === 'admin') {
-      setCurrentTab('teacher');
+      navigate('/manage');
     } else {
-      setCurrentTab('exams');
+      navigate('/exams');
     }
-    setCurrentView('list');
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
     setActiveExam(null);
     setExamResult(null);
-    setCurrentTab('exams');
-    setCurrentView('list');
+    navigate('/login');
   };
 
   const handleAddExam = async (newExam) => {
@@ -223,6 +279,7 @@ export default function App() {
       setUsers(remaining);
       if (currentUser && currentUser.id === userId) {
         setCurrentUser(null);
+        navigate('/login');
       }
     }
   };
@@ -231,29 +288,14 @@ export default function App() {
     setUsers([...users, newUser]);
   };
 
-  const handleSelectExam = async (exam) => {
-    setIsOpeningExam(true);
-    try {
-      // Luôn luôn lấy chi tiết đề thi mới nhất từ CSDL Backend để thí sinh nhận trọn vẹn câu hỏi mới nhất
-      const fullExam = await fetchExamById(exam.id);
-      if (fullExam && fullExam.questions && fullExam.questions.length > 0) {
-        setActiveExam(fullExam);
-        setCurrentView('room');
-        return;
-      }
-      setActiveExam(exam);
-      setCurrentView('room');
-    } catch {
-      setActiveExam(exam);
-      setCurrentView('room');
-    } finally {
-      setIsOpeningExam(false);
-    }
+  const handleSelectExam = (exam) => {
+    setActiveExam(exam);
+    navigate(`/exam/${exam.id}`);
   };
 
   const handleSubmitExam = async (resultData) => {
     setExamResult(resultData);
-    setCurrentView('result');
+    navigate('/result');
 
     // Tự động đồng bộ và lưu kết quả bài thi lên Neon PostgreSQL
     if (activeExam) {
@@ -269,13 +311,21 @@ export default function App() {
   };
 
   const handleRetry = () => {
-    setCurrentView('room');
+    if (activeExam) {
+      navigate(`/exam/${activeExam.id}`);
+    } else {
+      navigate('/exams');
+    }
   };
 
   const handleGoHome = () => {
     setActiveExam(null);
     setExamResult(null);
-    setCurrentView('list');
+    if (currentUser?.role === 'admin') {
+      navigate('/manage');
+    } else {
+      navigate('/exams');
+    }
   };
 
   if (!currentUser) {
@@ -294,23 +344,23 @@ export default function App() {
   return (
     <div className="min-h-screen bg-white text-slate-800 font-sans flex flex-row antialiased relative">
       {/* CỘT SIDEBAR TRÁI CHO VAI TRÒ ADMIN (Hiện trên máy tính md:flex) */}
-      {currentView !== 'room' && currentUser.role === 'admin' && (
+      {!isExamRoomPath && !isResultPath && currentUser.role === 'admin' && (
         <aside className="hidden md:flex w-16 bg-white border-r border-slate-200 flex-col items-center py-4 justify-between shrink-0 z-30 select-none">
           <div className="flex flex-col items-center gap-5 w-full">
             {/* Logo Quizizz biểu tượng chữ Q màu hồng */}
             <div 
-              onClick={() => { setCurrentTab('teacher'); handleGoHome(); }}
+              onClick={() => navigate('/manage')}
               title="Quizizz - Trang chủ"
               className="w-10 h-10 flex items-center justify-center cursor-pointer hover:opacity-90 mb-1"
             >
               <QuizizzLogo className="w-8 h-8 text-[#d82a7a]" />
             </div>
 
-            {/* Mục duy nhất: Trang chủ */}
+            {/* Mục: Trang chủ (Quản lý đề thi) */}
             <button
-              onClick={() => { setCurrentTab('teacher'); handleGoHome(); }}
+              onClick={() => navigate('/manage')}
               className={`flex flex-col items-center gap-1 text-[10px] w-full py-2.5 transition-all cursor-pointer ${
-                currentTab === 'teacher'
+                location.pathname === '/manage'
                   ? 'text-slate-900 font-bold border-l-2 border-[#d82a7a] bg-pink-50/20'
                   : 'text-slate-500 hover:text-slate-800'
               }`}
@@ -319,6 +369,22 @@ export default function App() {
               <Home className="w-5 h-5 text-[#d82a7a]" />
               <span className="scale-90 font-bold">Trang chủ</span>
             </button>
+
+            {/* Mục: Quản trị tài khoản */}
+            {canAccessAdmin && (
+              <button
+                onClick={() => navigate('/admin')}
+                className={`flex flex-col items-center gap-1 text-[10px] w-full py-2.5 transition-all cursor-pointer ${
+                  location.pathname === '/admin'
+                    ? 'text-slate-900 font-bold border-l-2 border-[#d82a7a] bg-pink-50/20'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+                title="Quản trị người dùng & Phân quyền"
+              >
+                <Users className="w-5 h-5 text-slate-600" />
+                <span className="scale-90 font-bold">Tài khoản</span>
+              </button>
+            )}
           </div>
 
           {/* Dưới cùng: Avatar Admin & Nút Đăng xuất */}
@@ -344,15 +410,29 @@ export default function App() {
       )}
 
       {/* THANH ĐIỀU HƯỚNG DƯỚI ĐÁY CHO DI ĐỘNG (Mobile Bottom Bar) */}
-      {currentView !== 'room' && currentUser.role === 'admin' && (
+      {!isExamRoomPath && !isResultPath && currentUser.role === 'admin' && (
         <nav className="md:hidden fixed bottom-0 left-0 right-0 h-14 bg-white/95 backdrop-blur-md border-t border-slate-200 z-40 flex items-center justify-around px-4 shadow-lg select-none">
           <button
-            onClick={() => { setCurrentTab('teacher'); handleGoHome(); }}
-            className="flex flex-col items-center justify-center gap-0.5 text-xs text-[#d82a7a] font-bold cursor-pointer"
+            onClick={() => navigate('/manage')}
+            className={`flex flex-col items-center justify-center gap-0.5 text-xs font-bold cursor-pointer ${
+              location.pathname === '/manage' ? 'text-[#d82a7a]' : 'text-slate-500'
+            }`}
           >
             <QuizizzLogo className="w-5 h-5 text-[#d82a7a]" />
             <span className="text-[10px]">Trang chủ</span>
           </button>
+
+          {canAccessAdmin && (
+            <button
+              onClick={() => navigate('/admin')}
+              className={`flex flex-col items-center justify-center gap-0.5 text-xs font-medium cursor-pointer ${
+                location.pathname === '/admin' ? 'text-[#d82a7a] font-bold' : 'text-slate-500'
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              <span className="text-[10px]">Tài khoản</span>
+            </button>
+          )}
 
           <div className="flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-full text-slate-800 text-xs font-semibold">
             <div className="w-5 h-5 rounded-full bg-slate-800 text-white text-[10px] flex items-center justify-center font-bold">
@@ -371,64 +451,106 @@ export default function App() {
         </nav>
       )}
 
-      {/* VÙNG NỘI DUNG CHÍNH (MAIN VIEW) */}
+      {/* VÙNG NỘI DUNG CHÍNH (MAIN VIEW) DỰA TRÊN ROUTES */}
       <div className="flex-1 flex flex-col min-w-0 bg-white pb-14 md:pb-0">
         <main className="flex-1">
-          {currentView === 'room' && activeExam && (
-            <ExamRoom 
-              exam={activeExam} 
-              onSubmitExam={handleSubmitExam} 
-              onBack={handleGoHome} 
+          <Routes>
+            {/* Route mặc định / chuyển hướng dựa theo vai trò */}
+            <Route 
+              path="/" 
+              element={<Navigate to={currentUser.role === 'admin' ? '/manage' : '/exams'} replace />} 
             />
-          )}
 
-          {currentView === 'result' && activeExam && examResult && (
-            <ExamResult 
-              exam={activeExam} 
-              result={examResult} 
-              onRetry={handleRetry} 
-              onGoHome={handleGoHome} 
-            />
-          )}
-
-          {currentView === 'list' && (
-            <>
-              {currentTab === 'exams' && (
+            {/* Danh sách đề thi cho sinh viên */}
+            <Route 
+              path="/exams" 
+              element={
                 <ExamList 
                   exams={exams} 
                   onSelectExam={handleSelectExam}
-                  onOpenTeacherManage={() => setCurrentTab('teacher')}
+                  onOpenTeacherManage={() => navigate('/manage')}
                   onLogout={handleLogout}
                   isLoading={isLoadingExams}
                 />
-              )}
+              } 
+            />
 
-              {currentTab === 'teacher' && canAccessManagement && (
-                <TeacherManage 
-                  exams={exams} 
-                  onAddExam={handleAddExam} 
-                  onDeleteExam={handleDeleteExam}
-                  onPlayExam={handleSelectExam}
-                  onUpdateExam={handleUpdateExam}
-                  isLoading={isLoadingExams}
-                />
-              )}
+            {/* Quản lý đề thi của giáo viên / admin */}
+            <Route 
+              path="/manage" 
+              element={
+                canAccessManagement ? (
+                  <TeacherManage 
+                    exams={exams} 
+                    onAddExam={handleAddExam} 
+                    onDeleteExam={handleDeleteExam}
+                    onPlayExam={handleSelectExam}
+                    onUpdateExam={handleUpdateExam}
+                    isLoading={isLoadingExams}
+                  />
+                ) : (
+                  <Navigate to="/exams" replace />
+                )
+              } 
+            />
 
-              {currentTab === 'admin' && canAccessAdmin && (
-                <AdminManage 
-                  users={users} 
-                  onUpdateUserRole={handleUpdateUserRole} 
-                  onDeleteUser={handleDeleteUser} 
-                  onAddUser={handleAddUser} 
+            {/* Quản trị tài khoản người dùng */}
+            <Route 
+              path="/admin" 
+              element={
+                canAccessAdmin ? (
+                  <AdminManage 
+                    users={users} 
+                    onUpdateUserRole={handleUpdateUserRole} 
+                    onDeleteUser={handleDeleteUser} 
+                    onAddUser={handleAddUser} 
+                  />
+                ) : (
+                  <Navigate to="/exams" replace />
+                )
+              } 
+            />
+
+            {/* Phòng làm bài thi theo ID: /exam/:examId */}
+            <Route 
+              path="/exam/:examId" 
+              element={
+                <ExamRoomRoute 
+                  onSubmitExam={handleSubmitExam}
+                  onBack={handleGoHome}
+                  isOpeningExam={isOpeningExam}
                 />
-              )}
-            </>
-          )}
+              } 
+            />
+
+            {/* Trang xem kết quả bài thi */}
+            <Route 
+              path="/result" 
+              element={
+                activeExam && examResult ? (
+                  <ExamResult 
+                    exam={activeExam} 
+                    result={examResult} 
+                    onRetry={handleRetry} 
+                    onGoHome={handleGoHome} 
+                  />
+                ) : (
+                  <Navigate to="/exams" replace />
+                )
+              } 
+            />
+
+            {/* Fallback bắt mọi URL không tồn tại quay lại trang chủ */}
+            <Route 
+              path="*" 
+              element={<Navigate to="/" replace />} 
+            />
+          </Routes>
         </main>
       </div>
 
       {/* Nút dấu chấm hỏi tím ở góc dưới cùng bên phải chuẩn Quizizz */}
-      {currentView !== 'room' && (
+      {!isExamRoomPath && (
         <button 
           onClick={() => alert("Trung tâm trợ giúp & Hướng dẫn sử dụng Quizizz")}
           className="fixed bottom-6 right-6 w-9 h-9 rounded-full bg-[#8c1d76] hover:bg-[#721560] text-white flex items-center justify-center font-bold text-sm shadow-lg z-50 transition-transform hover:scale-105"

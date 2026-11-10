@@ -443,10 +443,11 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
 
                       <button
                         onClick={() => {
-                          navigator.clipboard?.writeText(window.location.href);
-                          alert("Đã sao chép liên kết hoạt động!");
+                          const examShareUrl = `${window.location.origin}/exam/${exam.id}`;
+                          navigator.clipboard?.writeText(examShareUrl);
+                          alert(`Đã sao chép liên kết bài thi:\n${examShareUrl}`);
                         }}
-                        title="Chia sẻ"
+                        title="Sao chép liên kết bài thi để chia sẻ"
                         className="p-1.5 border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50 text-slate-600 rounded-lg shadow-2xs transition-colors"
                       >
                         <Share2 className="w-3.5 h-3.5" />
