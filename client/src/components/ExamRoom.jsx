@@ -893,7 +893,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
             <div className="bg-[#230620] border-2 border-white/15 rounded-2xl sm:rounded-3xl flex flex-col overflow-hidden shadow-2xl">
               <div className="px-4 py-2.5 sm:px-5 sm:py-3 border-b border-white/10 text-xs sm:text-sm font-black text-slate-200 flex items-center justify-between">
                 <span>Mục cần phân loại ({unassignedItems.length})</span>
-                <span className="text-[11px] text-slate-400 font-normal sm:hidden">Chạm 1 nút để xếp nhanh, hoặc chạm mục rồi chạm cột</span>
+                <span className="text-[11px] text-slate-400 font-normal sm:hidden">Chạm vào mục rồi chạm vào nhóm ở trên</span>
                 <span className="text-[11px] text-slate-400 font-normal hidden sm:inline">Kéo thả mục vào cột hoặc click để chọn</span>
               </div>
 
@@ -914,36 +914,14 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
                           onClick={() => {
                             setSelectedCategorizeItem(isSelected ? null : item);
                           }}
-                          className={`p-2.5 sm:p-3 rounded-xl shadow-lg cursor-pointer transition-all flex flex-col justify-between border ${
+                          className={`p-2.5 sm:p-3 rounded-xl shadow-lg cursor-pointer transition-all flex items-center gap-2.5 border ${
                             isSelected
                               ? 'bg-pink-50 border-2 border-[#d82a7a] ring-2 ring-[#d82a7a]/60 text-[#d82a7a] scale-[1.01]'
                               : 'bg-white text-slate-900 border-slate-200 hover:bg-slate-50'
                           }`}
                         >
-                          <div className="flex items-center gap-2">
-                            <GripVertical className="w-4 h-4 text-slate-400 shrink-0 group-hover:text-[#d82a7a]" />
-                            <span className="text-xs sm:text-sm font-bold flex-1 leading-snug break-words">{item.text}</span>
-                          </div>
-
-                          {/* Các nút bấm 1 chạm xếp nhanh vào nhóm (chỉ hiển thị trên thiết bị di động, ẩn trên máy tính) */}
-                          <div className="flex sm:hidden items-center gap-1.5 mt-2 pt-2 border-t border-slate-100 flex-wrap">
-                            <span className="text-[10px] text-slate-400 font-medium">Xếp vào:</span>
-                            {(currentQ.categories || []).map((cat, cIdx) => (
-                              <button
-                                key={cat.id}
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDropIntoCategory(cat.id, item);
-                                }}
-                                className={`px-2 py-0.5 text-[10px] font-bold rounded-lg text-white transition-transform active:scale-95 cursor-pointer shadow-2xs ${
-                                  cIdx % 2 === 1 ? 'bg-[#149184] hover:bg-[#0f7267]' : 'bg-[#1e6f9f] hover:bg-[#155377]'
-                                }`}
-                              >
-                                ➔ {cat.name || cat.title || `Nhóm ${cIdx + 1}`}
-                              </button>
-                            ))}
-                          </div>
+                          <GripVertical className="w-4 h-4 text-slate-400 shrink-0 group-hover:text-[#d82a7a]" />
+                          <span className="text-xs sm:text-sm font-bold flex-1 leading-snug break-words">{item.text}</span>
                         </div>
                       );
                     })}
