@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Asterisk, Eye, EyeOff, AlertCircle, ShieldCheck, KeyRound, ExternalLink, HelpCircle } from 'lucide-react';
-import { loginUser, registerUser } from '../services/api';
+import { loginUser } from '../services/api';
 import QuizizzLogo from './QuizizzLogo';
 // Biểu tượng Google chuẩn vector 4 màu chính thức
 function GoogleIcon({ className = "w-5 h-5" }) {
@@ -41,16 +41,12 @@ function parseJwt(token) {
     return null;
   }
 }
-export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
+export default function LoginPage({ onLogin, registeredUsers }) {
   const [emailOrUser, setEmailOrUser] = useState('student@test.com');
   const [password, setPassword] = useState('123');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  // Chế độ đăng ký tài khoản
-  const [isRegisterMode, setIsRegisterMode] = useState(false);
-  const [name, setName] = useState('');
-  const [regRole, setRegRole] = useState('student');
   // Quản lý Google Client ID
   const defaultClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || localStorage.getItem('QUIZIZZ_GOOGLE_CLIENT_ID') || '249147434256-tlu69jjva0l5gl7sorsh05b7rlbmembo.apps.googleusercontent.com';
   const [googleClientId, setGoogleClientId] = useState(defaultClientId);
@@ -197,48 +193,25 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (isRegisterMode) {
-      if (!name.trim() || !emailOrUser.trim() || !password.trim()) {
-        setError('Vui lòng điền đầy đủ các thông tin bắt buộc.');
+    setLoading(true);
+    const res = await loginUser(emailOrUser, password);
+    setLoading(false);
+    if (!res.success) {
+      const found = registeredUsers.find(
+        u => (u.email.toLowerCase() === emailOrUser.toLowerCase() || u.name.toLowerCase() === emailOrUser.toLowerCase()) && 
+             u.password === password
+      );
+      if (!found) {
+        setError(res.message || 'Email/Tên người dùng hoặc mật khẩu không chính xác!');
         return;
       }
-      setLoading(true);
-      const res = await registerUser({
-        name,
-        email: emailOrUser,
-        password,
-        role: regRole
-      });
-      setLoading(false);
-      if (!res.success) {
-        setError(res.message || 'Lỗi khi đăng ký tài khoản.');
-        return;
-      }
-      onRegister({
-        ...res.user,
-        roleName: res.user.role === 'admin' ? 'Admin' : 'Sinh viên'
-      });
-    } else {
-      setLoading(true);
-      const res = await loginUser(emailOrUser, password);
-      setLoading(false);
-      if (!res.success) {
-        const found = registeredUsers.find(
-          u => (u.email.toLowerCase() === emailOrUser.toLowerCase() || u.name.toLowerCase() === emailOrUser.toLowerCase()) && 
-               u.password === password
-        );
-        if (!found) {
-          setError(res.message || 'Email/Tên người dùng hoặc mật khẩu không chính xác!');
-          return;
-        }
-        onLogin(found);
-        return;
-      }
-      onLogin({
-        ...res.user,
-        roleName: res.user.role === 'admin' ? 'Admin' : 'Sinh viên'
-      });
+      onLogin(found);
+      return;
     }
+    onLogin({
+      ...res.user,
+      roleName: res.user.role === 'admin' ? 'Admin' : 'Sinh viên'
+    });
   };
   return (
     <div className="min-h-screen bg-white relative flex flex-col justify-between font-sans select-none overflow-x-hidden">
@@ -294,7 +267,7 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-14 z-10">
         <div className="w-full max-w-[430px]">
           <h1 className="text-[26px] font-bold text-center text-slate-900 mb-6 tracking-tight">
-            {isRegisterMode ? 'Đăng ký tài khoản' : 'Đăng nhập Quizizz'}
+            Đăng nhập Quizizz
           </h1>
           {/* Thông báo lỗi nếu có */}
           {error && (
@@ -304,69 +277,48 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
             </div>
           )}
           {/* NÚT ĐĂNG NHẬP BẰNG GOOGLE THẬT (DÀNH CHO ADMIN) */}
-          {!isRegisterMode && (
-            <div className="mb-5 space-y-4">
-              {/* Nơi render nút Google GSI thật nếu có Client ID */}
-              <div id="googleRealButtonContainer" className="w-full min-h-[44px]">
-                <button
-                  type="button"
-                  onClick={handleTriggerGoogleLogin}
-                  disabled={isGoogleLoading}
-                  className="w-full py-2.5 px-4 bg-white hover:bg-slate-50 active:bg-slate-100 border border-slate-300 hover:border-slate-400 rounded-xl font-bold text-xs sm:text-sm text-slate-700 flex items-center justify-center gap-2.5 transition-all shadow-xs cursor-pointer group"
-                >
-                  <GoogleIcon className="w-5 h-5 shrink-0" />
-                  <span>Đăng nhập bằng Google</span>
-                  <span className="text-[10px] font-semibold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full ml-0.5">
-                    Admin
-                  </span>
-                </button>
-              </div>
-              {googleStatus && (
-                <p className="text-[11px] text-center text-purple-700 font-semibold animate-pulse">
-                  {googleStatus}
-                </p>
-              )}
-              {/* Đường phân cách */}
-              <div className="flex items-center gap-3">
-                <div className="flex-1 h-px bg-slate-200"></div>
-                <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
-                  hoặc đăng nhập Sinh viên
+          <div className="mb-5 space-y-4">
+            {/* Nơi render nút Google GSI thật nếu có Client ID */}
+            <div id="googleRealButtonContainer" className="w-full min-h-[44px]">
+              <button
+                type="button"
+                onClick={handleTriggerGoogleLogin}
+                disabled={isGoogleLoading}
+                className="w-full py-2.5 px-4 bg-white hover:bg-slate-50 active:bg-slate-100 border border-slate-300 hover:border-slate-400 rounded-xl font-bold text-xs sm:text-sm text-slate-700 flex items-center justify-center gap-2.5 transition-all shadow-xs cursor-pointer group"
+              >
+                <GoogleIcon className="w-5 h-5 shrink-0" />
+                <span>Đăng nhập bằng Google</span>
+                <span className="text-[10px] font-semibold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full ml-0.5">
+                  Admin
                 </span>
-                <div className="flex-1 h-px bg-slate-200"></div>
-              </div>
+              </button>
             </div>
-          )}
-          {/* HỘP GỢI Ý ĐĂNG NHẬP MẪU CHO SINH VIÊN */}
-          {!isRegisterMode && (
-            <div className="mb-4 p-3 bg-pink-50/50 border border-pink-200/70 rounded-xl text-xs text-slate-700 flex items-start gap-2.5 shadow-2xs">
-              <span className="text-base leading-none">💡</span>
-              <div className="leading-relaxed">
-                <span className="font-bold text-slate-800">Tài khoản Sinh viên: </span>
-                <span className="text-[#c71e72] font-mono font-bold">student@test.com</span>
-                <span className="mx-1.5 text-slate-300">•</span>
-                <span className="font-bold text-slate-800">Mật khẩu: </span>
-                <span className="text-[#c71e72] font-mono font-bold">123</span>
-              </div>
-            </div>
-          )}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {isRegisterMode && (
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5 pl-0.5">
-                  Họ và tên của bạn
-                </label>
-                <div className="border border-slate-300 rounded-xl px-3.5 py-2.5 bg-white focus-within:border-[#d82a7a] transition-all">
-                  <input
-                    type="text"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="VD: Nguyễn Văn An"
-                    className="w-full text-xs text-slate-900 placeholder:text-slate-400 outline-none"
-                  />
-                </div>
-              </div>
+            {googleStatus && (
+              <p className="text-[11px] text-center text-purple-700 font-semibold animate-pulse">
+                {googleStatus}
+              </p>
             )}
+            {/* Đường phân cách */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-px bg-slate-200"></div>
+              <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
+                hoặc đăng nhập Sinh viên
+              </span>
+              <div className="flex-1 h-px bg-slate-200"></div>
+            </div>
+          </div>
+          {/* HỘP GỢI Ý ĐĂNG NHẬP MẪU CHO SINH VIÊN */}
+          <div className="mb-4 p-3 bg-pink-50/50 border border-pink-200/70 rounded-xl text-xs text-slate-700 flex items-start gap-2.5 shadow-2xs">
+            <span className="text-base leading-none">💡</span>
+            <div className="leading-relaxed">
+              <span className="font-bold text-slate-800">Tài khoản Sinh viên: </span>
+              <span className="text-[#c71e72] font-mono font-bold">student@test.com</span>
+              <span className="mx-1.5 text-slate-300">•</span>
+              <span className="font-bold text-slate-800">Mật khẩu: </span>
+              <span className="text-[#c71e72] font-mono font-bold">123</span>
+            </div>
+          </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
             {/* Input Email / Username */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5 pl-0.5">
@@ -408,21 +360,6 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
                 </button>
               </div>
             </div>
-            {isRegisterMode && (
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5 pl-0.5">
-                  Vai trò tài khoản
-                </label>
-                <select
-                  value={regRole}
-                  onChange={(e) => setRegRole(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs text-slate-800 border border-slate-300 rounded-xl outline-none focus:border-[#d82a7a] bg-white cursor-pointer"
-                >
-                  <option value="student">Sinh viên (Làm bài thi & xem kết quả)</option>
-                  <option value="admin">Quản trị viên (Admin - Quản lý toàn diện)</option>
-                </select>
-              </div>
-            )}
             {/* Nút đăng nhập Sinh viên */}
             <div className="pt-2">
               <button
@@ -430,48 +367,21 @@ export default function LoginPage({ onLogin, onRegister, registeredUsers }) {
                 disabled={loading}
                 className="w-full py-3 bg-[#c71e72] hover:bg-[#b01763] active:bg-[#971253] text-white font-bold text-sm rounded-xl transition-all shadow-md active:scale-[0.99] cursor-pointer disabled:opacity-50"
               >
-                {loading ? 'Đang kiểm tra...' : isRegisterMode ? 'Đăng ký ngay' : 'Tiếp tục đăng nhập'}
+                {loading ? 'Đang kiểm tra...' : 'Tiếp tục đăng nhập'}
               </button>
             </div>
           </form>
-          {/* Quên mật khẩu & Chuyển đổi đăng ký/đăng nhập */}
-          <div className="mt-5 text-center space-y-2">
-            {!isRegisterMode && (
-              <button
-                type="button"
-                onClick={() => alert("Mật khẩu tài khoản sinh viên mẫu là: 123")}
-                className="text-xs font-semibold text-blue-600 hover:underline block mx-auto cursor-pointer"
-              >
-                Quên mật khẩu?
-              </button>
-            )}
-            <div className="text-xs text-slate-500">
-              {isRegisterMode ? (
-                <span>
-                  Đã có tài khoản?{' '}
-                  <button
-                    type="button"
-                    onClick={() => { setIsRegisterMode(false); setError(''); }}
-                    className="text-[#c71e72] font-bold hover:underline cursor-pointer"
-                  >
-                    Đăng nhập ngay
-                  </button>
-                </span>
-              ) : (
-                <span>
-                  Chưa có tài khoản?{' '}
-                  <button
-                    type="button"
-                    onClick={() => { setIsRegisterMode(true); setError(''); }}
-                    className="text-[#c71e72] font-bold hover:underline cursor-pointer"
-                  >
-                    Đăng ký tài khoản mới
-                  </button>
-                </span>
-              )}
-            </div>
-    </div>
+          {/* Quên mật khẩu */}
+          <div className="mt-5 text-center">
+            <button
+              type="button"
+              onClick={() => alert("Mật khẩu tài khoản sinh viên mẫu là: 123")}
+              className="text-xs font-semibold text-blue-600 hover:underline block mx-auto cursor-pointer"
+            >
+              Quên mật khẩu?
+            </button>
           </div>
+        </div>
         </div>
     </div>
   );

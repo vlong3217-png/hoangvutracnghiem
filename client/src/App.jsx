@@ -372,16 +372,6 @@ export default function App() {
     }
   };
 
-  const handleRegister = (newUser) => {
-    setUsers(prev => [...prev, newUser]);
-    setCurrentUser(newUser);
-    if (newUser.role === 'admin') {
-      navigate('/manage');
-    } else {
-      navigate('/exams');
-    }
-  };
-
   const handleLogout = () => {
     setCurrentUser(null);
     setActiveExam(null);
@@ -519,7 +509,6 @@ export default function App() {
     return (
       <LoginPage 
         onLogin={handleLogin}
-        onRegister={handleRegister}
         registeredUsers={users}
       />
     );
