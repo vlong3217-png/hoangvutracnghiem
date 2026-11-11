@@ -101,41 +101,15 @@ export default function ExamResult({ exam, result, onRetry, onGoHome }) {
                     </span>
                   </div>
 
-                  {/* Thứ hạng & Điểm số & Độ chính xác % (TỐI ƯU MOBILE GRID) */}
-                  <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-3 sm:gap-6 md:gap-8 mb-6">
+                  {/* Độ chính xác % nổi bật */}
+                  <div className="flex items-center gap-3 sm:gap-6 mb-6">
                     {/* Ô ĐỘ CHÍNH XÁC PHẦN TRĂM NỔI BẬT */}
-                    <div className="col-span-2 sm:col-span-1 px-3.5 py-2 rounded-2xl bg-[#18baa5]/20 border border-[#18baa5]/40 flex flex-col">
+                    <div className="px-4 py-2.5 rounded-2xl bg-[#18baa5]/20 border border-[#18baa5]/40 flex flex-col">
                       <div className="text-2xl sm:text-3xl font-black text-[#2fe59e]">
                         {accuracyPercent}%
                       </div>
                       <div className="text-[11px] font-semibold text-slate-300 mt-0.5">
                         Độ chính xác ({correctCount}/{totalQuestions} câu)
-                      </div>
-                    </div>
-
-                    <div className="h-10 w-px bg-white/10 hidden sm:block"></div>
-
-                    {/* Thứ hạng */}
-                    <div className="px-3 py-1.5 rounded-xl bg-black/20 sm:bg-transparent">
-                      <div className="text-xl sm:text-3xl font-black text-white flex items-baseline gap-1">
-                        <span>1</span>
-                        <span className="text-xs sm:text-sm font-semibold text-slate-400">/1</span>
-                      </div>
-                      <div className="text-[10px] sm:text-[11px] font-semibold text-slate-400 flex items-center gap-1 mt-0.5">
-                        <span>Thứ hạng</span>
-                        <RotateCcw className="w-2.5 h-2.5 text-slate-400" />
-                      </div>
-                    </div>
-
-                    <div className="h-10 w-px bg-white/10 hidden sm:block"></div>
-
-                    {/* Điểm số */}
-                    <div className="px-3 py-1.5 rounded-xl bg-black/20 sm:bg-transparent">
-                      <div className="text-xl sm:text-3xl font-black text-white">
-                        {score > 0 ? score.toLocaleString() : '0'}
-                      </div>
-                      <div className="text-[10px] sm:text-[11px] font-semibold text-slate-400 mt-0.5">
-                        Điểm số
                       </div>
                     </div>
                   </div>
