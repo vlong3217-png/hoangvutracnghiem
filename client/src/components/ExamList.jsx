@@ -5,7 +5,6 @@ import {
   RotateCcw, 
   Bookmark, 
   Hourglass, 
-  Edit3, 
   Check, 
   ArrowRight,
   LogOut,
@@ -14,7 +13,7 @@ import {
 import QuizizzLogo from './QuizizzLogo';
 
 export default function ExamList({ exams, onSelectExam, onOpenTeacherManage, onLogout, isLoading }) {
-  const [activeTab, setActiveTab] = useState('running'); // 'running' (Đang chạy), 'completed' (Hoàn thành), 'created' (Tạo)
+  const [activeTab, setActiveTab] = useState('running'); // 'running' (Đang chạy), 'completed' (Hoàn thành)
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedExamId, setSelectedExamId] = useState(null);
 
@@ -123,18 +122,6 @@ export default function ExamList({ exams, onSelectExam, onOpenTeacherManage, onL
           >
             <span>Hoàn thành</span>
             <Hourglass className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 rotate-180" />
-          </button>
-
-          <button 
-            onClick={() => setActiveTab('created')}
-            className={`pb-3 flex items-center gap-1.5 sm:gap-2 relative transition-colors ${
-              activeTab === 'created' 
-                ? 'text-slate-900 font-bold border-b-2 border-amber-500' 
-                : 'text-slate-400 hover:text-slate-700'
-            }`}
-          >
-            <span>Tạo</span>
-            <Edit3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400" />
           </button>
         </div>
       </div>
