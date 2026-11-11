@@ -99,7 +99,54 @@ app.get('/api/users', async (req, res) => {
 // -------------------------------------------------------------
 // 3. EXAMS API (Lấy danh sách đề thi & chi tiết đề thi kèm câu hỏi)
 // -------------------------------------------------------------
+// Hàm xử lý lấy chi tiết 1 đề thi kèm toàn bộ câu hỏi
+async function getExamDetailById(id, res) {
+  try {
+    const examRes = await pool.query('SELECT * FROM exams WHERE id = $1', [id]);
+    if (examRes.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy đề thi' });
+    }
+
+    const exam = examRes.rows[0];
+    const questionsRes = await pool.query('SELECT * FROM questions WHERE exam_id = $1 ORDER BY COALESCE(sort_order, 0) ASC, created_at ASC', [id]);
+
+    const questions = questionsRes.rows.map(q => {
+      const extraData = q.data || {};
+      return {
+        id: q.id,
+        question: q.question_text,
+        type: q.type,
+        options: q.options || [],
+        correctAnswer: q.correct_answer,
+        ...extraData
+      };
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        id: exam.id,
+        title: exam.title,
+        description: exam.description,
+        subject: exam.subject,
+        difficulty: exam.difficulty,
+        durationMinutes: exam.duration_minutes,
+        shuffleQuestions: Boolean(exam.shuffle_questions),
+        shuffleAnswers: Boolean(exam.shuffle_answers),
+        questions
+      }
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+}
+
 app.get('/api/exams', async (req, res) => {
+  const { id } = req.query;
+  if (id) {
+    return getExamDetailById(id, res);
+  }
+
   try {
     const examsRes = await pool.query(`
       SELECT e.*, COUNT(q.id) as question_count 
@@ -136,44 +183,7 @@ app.get('/api/exams', async (req, res) => {
 
 app.get('/api/exams/:id', async (req, res) => {
   const { id } = req.params;
-  try {
-    const examRes = await pool.query('SELECT * FROM exams WHERE id = $1', [id]);
-    if (examRes.rows.length === 0) {
-      return res.status(404).json({ success: false, message: 'Không tìm thấy đề thi' });
-    }
-
-    const exam = examRes.rows[0];
-    const questionsRes = await pool.query('SELECT * FROM questions WHERE exam_id = $1 ORDER BY COALESCE(sort_order, 0) ASC, created_at ASC', [id]);
-
-    const questions = questionsRes.rows.map(q => {
-      const extraData = q.data || {};
-      return {
-        id: q.id,
-        question: q.question_text,
-        type: q.type,
-        options: q.options || [],
-        correctAnswer: q.correct_answer,
-        ...extraData
-      };
-    });
-
-    res.json({
-      success: true,
-      data: {
-        id: exam.id,
-        title: exam.title,
-        description: exam.description,
-        subject: exam.subject,
-        difficulty: exam.difficulty,
-        durationMinutes: exam.duration_minutes,
-        shuffleQuestions: Boolean(exam.shuffle_questions),
-        shuffleAnswers: Boolean(exam.shuffle_answers),
-        questions
-      }
-    });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
+  return getExamDetailById(id, res);
 });
 
 // Xóa đề thi khỏi CSDL

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Maximize2,
   Menu,
@@ -30,6 +30,8 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
   const [slideDirection, setSlideDirection] = useState('next'); // 'next' | 'prev'
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
+  const [maxStreak, setMaxStreak] = useState(0);
+  const [startTime] = useState(() => Date.now());
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [answeredState, setAnsweredState] = useState(null);
   const [shortInputText, setShortInputText] = useState('');
@@ -37,6 +39,44 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
   const [isMuted, setIsMuted] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [isImageZoomed, setIsImageZoomed] = useState(false);
+
+  // Refs giữ trạng thái mới nhất để tránh stale closure trong setTimeout
+  const selectedAnswersRef = useRef(selectedAnswers);
+  const scoreRef = useRef(score);
+  const streakRef = useRef(streak);
+  const maxStreakRef = useRef(maxStreak);
+
+  useEffect(() => {
+    selectedAnswersRef.current = selectedAnswers;
+  }, [selectedAnswers]);
+
+  useEffect(() => {
+    scoreRef.current = score;
+  }, [score]);
+
+  useEffect(() => {
+    streakRef.current = streak;
+  }, [streak]);
+
+  useEffect(() => {
+    maxStreakRef.current = maxStreak;
+  }, [maxStreak]);
+
+  // Cập nhật chuỗi câu đúng liên tiếp (streak & maxStreak)
+  const recordOutcome = (isCorrect) => {
+    if (isCorrect) {
+      const nextStreak = (streakRef.current || 0) + 1;
+      streakRef.current = nextStreak;
+      setStreak(nextStreak);
+      if (nextStreak > (maxStreakRef.current || 0)) {
+        maxStreakRef.current = nextStreak;
+        setMaxStreak(nextStreak);
+      }
+    } else {
+      streakRef.current = 0;
+      setStreak(0);
+    }
+  };
 
   // STATE DÀNH CHO DẠNG ĐÚNG/SAI NHIỀU PHẦN (A, B, C, D)
   // activePartId: 'A' | 'B' | 'C' | 'D'
@@ -209,6 +249,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
       [partId]: boolValue
     };
     setMultiTfAnswers(updated);
+    selectedAnswersRef.current = { ...selectedAnswersRef.current, [currentQ.id]: updated };
     setSelectedAnswers(prev => ({ ...prev, [currentQ.id]: updated }));
 
     // Hiện thông báo Đúng hay Sai NGAY LẬP TỨC tại footer
@@ -220,12 +261,18 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
 
     if (isPartCorrect) {
       playSound(true);
-      setScore(prev => prev + 150);
+      recordOutcome(true);
+      setScore(prev => {
+        const next = prev + 150;
+        scoreRef.current = next;
+        return next;
+      });
       try {
         confetti({ particleCount: 35, spread: 50, origin: { y: 0.7 } });
       } catch (e) { }
     } else {
       playSound(false);
+      recordOutcome(false);
     }
 
     // Tự động chuyển sau 2 giây
@@ -274,16 +321,23 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
         return targetCol.some(cItem => cItem.id === it.id || cItem.text === it.text);
       });
 
+      selectedAnswersRef.current = { ...selectedAnswersRef.current, [currentQ.id]: nextColumnAssignments };
       setSelectedAnswers(prev => ({ ...prev, [currentQ.id]: nextColumnAssignments }));
       setAnsweredState({ isCorrect: isAllMatch });
       if (isAllMatch) {
         playSound(true);
-        setScore(prev => prev + 600);
+        recordOutcome(true);
+        setScore(prev => {
+          const next = prev + 600;
+          scoreRef.current = next;
+          return next;
+        });
         try {
           confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
         } catch (e) { }
       } else {
         playSound(false);
+        recordOutcome(false);
       }
 
       // Tự động chuyển câu sau 2 giây
@@ -336,16 +390,23 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
         const correctChoice = String(s.correctItemId || s.correctWord || s.correctAnswer || '').trim().toLowerCase();
         return userChoice === correctChoice;
       });
+      selectedAnswersRef.current = { ...selectedAnswersRef.current, [currentQ.id]: nextSlots };
       setSelectedAnswers(prev => ({ ...prev, [currentQ.id]: nextSlots }));
       setAnsweredState({ isCorrect: isAllCorrect });
       if (isAllCorrect) {
         playSound(true);
-        setScore(prev => prev + 600);
+        recordOutcome(true);
+        setScore(prev => {
+          const next = prev + 600;
+          scoreRef.current = next;
+          return next;
+        });
         try {
           confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
         } catch (e) { }
       } else {
         playSound(false);
+        recordOutcome(false);
       }
 
       // Tự động chuyển câu sau 2 giây
@@ -386,6 +447,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
         : [...multiSelectedOpts, optId];
 
       setMultiSelectedOpts(nextList);
+      selectedAnswersRef.current = { ...selectedAnswersRef.current, [currentQ.id]: nextList };
       setSelectedAnswers(prev => ({ ...prev, [currentQ.id]: nextList }));
       return;
     }
@@ -395,12 +457,18 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
       ? currentQ.correctAnswer.includes(optId)
       : currentQ.correctAnswer === optId;
 
+    selectedAnswersRef.current = { ...selectedAnswersRef.current, [currentQ.id]: optId };
     setSelectedAnswers(prev => ({ ...prev, [currentQ.id]: optId }));
     setAnsweredState({ selectedOptId: optId, isCorrect });
 
     if (isCorrect) {
       playSound(true);
-      setScore(prev => prev + 600);
+      recordOutcome(true);
+      setScore(prev => {
+        const next = prev + 600;
+        scoreRef.current = next;
+        return next;
+      });
       try {
         confetti({
           particleCount: 50,
@@ -410,6 +478,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
       } catch (e) { }
     } else {
       playSound(false);
+      recordOutcome(false);
     }
 
     // Tự động chuyển câu sau 2 giây
@@ -428,6 +497,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
     const userList = [...multiSelectedOpts].sort();
     const isAllMatch = JSON.stringify(correctList) === JSON.stringify(userList);
 
+    selectedAnswersRef.current = { ...selectedAnswersRef.current, [currentQ.id]: multiSelectedOpts };
     setSelectedAnswers(prev => ({ ...prev, [currentQ.id]: multiSelectedOpts }));
     setAnsweredState({
       isCorrect: isAllMatch,
@@ -438,12 +508,18 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
 
     if (isAllMatch) {
       playSound(true);
-      setScore(prev => prev + 600);
+      recordOutcome(true);
+      setScore(prev => {
+        const next = prev + 600;
+        scoreRef.current = next;
+        return next;
+      });
       try {
         confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
       } catch (e) { }
     } else {
       playSound(false);
+      recordOutcome(false);
     }
 
     setTimeout(() => {
@@ -488,17 +564,24 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
         return accepted.includes(val);
       });
 
+      selectedAnswersRef.current = { ...selectedAnswersRef.current, [currentQ.id]: clozeAnswers };
       setSelectedAnswers(prev => ({ ...prev, [currentQ.id]: clozeAnswers }));
       setAnsweredState({ isCorrect: isAllCorrect, clozeAnswers });
 
       if (isAllCorrect) {
         playSound(true);
-        setScore(prev => prev + 600);
+        recordOutcome(true);
+        setScore(prev => {
+          const next = prev + 600;
+          scoreRef.current = next;
+          return next;
+        });
         try {
           confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
         } catch (err) { }
       } else {
         playSound(false);
+        recordOutcome(false);
       }
 
       setTimeout(() => {
@@ -517,17 +600,24 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
 
     const isCorrect = correctAnswers.some(ans => ans === userVal);
 
+    selectedAnswersRef.current = { ...selectedAnswersRef.current, [currentQ.id]: shortInputText };
     setSelectedAnswers(prev => ({ ...prev, [currentQ.id]: shortInputText }));
     setAnsweredState({ isCorrect, userAnswer: shortInputText });
 
     if (isCorrect) {
       playSound(true);
-      setScore(prev => prev + 600);
+      recordOutcome(true);
+      setScore(prev => {
+        const next = prev + 600;
+        scoreRef.current = next;
+        return next;
+      });
       try {
         confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
       } catch (err) { }
     } else {
       playSound(false);
+      recordOutcome(false);
     }
 
     setTimeout(() => {
@@ -552,13 +642,15 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
         maxScore: currentQ.maxScore || 10
       });
 
+      const essayData = {
+        text: essayAnswer,
+        aiResult: result
+      };
       setEssayAiResult(result);
+      selectedAnswersRef.current = { ...selectedAnswersRef.current, [currentQ.id]: essayData };
       setSelectedAnswers(prev => ({
         ...prev,
-        [currentQ.id]: {
-          text: essayAnswer,
-          aiResult: result
-        }
+        [currentQ.id]: essayData
       }));
 
       const isPass = result.score >= ((currentQ.maxScore || 10) * 0.5);
@@ -572,12 +664,19 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
 
       if (isPass) {
         playSound(true);
-        setScore(prev => prev + Math.round((result.score / (currentQ.maxScore || 10)) * 600));
+        recordOutcome(true);
+        const pts = Math.round((result.score / (currentQ.maxScore || 10)) * 600);
+        setScore(prev => {
+          const next = prev + pts;
+          scoreRef.current = next;
+          return next;
+        });
         try {
           confetti({ particleCount: 60, spread: 70, origin: { y: 0.7 } });
         } catch (err) { }
       } else {
         playSound(false);
+        recordOutcome(false);
       }
 
       // Tự động chuyển câu sau 2 giây cho dạng tự luận
@@ -597,10 +696,14 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
     if (currentIdx < questions.length - 1) {
       setCurrentIdx(prev => prev + 1);
     } else {
+      const elapsedSeconds = Math.max(1, Math.round((Date.now() - startTime) / 1000));
       onSubmitExam({
-        selectedAnswers,
-        score,
-        timeSpent: 600,
+        exam,
+        questions,
+        selectedAnswers: selectedAnswersRef.current,
+        score: scoreRef.current || score,
+        streak: maxStreakRef.current || streak,
+        timeSpent: elapsedSeconds,
         warnings: 0
       });
     }
@@ -631,6 +734,24 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
         : shortInputText.trim().length > 0
     ))
   );
+
+  if (!questions || questions.length === 0) {
+    return (
+      <div className="fixed inset-0 z-50 bg-[#220720] text-white flex flex-col items-center justify-center p-6 text-center select-none font-sans">
+        <div className="w-16 h-16 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center text-2xl font-bold mb-4 border border-rose-500/30">
+          !
+        </div>
+        <h3 className="text-lg font-bold text-white mb-2">Đề thi chưa có câu hỏi</h3>
+        <p className="text-xs text-slate-300 max-w-sm mb-6">Đề thi này chưa có dữ liệu câu hỏi để bắt đầu bài làm.</p>
+        <button
+          onClick={onBack}
+          className="px-5 py-2.5 bg-[#d82a7a] hover:bg-[#c2226b] text-white text-xs font-bold rounded-xl transition-colors cursor-pointer shadow-md"
+        >
+          Quay lại Thư viện
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 bg-[#220720] text-white flex flex-col justify-between select-none overflow-hidden font-sans">

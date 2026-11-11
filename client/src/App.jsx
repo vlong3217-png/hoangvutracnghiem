@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { fetchExams, fetchExamById, submitExamResult, updateExamApi, deleteExamApi, createExamApi } from './services/api';
+import { evaluateUserAnswers } from './services/examEvaluation';
 import ExamList from './components/ExamList';
 import ExamRoom from './components/ExamRoom';
 import ExamResult from './components/ExamResult';
@@ -21,7 +22,7 @@ import {
 } from 'lucide-react';
 
 // Wrapper component để xử lý route /exam/:id trực tiếp (khi truy cập hoặc F5 trang bài thi)
-function ExamRoomRoute({ onBack, onSubmitExam, isOpeningExam }) {
+function ExamRoomRoute({ onBack, onSubmitExam, isOpeningExam, onLoadedExam }) {
   const { examId } = useParams();
   const [examData, setExamData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,6 +38,7 @@ function ExamRoomRoute({ onBack, onSubmitExam, isOpeningExam }) {
         if (!isMounted) return;
         if (full && full.id) {
           setExamData(full);
+          if (onLoadedExam) onLoadedExam(full);
         } else {
           setLoadError('Không tìm thấy bài thi hoặc bài thi đã bị xóa.');
         }
@@ -83,7 +85,13 @@ function ExamRoomRoute({ onBack, onSubmitExam, isOpeningExam }) {
   return (
     <ExamRoom
       exam={examData}
-      onSubmitExam={onSubmitExam}
+      onSubmitExam={(resultData) => {
+        onSubmitExam({
+          ...resultData,
+          exam: examData,
+          questions: examData.questions
+        });
+      }}
       onBack={onBack}
     />
   );
@@ -293,8 +301,22 @@ export default function App() {
   const [exams, setExams] = useState([]);
   const [isLoadingExams, setIsLoadingExams] = useState(true);
   const [isOpeningExam, setIsOpeningExam] = useState(false);
-  const [activeExam, setActiveExam] = useState(null);
-  const [examResult, setExamResult] = useState(null);
+  const [activeExam, setActiveExam] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('QUIZIZZ_ACTIVE_EXAM');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [examResult, setExamResult] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('QUIZIZZ_EXAM_RESULT');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
 
   // Tải danh sách đề thi thời gian thực từ Neon PostgreSQL Backend
   useEffect(() => {
@@ -364,6 +386,10 @@ export default function App() {
     setCurrentUser(null);
     setActiveExam(null);
     setExamResult(null);
+    try {
+      sessionStorage.removeItem('QUIZIZZ_ACTIVE_EXAM');
+      sessionStorage.removeItem('QUIZIZZ_EXAM_RESULT');
+    } catch (e) {}
     navigate('/login');
   };
 
@@ -425,18 +451,44 @@ export default function App() {
   };
 
   const handleSubmitExam = async (resultData) => {
-    setExamResult(resultData);
+    const fullExam = resultData.exam || activeExam;
+    if (fullExam) {
+      setActiveExam(fullExam);
+      try {
+        sessionStorage.setItem('QUIZIZZ_ACTIVE_EXAM', JSON.stringify(fullExam));
+      } catch (e) {}
+    }
+
+    const questions = fullExam?.questions || resultData?.questions || [];
+    const evaluation = evaluateUserAnswers(questions, resultData.selectedAnswers || {});
+
+    const enrichedResult = {
+      ...resultData,
+      exam: fullExam,
+      questions,
+      correctCount: evaluation.correctCount,
+      incorrectCount: evaluation.incorrectCount,
+      totalQuestions: evaluation.totalQuestions,
+      accuracyPercent: evaluation.accuracyPercent,
+      maxStreak: evaluation.maxStreak,
+      evaluatedQuestions: evaluation.evaluatedQuestions
+    };
+
+    setExamResult(enrichedResult);
+    try {
+      sessionStorage.setItem('QUIZIZZ_EXAM_RESULT', JSON.stringify(enrichedResult));
+    } catch (e) {}
     navigate('/result');
 
     // Tự động đồng bộ và lưu kết quả bài thi lên Neon PostgreSQL
-    if (activeExam) {
+    if (fullExam) {
       await submitExamResult({
-        examId: activeExam.id,
+        examId: fullExam.id,
         username: currentUser?.name || currentUser?.email || 'Thí sinh',
-        score: resultData.score || 0,
-        accuracyPercent: resultData.accuracyPercent || 0,
-        timeSpentSeconds: resultData.timeSpent || 0,
-        answers: resultData.selectedAnswers || {}
+        score: enrichedResult.score || 0,
+        accuracyPercent: enrichedResult.accuracyPercent || 0,
+        timeSpentSeconds: enrichedResult.timeSpent || 0,
+        answers: enrichedResult.selectedAnswers || {}
       });
     }
   };
@@ -452,6 +504,10 @@ export default function App() {
   const handleGoHome = () => {
     setActiveExam(null);
     setExamResult(null);
+    try {
+      sessionStorage.removeItem('QUIZIZZ_ACTIVE_EXAM');
+      sessionStorage.removeItem('QUIZIZZ_EXAM_RESULT');
+    } catch (e) {}
     if (currentUser?.role === 'admin') {
       navigate('/manage');
     } else {
@@ -647,6 +703,12 @@ export default function App() {
                 <ExamRoomRoute 
                   onSubmitExam={handleSubmitExam}
                   onBack={handleGoHome}
+                  onLoadedExam={(full) => {
+                    setActiveExam(full);
+                    try {
+                      sessionStorage.setItem('QUIZIZZ_ACTIVE_EXAM', JSON.stringify(full));
+                    } catch (e) {}
+                  }}
                   isOpeningExam={isOpeningExam}
                 />
               } 
@@ -656,9 +718,9 @@ export default function App() {
             <Route 
               path="/result" 
               element={
-                activeExam && examResult ? (
+                (activeExam || examResult?.exam) && examResult ? (
                   <ExamResult 
-                    exam={activeExam} 
+                    exam={activeExam || examResult.exam} 
                     result={examResult} 
                     onRetry={handleRetry} 
                     onGoHome={handleGoHome} 

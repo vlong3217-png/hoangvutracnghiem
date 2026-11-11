@@ -36,11 +36,24 @@ export async function fetchExams(retries = 2) {
  * Lấy chi tiết đề thi kèm câu hỏi theo ID từ CSDL Neon PostgreSQL
  */
 export async function fetchExamById(id) {
+  if (!id) return null;
   try {
-    const res = await fetch(`${API_BASE_URL}/exams?id=${id}`);
+    const url = `${API_BASE_URL}/exams?id=${id}`;
+    const res = await fetch(url);
     const json = await res.json();
-    if (json.success) return json.data;
-    throw new Error(json.message || 'Không tìm thấy đề thi');
+    if (json.success && json.data) {
+      return json.data;
+    }
+
+    // Fallback thử endpoint RESTful /exams/:id nếu backend sử dụng Express route
+    const altUrl = `${API_BASE_URL}/exams/${id}`;
+    const altRes = await fetch(altUrl);
+    const altJson = await altRes.json();
+    if (altJson.success && altJson.data) {
+      return altJson.data;
+    }
+
+    throw new Error(json.message || altJson.message || 'Không tìm thấy đề thi');
   } catch (err) {
     console.warn(`⚠️ Lỗi tải chi tiết đề thi ${id} từ Backend:`, err);
     return null;
