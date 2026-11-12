@@ -102,13 +102,6 @@ export async function initDatabase() {
       ALTER TABLE class_students ADD COLUMN IF NOT EXISTS birth_date VARCHAR(50);
     `);
 
-    // Tạo lớp mặc định nếu chưa có
-    await client.query(`
-      INSERT INTO classes (id, name, description, color)
-      VALUES ('class-cntt-k23a', 'CNTT K23A', 'Lớp Công nghệ thông tin K23A', '#22c55e')
-      ON CONFLICT (id) DO NOTHING;
-    `);
-
     console.log('✅ Khởi tạo các bảng PostgreSQL trên Neon thành công!');
   } catch (error) {
     console.error('❌ Lỗi khi khởi tạo CSDL:', error);

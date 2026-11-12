@@ -36,9 +36,6 @@ export default async function handler(req, res) {
           joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
         ALTER TABLE class_students ADD COLUMN IF NOT EXISTS birth_date VARCHAR(50);
-        INSERT INTO classes (id, name, description, color)
-        VALUES ('class-cntt-k23a', 'CNTT K23A', 'Lớp Công nghệ thông tin K23A', '#22c55e')
-        ON CONFLICT (id) DO NOTHING;
       `);
     } finally {
       initClient.release();

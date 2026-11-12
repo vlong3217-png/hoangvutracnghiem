@@ -194,16 +194,7 @@ export async function fetchClasses() {
     throw new Error(json.message || 'Lỗi tải danh sách lớp học');
   } catch (err) {
     console.warn('⚠️ Lỗi gọi API lấy danh sách lớp học:', err);
-    // Fallback dữ liệu mặc định nếu backend tạm thời không phản hồi
-    return [
-      {
-        id: 'class-cntt-k23a',
-        name: 'CNTT K23A',
-        description: 'Lớp Công nghệ thông tin K23A',
-        color: '#22c55e',
-        student_count: 0
-      }
-    ];
+    return [];
   }
 }
 
