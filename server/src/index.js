@@ -385,7 +385,7 @@ app.get('/api/classes/:id', async (req, res) => {
     }
 
     const studentsRes = await pool.query(`
-      SELECT id, class_id, name, email, student_code, joined_at
+      SELECT id, class_id, name, email, student_code, birth_date, joined_at
       FROM class_students
       WHERE class_id = $1
       ORDER BY joined_at DESC
@@ -441,10 +441,10 @@ app.delete('/api/classes/:id', async (req, res) => {
   }
 });
 
-// Thêm sinh viên vào lớp (hỗ trợ 1 hoặc nhiều sinh viên)
+// Thêm sinh viên vào lớp (hỗ trợ 1 hoặc nhiều sinh viên từ form hoặc Excel)
 app.post('/api/classes/:id/students', async (req, res) => {
   const { id: classId } = req.params;
-  const { name, email, student_code, students } = req.body;
+  const { name, email, student_code, birth_date, students } = req.body;
 
   try {
     const client = await pool.connect();
@@ -457,20 +457,20 @@ app.post('/api/classes/:id/students', async (req, res) => {
           if (s.name && s.name.trim()) {
             const sid = `stu-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
             const r = await client.query(`
-              INSERT INTO class_students (id, class_id, name, email, student_code)
-              VALUES ($1, $2, $3, $4, $5)
+              INSERT INTO class_students (id, class_id, name, email, student_code, birth_date)
+              VALUES ($1, $2, $3, $4, $5, $6)
               RETURNING *
-            `, [sid, classId, s.name.trim(), s.email || '', s.student_code || '']);
+            `, [sid, classId, s.name.trim(), s.email || '', s.student_code || '', s.birth_date || '']);
             inserted.push(r.rows[0]);
           }
         }
       } else if (name && name.trim()) {
         const sid = `stu-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
         const r = await client.query(`
-          INSERT INTO class_students (id, class_id, name, email, student_code)
-          VALUES ($1, $2, $3, $4, $5)
+          INSERT INTO class_students (id, class_id, name, email, student_code, birth_date)
+          VALUES ($1, $2, $3, $4, $5, $6)
           RETURNING *
-        `, [sid, classId, name.trim(), email || '', student_code || '']);
+        `, [sid, classId, name.trim(), email || '', student_code || '', birth_date || '']);
         inserted.push(r.rows[0]);
       } else {
         await client.query('ROLLBACK');

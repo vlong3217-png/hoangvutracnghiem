@@ -32,8 +32,10 @@ export default async function handler(req, res) {
           name VARCHAR(150) NOT NULL,
           email VARCHAR(150),
           student_code VARCHAR(50),
+          birth_date VARCHAR(50),
           joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
+        ALTER TABLE class_students ADD COLUMN IF NOT EXISTS birth_date VARCHAR(50);
         INSERT INTO classes (id, name, description, color)
         VALUES ('class-cntt-k23a', 'CNTT K23A', 'Lớp Công nghệ thông tin K23A', '#22c55e')
         ON CONFLICT (id) DO NOTHING;
@@ -51,7 +53,7 @@ export default async function handler(req, res) {
           return res.status(404).json({ success: false, message: 'Không tìm thấy lớp học' });
         }
         const studentsRes = await pool.query(`
-          SELECT id, class_id, name, email, student_code, joined_at
+          SELECT id, class_id, name, email, student_code, birth_date, joined_at
           FROM class_students
           WHERE class_id = $1
           ORDER BY joined_at DESC
@@ -85,12 +87,12 @@ export default async function handler(req, res) {
       }
     }
 
-    // 2. POST: Tạo lớp mới HOẶC Thêm học sinh vào lớp
+    // 2. POST: Tạo lớp mới HOẶC Thêm học sinh vào lớp (từ form hoặc Excel)
     if (req.method === 'POST') {
-      // Trường hợp thêm học sinh vào lớp: có query id và action/body học sinh
-      if (id || action === 'add_student' || req.body.classId) {
+      // Trường hợp thêm học sinh vào lớp đã có: có query id hoặc body classId
+      if (id || action === 'add_student' || (req.body.classId && !req.body.createWithStudents)) {
         const targetClassId = id || req.body.classId;
-        const { name: stuName, email: stuEmail, student_code, students } = req.body;
+        const { name: stuName, email: stuEmail, student_code, birth_date, students } = req.body;
 
         const client = await pool.connect();
         try {
@@ -101,20 +103,20 @@ export default async function handler(req, res) {
               if (s.name && s.name.trim()) {
                 const sid = `stu-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
                 const r = await client.query(`
-                  INSERT INTO class_students (id, class_id, name, email, student_code)
-                  VALUES ($1, $2, $3, $4, $5)
+                  INSERT INTO class_students (id, class_id, name, email, student_code, birth_date)
+                  VALUES ($1, $2, $3, $4, $5, $6)
                   RETURNING *
-                `, [sid, targetClassId, s.name.trim(), s.email || '', s.student_code || '']);
+                `, [sid, targetClassId, s.name.trim(), s.email || '', s.student_code || '', s.birth_date || '']);
                 inserted.push(r.rows[0]);
               }
             }
           } else if (stuName && stuName.trim()) {
             const sid = `stu-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
             const r = await client.query(`
-              INSERT INTO class_students (id, class_id, name, email, student_code)
-              VALUES ($1, $2, $3, $4, $5)
+              INSERT INTO class_students (id, class_id, name, email, student_code, birth_date)
+              VALUES ($1, $2, $3, $4, $5, $6)
               RETURNING *
-            `, [sid, targetClassId, stuName.trim(), stuEmail || '', student_code || '']);
+            `, [sid, targetClassId, stuName.trim(), stuEmail || '', student_code || '', birth_date || '']);
             inserted.push(r.rows[0]);
           } else {
             await client.query('ROLLBACK');
@@ -135,20 +137,50 @@ export default async function handler(req, res) {
         }
       }
 
-      // Tạo lớp học mới
-      const { name, description, color } = req.body;
+      // Tạo lớp học mới (có thể kèm danh sách học sinh từ file Excel)
+      const { name, description, color, students } = req.body;
       if (!name || !name.trim()) {
         return res.status(400).json({ success: false, message: 'Tên lớp học không được để trống' });
       }
 
       const classId = `class-${Date.now()}`;
-      const result = await pool.query(`
-        INSERT INTO classes (id, name, description, color)
-        VALUES ($1, $2, $3, $4)
-        RETURNING *, 0 as student_count
-      `, [classId, name.trim(), description || '', color || '#22c55e']);
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const classRes = await client.query(`
+          INSERT INTO classes (id, name, description, color)
+          VALUES ($1, $2, $3, $4)
+          RETURNING *
+        `, [classId, name.trim(), description || '', color || '#22c55e']);
 
-      return res.json({ success: true, data: result.rows[0] });
+        let studentCount = 0;
+        if (Array.isArray(students) && students.length > 0) {
+          for (const s of students) {
+            if (s.name && s.name.trim()) {
+              const sid = `stu-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+              await client.query(`
+                INSERT INTO class_students (id, class_id, name, email, student_code, birth_date)
+                VALUES ($1, $2, $3, $4, $5, $6)
+              `, [sid, classId, s.name.trim(), s.email || '', s.student_code || '', s.birth_date || '']);
+              studentCount++;
+            }
+          }
+        }
+
+        await client.query('COMMIT');
+        return res.json({
+          success: true,
+          data: {
+            ...classRes.rows[0],
+            student_count: studentCount
+          }
+        });
+      } catch (e) {
+        await client.query('ROLLBACK');
+        throw e;
+      } finally {
+        client.release();
+      }
     }
 
     // 3. PUT: Cập nhật thông tin lớp (đổi tên, màu, mô tả)
@@ -201,3 +233,4 @@ export default async function handler(req, res) {
     return res.status(500).json({ success: false, error: err.message });
   }
 }
+

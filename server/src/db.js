@@ -96,8 +96,10 @@ export async function initDatabase() {
         name VARCHAR(150) NOT NULL,
         email VARCHAR(150),
         student_code VARCHAR(50),
+        birth_date VARCHAR(50),
         joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+      ALTER TABLE class_students ADD COLUMN IF NOT EXISTS birth_date VARCHAR(50);
     `);
 
     // Tạo lớp mặc định nếu chưa có

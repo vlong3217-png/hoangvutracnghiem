@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import * as XLSX from 'xlsx';
 import { 
   ArrowLeft, 
   Pencil, 
@@ -14,7 +15,10 @@ import {
   Mail, 
   User, 
   Sparkles,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Download,
+  AlertCircle,
+  Calendar
 } from 'lucide-react';
 import { 
   fetchClassById, 
@@ -37,15 +41,23 @@ export default function ClassDetail({ classId, onBack }) {
 
   // Modal thêm sinh viên
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
-  const [addMode, setAddMode] = useState('single'); // 'single' | 'bulk' | 'existing'
+  const [addMode, setAddMode] = useState('excel'); // 'excel' | 'single' | 'bulk' | 'existing'
   
   // Single student form
   const [studentName, setStudentName] = useState('');
   const [studentEmail, setStudentEmail] = useState('');
   const [studentCode, setStudentCode] = useState('');
+  const [studentBirthDate, setStudentBirthDate] = useState('');
 
   // Bulk student form
   const [bulkInput, setBulkInput] = useState('');
+
+  // Excel import in ClassDetail
+  const [excelStudents, setExcelStudents] = useState([]);
+  const [excelFileName, setExcelFileName] = useState('');
+  const [excelError, setExcelError] = useState('');
+  const [isParsingExcel, setIsParsingExcel] = useState(false);
+  const excelInputRef = useRef(null);
 
   // Existing system users
   const [systemUsers, setSystemUsers] = useState([]);
@@ -75,13 +87,17 @@ export default function ClassDetail({ classId, onBack }) {
     loadClassDetail();
   }, [classId]);
 
-  // Tải danh sách user có sẵn trong hệ thống khi mở tab existing
+  // Tải danh sách user có sẵn trong hệ thống khi mở modal
   const handleOpenAddModal = async () => {
     setShowAddStudentModal(true);
     setStudentName('');
     setStudentEmail('');
     setStudentCode('');
+    setStudentBirthDate('');
     setBulkInput('');
+    setExcelStudents([]);
+    setExcelFileName('');
+    setExcelError('');
     setSelectedUserIds([]);
     try {
       const uList = await fetchUsers();
@@ -115,7 +131,156 @@ export default function ClassDetail({ classId, onBack }) {
     }
   };
 
-  // Thêm 1 sinh viên
+  // Tải file Excel mẫu
+  const handleDownloadExcelTemplate = () => {
+    const wsData = [
+      ['Mã sinh viên', 'Họ và tên', 'Ngày tháng năm sinh'],
+      ['23IT001', 'Nguyễn Văn An', '15/08/2004'],
+      ['23IT002', 'Trần Thị Bình', '20/11/2004'],
+      ['23IT003', 'Lê Hoàng Cường', '05/03/2004'],
+      ['23IT004', 'Phạm Thị Diệu', '12/09/2004'],
+      ['23IT005', 'Hoàng Minh Đức', '28/01/2004']
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['!cols'] = [{ wch: 18 }, { wch: 26 }, { wch: 22 }];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'DanhSachSinhVien');
+    XLSX.writeFile(wb, `Mau_Danh_Sach_${classInfo?.name || 'Lop'}.xlsx`);
+  };
+
+  // Định dạng ngày tháng từ ô Excel
+  const formatExcelDate = (val) => {
+    if (!val) return '';
+    if (typeof val === 'number') {
+      try {
+        const dateObj = XLSX.SSF.parse_date_code(val);
+        if (dateObj) {
+          const d = String(dateObj.d).padStart(2, '0');
+          const m = String(dateObj.m).padStart(2, '0');
+          const y = dateObj.y;
+          return `${d}/${m}/${y}`;
+        }
+      } catch (e) {}
+    }
+    return String(val).trim();
+  };
+
+  // Đọc và phân tích file Excel
+  const handleProcessExcel = async (file) => {
+    if (!file) return;
+    setExcelError('');
+    setIsParsingExcel(true);
+    setExcelFileName(file.name);
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+      if (!rawData || rawData.length === 0) {
+        throw new Error('Tệp Excel rỗng hoặc không chứa dữ liệu.');
+      }
+
+      let codeCol = -1;
+      let nameCol = -1;
+      let dobCol = -1;
+      let startRow = 0;
+
+      for (let r = 0; r < Math.min(rawData.length, 6); r++) {
+        const row = rawData[r];
+        for (let c = 0; c < row.length; c++) {
+          const cellStr = String(row[c]).toLowerCase().trim();
+          if (cellStr.includes('mã') || cellStr.includes('mssv') || cellStr.includes('student') || cellStr.includes('code') || cellStr.includes('masv')) {
+            codeCol = c;
+          }
+          if (cellStr.includes('họ') || cellStr.includes('tên') || cellStr.includes('name') || cellStr.includes('sinh viên')) {
+            nameCol = c;
+          }
+          if (cellStr.includes('ngày') || cellStr.includes('sinh') || cellStr.includes('dob') || cellStr.includes('birth')) {
+            dobCol = c;
+          }
+        }
+        if (codeCol !== -1 && nameCol !== -1) {
+          startRow = r + 1;
+          break;
+        }
+      }
+
+      if (codeCol === -1 || nameCol === -1) {
+        codeCol = 0;
+        nameCol = 1;
+        dobCol = 2;
+        const row0 = rawData[0];
+        if (row0 && isNaN(row0[0]) && String(row0[0]).length > 0 && String(row0[1]).length > 0) {
+          const firstVal = String(row0[0]).toLowerCase();
+          if (firstVal.includes('mã') || firstVal.includes('họ') || firstVal.includes('stt')) {
+            startRow = 1;
+          }
+        }
+      }
+
+      const extracted = [];
+      for (let r = startRow; r < rawData.length; r++) {
+        const row = rawData[r];
+        if (!row || row.length === 0) continue;
+
+        const codeVal = String(row[codeCol] !== undefined ? row[codeCol] : '').trim();
+        const nameVal = String(row[nameCol] !== undefined ? row[nameCol] : '').trim();
+        const dobVal = formatExcelDate(dobCol !== -1 ? row[dobCol] : '');
+
+        if (!nameVal && !codeVal) continue;
+        if (nameVal.toLowerCase().includes('họ và tên') || codeVal.toLowerCase().includes('mã sinh viên')) continue;
+
+        extracted.push({
+          student_code: codeVal || `SV-${Date.now().toString().slice(-4)}${r}`,
+          name: nameVal || codeVal,
+          birth_date: dobVal || '---',
+          email: `${codeVal.toLowerCase().replace(/[^a-z0-9]/g, '')}@student.edu.vn`
+        });
+      }
+
+      if (extracted.length === 0) {
+        throw new Error('Không trích xuất được sinh viên nào từ tệp. Vui lòng kiểm tra lại định dạng Excel.');
+      }
+
+      setExcelStudents(extracted);
+    } catch (err) {
+      console.error(err);
+      setExcelError(err.message || 'Lỗi khi đọc file Excel.');
+      setExcelStudents([]);
+    } finally {
+      setIsParsingExcel(false);
+    }
+  };
+
+  // Xác nhận nhập từ Excel vào lớp
+  const handleConfirmExcelImport = async () => {
+    if (excelStudents.length === 0) return;
+    try {
+      setIsSubmittingStudent(true);
+      const res = await addStudentsToClassApi(classId, {
+        students: excelStudents
+      });
+
+      if (res.success) {
+        setShowAddStudentModal(false);
+        await loadClassDetail();
+        alert(`🎉 Đã nhập thành công ${excelStudents.length} sinh viên từ file Excel vào lớp!`);
+      } else {
+        alert(res.message || 'Lỗi khi nhập sinh viên');
+      }
+    } catch (err) {
+      alert('Lỗi: ' + err.message);
+    } finally {
+      setIsSubmittingStudent(false);
+    }
+  };
+
+  // Thêm 1 sinh viên thủ công
   const handleAddSingleStudent = async (e) => {
     e?.preventDefault();
     if (!studentName.trim()) {
@@ -128,7 +293,8 @@ export default function ClassDetail({ classId, onBack }) {
       const res = await addStudentsToClassApi(classId, {
         name: studentName.trim(),
         email: studentEmail.trim(),
-        student_code: studentCode.trim()
+        student_code: studentCode.trim(),
+        birth_date: studentBirthDate.trim()
       });
 
       if (res.success) {
@@ -157,12 +323,23 @@ export default function ClassDetail({ classId, onBack }) {
       .filter(l => l.length > 0);
 
     const parsedStudents = lines.map(line => {
-      // Hỗ trợ phân cách bằng dấu phẩy, tab hoặc chấm phẩy
       const parts = line.split(/[,;\t]/).map(p => p.trim());
+      // Hỗ trợ dạng: Mã SV, Họ tên, Ngày sinh hoặc Họ tên, Email, Mã SV
+      let code = parts[0] || '';
+      let name = parts[1] || '';
+      let dob = parts[2] || '';
+
+      // Nếu cột 0 là chữ dài có dấu (Họ tên) và cột 1 là mã
+      if (parts[0] && parts[0].includes(' ') && parts[1] && !parts[1].includes(' ')) {
+        name = parts[0];
+        code = parts[1];
+      }
+
       return {
-        name: parts[0] || 'Sinh viên',
-        email: parts[1] || '',
-        student_code: parts[2] || ''
+        student_code: code || `SV-${Date.now().toString().slice(-4)}`,
+        name: name || parts[0] || 'Sinh viên',
+        birth_date: dob || '---',
+        email: `${code.toLowerCase().replace(/[^a-z0-9]/g, '')}@student.edu.vn`
       };
     });
 
@@ -198,7 +375,8 @@ export default function ClassDetail({ classId, onBack }) {
       .map(u => ({
         name: u.name || u.email.split('@')[0],
         email: u.email,
-        student_code: `SV-${u.id}`
+        student_code: `SV-${u.id}`,
+        birth_date: '---'
       }));
 
     try {
@@ -238,11 +416,12 @@ export default function ClassDetail({ classId, onBack }) {
     }
   };
 
-  // Lọc sinh viên theo tên hoặc email
+  // Lọc sinh viên theo tên, mã SV hoặc ngày sinh
   const filteredStudents = students.filter(s => 
     (s.name && s.name.toLowerCase().includes(searchStudentQuery.toLowerCase())) ||
     (s.email && s.email.toLowerCase().includes(searchStudentQuery.toLowerCase())) ||
-    (s.student_code && s.student_code.toLowerCase().includes(searchStudentQuery.toLowerCase()))
+    (s.student_code && s.student_code.toLowerCase().includes(searchStudentQuery.toLowerCase())) ||
+    (s.birth_date && s.birth_date.toLowerCase().includes(searchStudentQuery.toLowerCase()))
   );
 
   return (
@@ -290,7 +469,7 @@ export default function ClassDetail({ classId, onBack }) {
                     <button
                       onClick={handleSaveTitle}
                       disabled={isSavingTitle}
-                      className="px-2.5 py-1 bg-[#d82a7a] text-white text-xs font-bold rounded-lg"
+                      className="px-2.5 py-1 bg-[#d82a7a] text-white text-xs font-bold rounded-lg cursor-pointer"
                     >
                       {isSavingTitle ? '...' : 'Lưu'}
                     </button>
@@ -299,7 +478,7 @@ export default function ClassDetail({ classId, onBack }) {
                         setIsEditingTitle(false);
                         setEditTitleValue(classInfo?.name || '');
                       }}
-                      className="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-semibold rounded-lg"
+                      className="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-semibold rounded-lg cursor-pointer"
                     >
                       Hủy
                     </button>
@@ -387,7 +566,7 @@ export default function ClassDetail({ classId, onBack }) {
             </button>
           </div>
         ) : (
-          /* NẾU ĐÃ CÓ HỌC SINH -> BẢNG DANH SÁCH HỌC SINH */
+          /* NẾU ĐÃ CÓ HỌC SINH -> BẢNG DANH SÁCH HỌC SINH (BAO GỒM MÃ SV - HỌ VÀ TÊN - NGÀY SINH) */
           <div className="pt-6">
             <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
               <div className="overflow-x-auto">
@@ -395,8 +574,9 @@ export default function ClassDetail({ classId, onBack }) {
                   <thead className="bg-slate-50/80 text-[11px] font-bold text-slate-500 uppercase border-b border-slate-200">
                     <tr>
                       <th className="px-4 py-3 w-12 text-center">STT</th>
-                      <th className="px-4 py-3">Họ và tên</th>
                       <th className="px-4 py-3">Mã SV</th>
+                      <th className="px-4 py-3">Họ và tên</th>
+                      <th className="px-4 py-3">Ngày tháng năm sinh</th>
                       <th className="px-4 py-3">Email</th>
                       <th className="px-4 py-3">Ngày thêm</th>
                       <th className="px-4 py-3 text-right">Thao tác</th>
@@ -405,7 +585,7 @@ export default function ClassDetail({ classId, onBack }) {
                   <tbody className="divide-y divide-slate-100">
                     {filteredStudents.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
+                        <td colSpan={7} className="px-4 py-8 text-center text-slate-400">
                           Không tìm thấy sinh viên nào khớp với từ khóa "{searchStudentQuery}"
                         </td>
                       </tr>
@@ -414,6 +594,9 @@ export default function ClassDetail({ classId, onBack }) {
                         <tr key={stu.id || idx} className="hover:bg-slate-50/60 transition-colors">
                           <td className="px-4 py-3 text-center text-slate-400 font-medium">
                             {idx + 1}
+                          </td>
+                          <td className="px-4 py-3 text-slate-800 font-mono font-bold">
+                            {stu.student_code || '---'}
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2.5">
@@ -424,7 +607,7 @@ export default function ClassDetail({ classId, onBack }) {
                             </div>
                           </td>
                           <td className="px-4 py-3 text-slate-600 font-mono">
-                            {stu.student_code || '---'}
+                            {stu.birth_date || '---'}
                           </td>
                           <td className="px-4 py-3 text-slate-500">
                             {stu.email || '---'}
@@ -455,12 +638,12 @@ export default function ClassDetail({ classId, onBack }) {
       {/* 3. MODAL THÊM SINH VIÊN VÀO LỚP */}
       {showAddStudentModal && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-2xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]">
+          <div className="bg-white rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[92vh]">
             {/* Header Modal */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50/50">
               <div>
                 <h2 className="text-sm font-bold text-slate-900">Thêm học sinh vào lớp {classInfo?.name}</h2>
-                <p className="text-[11px] text-slate-400">Chọn cách bạn muốn thêm học sinh</p>
+                <p className="text-[11px] text-slate-500">Hỗ trợ nhập trực tiếp từ tệp Excel (Mã SV - Họ và tên - Ngày sinh)</p>
               </div>
               <button 
                 onClick={() => setShowAddStudentModal(false)}
@@ -471,7 +654,19 @@ export default function ClassDetail({ classId, onBack }) {
             </div>
 
             {/* Các tab chọn hình thức thêm */}
-            <div className="flex border-b border-slate-100 px-5 pt-2 bg-slate-50/50">
+            <div className="flex border-b border-slate-100 px-5 pt-2 bg-slate-50/30">
+              <button
+                type="button"
+                onClick={() => setAddMode('excel')}
+                className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 transition-colors ${
+                  addMode === 'excel'
+                    ? 'border-[#d82a7a] text-[#d82a7a]'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+                <span>Nhập từ Excel (.xlsx)</span>
+              </button>
               <button
                 type="button"
                 onClick={() => setAddMode('single')}
@@ -492,7 +687,7 @@ export default function ClassDetail({ classId, onBack }) {
                     : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
-                Dán danh sách nhiều bạn
+                Dán danh sách dòng
               </button>
               <button
                 type="button"
@@ -503,14 +698,137 @@ export default function ClassDetail({ classId, onBack }) {
                     : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
-                Chọn từ tài khoản có sẵn
+                Tài khoản có sẵn
               </button>
             </div>
 
             {/* Thân Modal theo từng chế độ */}
             <div className="p-5 overflow-y-auto flex-1">
+              {/* CHẾ ĐỘ 1: NHẬP TỪ EXCEL */}
+              {addMode === 'excel' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-700">Tệp Excel chứa danh sách học sinh:</span>
+                    <button
+                      type="button"
+                      onClick={handleDownloadExcelTemplate}
+                      className="text-[11px] font-semibold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 hover:underline cursor-pointer"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Tải file Excel mẫu (.xlsx)</span>
+                    </button>
+                  </div>
+
+                  <div 
+                    onClick={() => excelInputRef.current?.click()}
+                    className="border-2 border-dashed border-emerald-300 hover:border-emerald-500 bg-emerald-50/20 hover:bg-emerald-50/40 rounded-xl p-5 text-center cursor-pointer transition-colors flex flex-col items-center justify-center"
+                  >
+                    <input
+                      ref={excelInputRef}
+                      type="file"
+                      accept=".xlsx,.xls,.csv"
+                      onChange={(e) => {
+                        if (e.target.files?.[0]) {
+                          handleProcessExcel(e.target.files[0]);
+                        }
+                      }}
+                      className="hidden"
+                    />
+                    <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mb-2">
+                      <FileSpreadsheet className="w-5 h-5" />
+                    </div>
+                    <p className="text-xs font-bold text-slate-800">
+                      {excelFileName ? `Đã chọn: ${excelFileName}` : 'Nhấp để chọn tệp Excel (.xlsx, .xls, .csv)'}
+                    </p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      3 cột: Mã sinh viên - Họ và tên - Ngày tháng năm sinh
+                    </p>
+                  </div>
+
+                  {excelError && (
+                    <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg flex items-start gap-2 text-xs text-rose-700">
+                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <span>{excelError}</span>
+                    </div>
+                  )}
+
+                  {isParsingExcel ? (
+                    <div className="py-6 flex flex-col items-center justify-center text-slate-400">
+                      <Loader2 className="w-6 h-6 animate-spin text-emerald-600 mb-2" />
+                      <p className="text-xs">Đang đọc dữ liệu sinh viên...</p>
+                    </div>
+                  ) : excelStudents.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                          <Check className="w-4 h-4 text-emerald-600" />
+                          <span>Đã nhận diện {excelStudents.length} sinh viên:</span>
+                        </span>
+                      </div>
+
+                      <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-xl">
+                        <table className="w-full text-left text-xs text-slate-700">
+                          <thead className="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase sticky top-0 border-b border-slate-200">
+                            <tr>
+                              <th className="px-3 py-2 w-10 text-center">STT</th>
+                              <th className="px-3 py-2">Mã SV</th>
+                              <th className="px-3 py-2">Họ và tên</th>
+                              <th className="px-3 py-2">Ngày sinh</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {excelStudents.map((st, idx) => (
+                              <tr key={idx} className="hover:bg-slate-50/60">
+                                <td className="px-3 py-1.5 text-center text-slate-400 font-mono text-[11px]">{idx + 1}</td>
+                                <td className="px-3 py-1.5 font-mono font-semibold text-slate-900">{st.student_code}</td>
+                                <td className="px-3 py-1.5 font-medium text-slate-800">{st.name}</td>
+                                <td className="px-3 py-1.5 text-slate-600">{st.birth_date}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddStudentModal(false)}
+                      className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg"
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleConfirmExcelImport}
+                      disabled={isSubmittingStudent || excelStudents.length === 0}
+                      className="px-5 py-2 bg-[#d82a7a] hover:bg-[#c2226b] disabled:opacity-50 text-white text-xs font-bold rounded-lg shadow-xs flex items-center gap-1.5 cursor-pointer"
+                    >
+                      {isSubmittingStudent && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                      <span>Xác nhận nhập {excelStudents.length > 0 ? `${excelStudents.length} bạn` : ''}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* CHẾ ĐỘ 2: THÊM TỪNG BẠN */}
               {addMode === 'single' && (
                 <form onSubmit={handleAddSingleStudent} className="space-y-3.5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Mã sinh viên (MSSV)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="VD: 23IT001"
+                      value={studentCode}
+                      onChange={(e) => setStudentCode(e.target.value)}
+                      className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-[#d82a7a]"
+                      autoFocus
+                    />
+                  </div>
+
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
                       Họ và tên học sinh <span className="text-rose-500">*</span>
@@ -521,8 +839,20 @@ export default function ClassDetail({ classId, onBack }) {
                       value={studentName}
                       onChange={(e) => setStudentName(e.target.value)}
                       className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-[#d82a7a]"
-                      autoFocus
                       required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Ngày tháng năm sinh
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="VD: 15/08/2004"
+                      value={studentBirthDate}
+                      onChange={(e) => setStudentBirthDate(e.target.value)}
+                      className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-[#d82a7a]"
                     />
                   </div>
 
@@ -535,19 +865,6 @@ export default function ClassDetail({ classId, onBack }) {
                       placeholder="VD: student@test.com"
                       value={studentEmail}
                       onChange={(e) => setStudentEmail(e.target.value)}
-                      className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-[#d82a7a]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Mã sinh viên / Số báo danh (Tùy chọn)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="VD: 23IT001"
-                      value={studentCode}
-                      onChange={(e) => setStudentCode(e.target.value)}
                       className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-[#d82a7a]"
                     />
                   </div>
@@ -572,16 +889,17 @@ export default function ClassDetail({ classId, onBack }) {
                 </form>
               )}
 
+              {/* CHẾ ĐỘ 3: DÁN DANH SÁCH DÒNG */}
               {addMode === 'bulk' && (
                 <div className="space-y-3.5">
                   <p className="text-xs text-slate-500 leading-relaxed">
-                    Dán danh sách sinh viên vào ô bên dưới, mỗi học sinh trên một dòng (Định dạng: <code className="bg-slate-100 px-1 py-0.5 rounded text-[#d82a7a]">Họ và tên, email, mã_sinh_viên</code> hoặc chỉ cần <code className="bg-slate-100 px-1 py-0.5 rounded text-[#d82a7a]">Họ và tên</code>):
+                    Dán danh sách sinh viên vào ô bên dưới, mỗi học sinh trên một dòng (Định dạng chuẩn: <code className="bg-slate-100 px-1 py-0.5 rounded text-[#d82a7a]">Mã_SV, Họ và tên, Ngày_sinh</code>):
                   </p>
                   <textarea
                     rows={6}
                     value={bulkInput}
                     onChange={(e) => setBulkInput(e.target.value)}
-                    placeholder="Nguyễn Văn An, an@test.com, 23001&#10;Trần Thị Bình, binh@test.com, 23002&#10;Lê Hoàng Cường"
+                    placeholder="23IT001, Nguyễn Văn An, 15/08/2004&#10;23IT002, Trần Thị Bình, 20/11/2004&#10;23IT003, Lê Hoàng Cường, 05/03/2004"
                     className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-[#d82a7a] font-mono leading-relaxed"
                   />
 
@@ -605,6 +923,7 @@ export default function ClassDetail({ classId, onBack }) {
                 </div>
               )}
 
+              {/* CHẾ ĐỘ 4: TÀI KHOẢN CÓ SẴN */}
               {addMode === 'existing' && (
                 <div className="space-y-3.5">
                   <p className="text-xs text-slate-500">

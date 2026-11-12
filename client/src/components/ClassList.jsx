@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import * as XLSX from 'xlsx';
 import { 
   Users, 
   Folder, 
@@ -14,13 +15,16 @@ import {
   Loader2, 
   BookOpen, 
   Check,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Download,
+  AlertCircle
 } from 'lucide-react';
 import { 
   fetchClasses, 
   createClassApi, 
   updateClassApi, 
-  deleteClassApi 
+  deleteClassApi,
+  addStudentsToClassApi 
 } from '../services/api';
 
 export default function ClassList({ onSelectClass }) {
@@ -29,17 +33,28 @@ export default function ClassList({ onSelectClass }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchInput, setShowSearchInput] = useState(false);
 
-  // Modal tạo lớp học
+  // Modal tạo lớp học thông thường
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newClassName, setNewClassName] = useState('');
   const [newClassDesc, setNewClassDesc] = useState('');
   const [newClassColor, setNewClassColor] = useState('#22c55e');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Dropdown / Modal Nhập lớp
+  // Dropdown Nhập lớp
   const [showImportDropdown, setShowImportDropdown] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [importText, setImportText] = useState('');
+
+  // Modal Nhập từ Excel
+  const [showExcelModal, setShowExcelModal] = useState(false);
+  const [excelTargetMode, setExcelTargetMode] = useState('existing'); // 'existing' | 'new'
+  const [excelTargetClassId, setExcelTargetClassId] = useState('');
+  const [excelNewClassName, setExcelNewClassName] = useState('');
+  const [parsedStudents, setParsedStudents] = useState([]);
+  const [excelFileName, setExcelFileName] = useState('');
+  const [excelParseError, setExcelParseError] = useState('');
+  const [isParsingExcel, setIsParsingExcel] = useState(false);
+  const fileInputRef = useRef(null);
 
   // Dropdown menu thẻ lớp học
   const [activeMenuClassId, setActiveMenuClassId] = useState(null);
@@ -58,13 +73,16 @@ export default function ClassList({ onSelectClass }) {
     { name: 'Đỏ', value: '#ef4444' }
   ];
 
-  // Tải danh sách lớp từ Backend
+  // Tải danh sách lớp từ Backend Neon PostgreSQL
   const loadClasses = async () => {
     try {
       setIsLoading(true);
       const data = await fetchClasses();
       if (Array.isArray(data)) {
         setClasses(data);
+        if (data.length > 0 && !excelTargetClassId) {
+          setExcelTargetClassId(data[0].id);
+        }
       }
     } catch (err) {
       console.error('Lỗi khi tải danh sách lớp học:', err);
@@ -185,6 +203,209 @@ export default function ClassList({ onSelectClass }) {
     }
   };
 
+  // -------------------------------------------------------------
+  // TÍNH NĂNG NHẬP SINH VIÊN TỪ EXCEL (MÃ SV - HỌ VÀ TÊN - NGÀY SINH)
+  // -------------------------------------------------------------
+
+  // Tải file Excel mẫu
+  const handleDownloadExcelTemplate = () => {
+    const wsData = [
+      ['Mã sinh viên', 'Họ và tên', 'Ngày tháng năm sinh'],
+      ['23IT001', 'Nguyễn Văn An', '15/08/2004'],
+      ['23IT002', 'Trần Thị Bình', '20/11/2004'],
+      ['23IT003', 'Lê Hoàng Cường', '05/03/2004'],
+      ['23IT004', 'Phạm Thị Diệu', '12/09/2004'],
+      ['23IT005', 'Hoàng Minh Đức', '28/01/2004']
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    // Định dạng độ rộng cột
+    ws['!cols'] = [{ wch: 18 }, { wch: 26 }, { wch: 22 }];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'DanhSachSinhVien');
+    XLSX.writeFile(wb, 'Mau_Danh_Sach_Sinh_Vien.xlsx');
+  };
+
+  // Định dạng ngày tháng từ ô Excel (hỗ trợ số serial date hoặc text chuỗi)
+  const formatExcelDate = (val) => {
+    if (!val) return '';
+    if (typeof val === 'number') {
+      try {
+        const dateObj = XLSX.SSF.parse_date_code(val);
+        if (dateObj) {
+          const d = String(dateObj.d).padStart(2, '0');
+          const m = String(dateObj.m).padStart(2, '0');
+          const y = dateObj.y;
+          return `${d}/${m}/${y}`;
+        }
+      } catch (e) {}
+    }
+    const str = String(val).trim();
+    return str;
+  };
+
+  // Đọc và phân tích file Excel
+  const handleProcessExcelFile = async (file) => {
+    if (!file) return;
+    setExcelParseError('');
+    setIsParsingExcel(true);
+    setExcelFileName(file.name);
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+      if (!rawData || rawData.length === 0) {
+        throw new Error('Tệp Excel rỗng hoặc không chứa dữ liệu hợp lệ.');
+      }
+
+      // Xác định chỉ số các cột: Mã SV, Họ và tên, Ngày tháng năm sinh
+      let codeCol = -1;
+      let nameCol = -1;
+      let dobCol = -1;
+      let startRow = 0;
+
+      // Quét các dòng đầu tiên để tìm tiêu đề
+      for (let r = 0; r < Math.min(rawData.length, 6); r++) {
+        const row = rawData[r];
+        for (let c = 0; c < row.length; c++) {
+          const cellStr = String(row[c]).toLowerCase().trim();
+          if (cellStr.includes('mã') || cellStr.includes('mssv') || cellStr.includes('student') || cellStr.includes('code') || cellStr.includes('masv')) {
+            codeCol = c;
+          }
+          if (cellStr.includes('họ') || cellStr.includes('tên') || cellStr.includes('name') || cellStr.includes('sinh viên')) {
+            nameCol = c;
+          }
+          if (cellStr.includes('ngày') || cellStr.includes('sinh') || cellStr.includes('dob') || cellStr.includes('birth')) {
+            dobCol = c;
+          }
+        }
+        if (codeCol !== -1 && nameCol !== -1) {
+          startRow = r + 1;
+          break;
+        }
+      }
+
+      // Nếu không tìm thấy hàng tiêu đề rõ ràng, gán mặc định: Cột 0: Mã SV, Cột 1: Họ tên, Cột 2: Ngày sinh
+      if (codeCol === -1 || nameCol === -1) {
+        codeCol = 0;
+        nameCol = 1;
+        dobCol = 2;
+        // Kiểm tra xem dòng 0 có phải tiêu đề text không
+        const row0 = rawData[0];
+        if (row0 && isNaN(row0[0]) && String(row0[0]).length > 0 && String(row0[1]).length > 0) {
+          const firstVal = String(row0[0]).toLowerCase();
+          if (firstVal.includes('mã') || firstVal.includes('họ') || firstVal.includes('stt')) {
+            startRow = 1;
+          }
+        }
+      }
+
+      const extracted = [];
+      for (let r = startRow; r < rawData.length; r++) {
+        const row = rawData[r];
+        if (!row || row.length === 0) continue;
+
+        const codeVal = String(row[codeCol] !== undefined ? row[codeCol] : '').trim();
+        const nameVal = String(row[nameCol] !== undefined ? row[nameCol] : '').trim();
+        const dobVal = formatExcelDate(dobCol !== -1 ? row[dobCol] : '');
+
+        // Bỏ qua dòng trống hoặc dòng chỉ có STT
+        if (!nameVal && !codeVal) continue;
+        if (nameVal.toLowerCase().includes('họ và tên') || codeVal.toLowerCase().includes('mã sinh viên')) continue;
+
+        extracted.push({
+          student_code: codeVal || `SV-${Date.now().toString().slice(-4)}${r}`,
+          name: nameVal || codeVal,
+          birth_date: dobVal || '---',
+          email: `${codeVal.toLowerCase().replace(/[^a-z0-9]/g, '')}@student.edu.vn`
+        });
+      }
+
+      if (extracted.length === 0) {
+        throw new Error('Không trích xuất được sinh viên nào từ tệp. Vui lòng kiểm tra lại định dạng tệp Excel.');
+      }
+
+      setParsedStudents(extracted);
+      // Tự động gợi ý tên lớp mới từ tên file nếu chưa có
+      const defaultName = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
+      setExcelNewClassName(defaultName);
+    } catch (err) {
+      console.error(err);
+      setExcelParseError(err.message || 'Lỗi khi đọc tệp Excel.');
+      setParsedStudents([]);
+    } finally {
+      setIsParsingExcel(false);
+    }
+  };
+
+  // Xác nhận nhập sinh viên từ Excel vào hệ thống CSDL
+  const handleConfirmImportExcel = async () => {
+    if (parsedStudents.length === 0) {
+      alert('Chưa có danh sách sinh viên nào được phân tích từ Excel!');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      let targetId = excelTargetClassId;
+
+      // Nếu người dùng chọn Tạo lớp mới từ tệp Excel
+      if (excelTargetMode === 'new') {
+        if (!excelNewClassName.trim()) {
+          alert('Vui lòng nhập tên lớp học mới!');
+          return;
+        }
+
+        const createRes = await createClassApi({
+          name: excelNewClassName.trim(),
+          description: `Nhập từ tệp ${excelFileName} (${parsedStudents.length} sinh viên)`,
+          color: colorPalette[Math.floor(Math.random() * colorPalette.length)].value,
+          students: parsedStudents
+        });
+
+        if (createRes.success) {
+          setShowExcelModal(false);
+          setParsedStudents([]);
+          setExcelFileName('');
+          await loadClasses();
+          alert(`🎉 Đã tạo lớp "${excelNewClassName}" và nhập thành công ${parsedStudents.length} sinh viên vào CSDL Neon!`);
+          return;
+        } else {
+          throw new Error(createRes.message || 'Lỗi khi tạo lớp mới');
+        }
+      }
+
+      // Nếu chọn nhập vào lớp đã có sẵn (vd: CNTT K23A)
+      if (!targetId) {
+        alert('Vui lòng chọn lớp học cần nhập sinh viên!');
+        return;
+      }
+
+      const addRes = await addStudentsToClassApi(targetId, {
+        students: parsedStudents
+      });
+
+      if (addRes.success) {
+        setShowExcelModal(false);
+        setParsedStudents([]);
+        setExcelFileName('');
+        await loadClasses();
+        alert(`🎉 Đã nhập thành công ${parsedStudents.length} sinh viên vào lớp học trên CSDL Neon!`);
+      } else {
+        throw new Error(addRes.message || 'Lỗi khi thêm sinh viên vào lớp');
+      }
+    } catch (err) {
+      alert('Lỗi: ' + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Lọc theo từ khóa tìm kiếm
   const filteredClasses = classes.filter(c => 
     c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -244,7 +465,7 @@ export default function ClassList({ onSelectClass }) {
               </button>
             )}
 
-            {/* Nút Nhập lớp với menu dropdown */}
+            {/* Nút Nhập lớp với menu dropdown chuẩn */}
             <div className="relative">
               <button
                 onClick={() => setShowImportDropdown(!showImportDropdown)}
@@ -260,7 +481,28 @@ export default function ClassList({ onSelectClass }) {
                     className="fixed inset-0 z-20"
                     onClick={() => setShowImportDropdown(false)}
                   />
-                  <div className="absolute right-0 mt-1.5 w-56 bg-white border border-slate-200 rounded-xl shadow-lg z-30 py-1 text-xs">
+                  <div className="absolute right-0 mt-1.5 w-64 bg-white border border-slate-200 rounded-xl shadow-lg z-30 py-1 text-xs">
+                    {/* Mục 1: Nhập từ tệp Excel chuẩn yêu cầu: Mã SV - Họ tên - Ngày sinh */}
+                    <button
+                      onClick={() => {
+                        setShowImportDropdown(false);
+                        setShowExcelModal(true);
+                        setParsedStudents([]);
+                        setExcelParseError('');
+                        setExcelFileName('');
+                      }}
+                      className="w-full text-left px-3.5 py-2.5 hover:bg-emerald-50 flex items-start gap-2.5 text-slate-800 font-medium group transition-colors"
+                    >
+                      <FileSpreadsheet className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
+                      <div>
+                        <div className="font-bold text-slate-900 group-hover:text-emerald-700">Nhập từ tệp Excel (.xlsx, .csv)</div>
+                        <div className="text-[11px] text-slate-400 mt-0.5">Mã SV - Họ và tên - Ngày sinh</div>
+                      </div>
+                    </button>
+
+                    <div className="border-t border-slate-100 my-1" />
+
+                    {/* Mục 2: Dán danh sách tên lớp */}
                     <button
                       onClick={() => {
                         setShowImportDropdown(false);
@@ -271,10 +513,12 @@ export default function ClassList({ onSelectClass }) {
                       <Upload className="w-3.5 h-3.5 text-slate-500" />
                       <span>Dán danh sách tên lớp</span>
                     </button>
+
+                    {/* Mục 3: Nhập từ Google Classroom */}
                     <button
                       onClick={() => {
                         setShowImportDropdown(false);
-                        alert('Tính năng đồng bộ Google Classroom đang được kết nối với tài khoản giảng viên.');
+                        alert('Tính năng đồng bộ Google Classroom đang sẵn sàng kết nối.');
                       }}
                       className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center gap-2 text-slate-700 font-medium"
                     >
@@ -309,7 +553,7 @@ export default function ClassList({ onSelectClass }) {
             </div>
             <h3 className="text-sm font-bold text-slate-800">Không tìm thấy lớp học nào</h3>
             <p className="text-xs text-slate-500 mt-1 max-w-sm">
-              {searchQuery ? 'Không có lớp học nào khớp với từ khóa tìm kiếm.' : 'Bắt đầu bằng cách tạo một lớp học mới để quản lý sinh viên và theo dõi kết quả.'}
+              {searchQuery ? 'Không có lớp học nào khớp với từ khóa tìm kiếm.' : 'Bắt đầu bằng cách tạo một lớp học mới hoặc nhập sinh viên từ tệp Excel.'}
             </p>
             {!searchQuery && (
               <button
@@ -411,7 +655,229 @@ export default function ClassList({ onSelectClass }) {
         )}
       </main>
 
-      {/* 4. MODAL TẠO LỚP HỌC MỚI */}
+      {/* 4. MODAL NHẬP SINH VIÊN TỪ EXCEL (MÃ SINH VIÊN - HỌ VÀ TÊN - NGÀY SINH) */}
+      {showExcelModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-2xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[92vh]">
+            {/* Header Modal */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-emerald-50/30">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                  <FileSpreadsheet className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900">Nhập sinh viên từ tệp Excel</h2>
+                  <p className="text-[11px] text-slate-500">Định dạng chuẩn 3 cột: Mã sinh viên - Họ và tên - Ngày tháng năm sinh</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowExcelModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 overflow-y-auto space-y-4 flex-1">
+              {/* 1. Chọn đích đến: Lớp học có sẵn hay Tạo lớp mới */}
+              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                <label className="block text-xs font-bold text-slate-800 mb-2">
+                  Lựa chọn đích đến:
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <label className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-colors ${
+                    excelTargetMode === 'existing' ? 'bg-white border-[#d82a7a] shadow-xs' : 'border-slate-200 hover:bg-white'
+                  }`}>
+                    <input
+                      type="radio"
+                      name="excelTargetMode"
+                      checked={excelTargetMode === 'existing'}
+                      onChange={() => setExcelTargetMode('existing')}
+                      className="text-[#d82a7a] focus:ring-[#d82a7a]"
+                    />
+                    <div className="text-xs">
+                      <div className="font-bold text-slate-900">Nhập vào lớp đã có</div>
+                      <div className="text-[10px] text-slate-400">Chọn lớp có sẵn trong danh sách</div>
+                    </div>
+                  </label>
+
+                  <label className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-colors ${
+                    excelTargetMode === 'new' ? 'bg-white border-[#d82a7a] shadow-xs' : 'border-slate-200 hover:bg-white'
+                  }`}>
+                    <input
+                      type="radio"
+                      name="excelTargetMode"
+                      checked={excelTargetMode === 'new'}
+                      onChange={() => setExcelTargetMode('new')}
+                      className="text-[#d82a7a] focus:ring-[#d82a7a]"
+                    />
+                    <div className="text-xs">
+                      <div className="font-bold text-slate-900">Tạo lớp học mới</div>
+                      <div className="text-[10px] text-slate-400">Tạo lớp và thêm sinh viên ngay</div>
+                    </div>
+                  </label>
+                </div>
+
+                {/* Chọn lớp có sẵn */}
+                {excelTargetMode === 'existing' && (
+                  <div className="mt-3">
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                      Chọn lớp học tiếp nhận:
+                    </label>
+                    <select
+                      value={excelTargetClassId}
+                      onChange={(e) => setExcelTargetClassId(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-[#d82a7a]"
+                    >
+                      {classes.map(c => (
+                        <option key={c.id} value={c.id}>
+                          {c.name} ({c.student_count || 0} sinh viên)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Nhập tên lớp mới */}
+                {excelTargetMode === 'new' && (
+                  <div className="mt-3">
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                      Tên lớp học mới:
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="VD: CNTT K23A, Kế toán K24..."
+                      value={excelNewClassName}
+                      onChange={(e) => setExcelNewClassName(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-[#d82a7a]"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* 2. Vùng Tải tệp Excel hoặc Tải file mẫu */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-slate-700">
+                    Chọn tệp Excel (.xlsx, .xls, .csv)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleDownloadExcelTemplate}
+                    className="text-[11px] font-semibold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 hover:underline cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Tải file Excel mẫu (.xlsx)</span>
+                  </button>
+                </div>
+
+                <div 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="border-2 border-dashed border-emerald-300 hover:border-emerald-500 bg-emerald-50/20 hover:bg-emerald-50/40 rounded-xl p-5 text-center cursor-pointer transition-colors flex flex-col items-center justify-center"
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".xlsx,.xls,.csv"
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) {
+                        handleProcessExcelFile(e.target.files[0]);
+                      }
+                    }}
+                    className="hidden"
+                  />
+                  <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mb-2">
+                    <FileSpreadsheet className="w-5 h-5" />
+                  </div>
+                  <p className="text-xs font-bold text-slate-800">
+                    {excelFileName ? `Đã chọn: ${excelFileName}` : 'Nhấp để tải lên tệp Excel hoặc kéo thả vào đây'}
+                  </p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Hỗ trợ tệp .xlsx, .xls, .csv có cột: Mã sinh viên - Họ và tên - Ngày tháng năm sinh
+                  </p>
+                </div>
+              </div>
+
+              {/* Báo lỗi nếu có */}
+              {excelParseError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg flex items-start gap-2 text-xs text-rose-700">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>{excelParseError}</span>
+                </div>
+              )}
+
+              {/* 3. Bảng xem trước dữ liệu sau khi đọc Excel */}
+              {isParsingExcel ? (
+                <div className="py-8 flex flex-col items-center justify-center text-slate-400">
+                  <Loader2 className="w-6 h-6 animate-spin text-emerald-600 mb-2" />
+                  <p className="text-xs">Đang đọc và phân tích cấu trúc cột Excel...</p>
+                </div>
+              ) : parsedStudents.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <Check className="w-4 h-4 text-emerald-600" />
+                      <span>Xem trước danh sách ({parsedStudents.length} sinh viên hợp lệ):</span>
+                    </span>
+                    <span className="text-[11px] text-emerald-700 font-semibold bg-emerald-100 px-2 py-0.5 rounded-full">
+                      Sẵn sàng nhập
+                    </span>
+                  </div>
+
+                  <div className="max-h-56 overflow-y-auto border border-slate-200 rounded-xl">
+                    <table className="w-full text-left text-xs text-slate-700">
+                      <thead className="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase sticky top-0 border-b border-slate-200">
+                        <tr>
+                          <th className="px-3 py-2 w-10 text-center">STT</th>
+                          <th className="px-3 py-2">Mã SV</th>
+                          <th className="px-3 py-2">Họ và tên</th>
+                          <th className="px-3 py-2">Ngày tháng năm sinh</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {parsedStudents.map((st, idx) => (
+                          <tr key={idx} className="hover:bg-slate-50/60">
+                            <td className="px-3 py-1.5 text-center text-slate-400 font-mono text-[11px]">{idx + 1}</td>
+                            <td className="px-3 py-1.5 font-mono font-semibold text-slate-900">{st.student_code}</td>
+                            <td className="px-3 py-1.5 font-medium text-slate-800">{st.name}</td>
+                            <td className="px-3 py-1.5 text-slate-600">{st.birth_date}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer Modal */}
+            <div className="flex items-center justify-end gap-2.5 px-5 py-3 border-t border-slate-100 bg-slate-50/50">
+              <button
+                type="button"
+                onClick={() => setShowExcelModal(false)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmImportExcel}
+                disabled={isSubmitting || parsedStudents.length === 0}
+                className="px-5 py-2 bg-[#d82a7a] hover:bg-[#c2226b] disabled:opacity-50 text-white text-xs font-bold rounded-lg shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>
+                  {parsedStudents.length > 0 
+                    ? `Xác nhận nhập ${parsedStudents.length} sinh viên`
+                    : 'Chọn tệp Excel để nhập'}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5. MODAL TẠO LỚP HỌC MỚI */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-2xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
@@ -498,7 +964,7 @@ export default function ClassList({ onSelectClass }) {
         </div>
       )}
 
-      {/* 5. MODAL ĐỔI TÊN LỚP HỌC */}
+      {/* 6. MODAL ĐỔI TÊN LỚP HỌC */}
       {editingClass && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-2xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
@@ -571,7 +1037,7 @@ export default function ClassList({ onSelectClass }) {
         </div>
       )}
 
-      {/* 6. MODAL DÁN DANH SÁCH LỚP HỌC NHANH */}
+      {/* 7. MODAL DÁN DANH SÁCH LỚP HỌC NHANH */}
       {showImportModal && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-2xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
