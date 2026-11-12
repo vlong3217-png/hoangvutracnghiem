@@ -12,20 +12,15 @@ import {
   Loader2, 
   Check, 
   Upload, 
-  Mail, 
-  User, 
-  Sparkles,
   FileSpreadsheet,
   Download,
-  AlertCircle,
-  Calendar
+  AlertCircle
 } from 'lucide-react';
 import { 
   fetchClassById, 
   updateClassApi, 
   addStudentsToClassApi, 
-  deleteStudentFromClassApi,
-  fetchUsers
+  deleteStudentFromClassApi 
 } from '../services/api';
 
 export default function ClassDetail({ classId, onBack }) {
@@ -39,14 +34,13 @@ export default function ClassDetail({ classId, onBack }) {
   const [editTitleValue, setEditTitleValue] = useState('');
   const [isSavingTitle, setIsSavingTitle] = useState(false);
 
-  // Modal thêm sinh viên
+  // Modal thêm sinh viên (mặc định tab single theo ảnh)
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
-  const [addMode, setAddMode] = useState('excel'); // 'excel' | 'single' | 'bulk' | 'existing'
+  const [addMode, setAddMode] = useState('single'); // 'single' | 'bulk' | 'excel'
   
-  // Single student form
-  const [studentName, setStudentName] = useState('');
-  const [studentEmail, setStudentEmail] = useState('');
+  // Single student form: 3 trường chuẩn: Mã sinh viên - Họ và tên - Ngày tháng năm sinh
   const [studentCode, setStudentCode] = useState('');
+  const [studentName, setStudentName] = useState('');
   const [studentBirthDate, setStudentBirthDate] = useState('');
 
   // Bulk student form
@@ -59,13 +53,9 @@ export default function ClassDetail({ classId, onBack }) {
   const [isParsingExcel, setIsParsingExcel] = useState(false);
   const excelInputRef = useRef(null);
 
-  // Existing system users
-  const [systemUsers, setSystemUsers] = useState([]);
-  const [selectedUserIds, setSelectedUserIds] = useState([]);
-
   const [isSubmittingStudent, setIsSubmittingStudent] = useState(false);
 
-  // Tải thông tin lớp học và học sinh
+  // Tải thông tin lớp học và học sinh từ Backend Neon PostgreSQL
   const loadClassDetail = async () => {
     if (!classId) return;
     try {
@@ -87,26 +77,17 @@ export default function ClassDetail({ classId, onBack }) {
     loadClassDetail();
   }, [classId]);
 
-  // Tải danh sách user có sẵn trong hệ thống khi mở modal
-  const handleOpenAddModal = async () => {
+  // Mở modal thêm sinh viên
+  const handleOpenAddModal = () => {
     setShowAddStudentModal(true);
-    setStudentName('');
-    setStudentEmail('');
+    setAddMode('single');
     setStudentCode('');
+    setStudentName('');
     setStudentBirthDate('');
     setBulkInput('');
     setExcelStudents([]);
     setExcelFileName('');
     setExcelError('');
-    setSelectedUserIds([]);
-    try {
-      const uList = await fetchUsers();
-      if (Array.isArray(uList)) {
-        setSystemUsers(uList.filter(u => u.role === 'student' || !u.role));
-      }
-    } catch (e) {
-      console.warn('Lỗi lấy users:', e);
-    }
   };
 
   // Lưu tên lớp sau khi sửa
@@ -131,7 +112,7 @@ export default function ClassDetail({ classId, onBack }) {
     }
   };
 
-  // Tải file Excel mẫu
+  // Tải file Excel mẫu 3 cột chuẩn
   const handleDownloadExcelTemplate = () => {
     const wsData = [
       ['Mã sinh viên', 'Họ và tên', 'Ngày tháng năm sinh'],
@@ -280,9 +261,13 @@ export default function ClassDetail({ classId, onBack }) {
     }
   };
 
-  // Thêm 1 sinh viên thủ công
+  // Thêm 1 sinh viên thủ công: Mã sinh viên - Họ và tên - Ngày tháng năm sinh
   const handleAddSingleStudent = async (e) => {
     e?.preventDefault();
+    if (!studentCode.trim()) {
+      alert('Vui lòng nhập mã sinh viên!');
+      return;
+    }
     if (!studentName.trim()) {
       alert('Vui lòng nhập họ và tên sinh viên!');
       return;
@@ -291,10 +276,10 @@ export default function ClassDetail({ classId, onBack }) {
     try {
       setIsSubmittingStudent(true);
       const res = await addStudentsToClassApi(classId, {
-        name: studentName.trim(),
-        email: studentEmail.trim(),
         student_code: studentCode.trim(),
-        birth_date: studentBirthDate.trim()
+        name: studentName.trim(),
+        birth_date: studentBirthDate.trim(),
+        email: `${studentCode.trim().toLowerCase().replace(/[^a-z0-9]/g, '')}@student.edu.vn`
       });
 
       if (res.success) {
@@ -310,7 +295,7 @@ export default function ClassDetail({ classId, onBack }) {
     }
   };
 
-  // Thêm nhiều sinh viên theo danh sách dòng
+  // Thêm nhiều sinh viên theo danh sách dòng: Mã sinh viên, Họ và tên, Ngày tháng năm sinh
   const handleAddBulkStudents = async () => {
     if (!bulkInput.trim()) {
       alert('Vui lòng nhập danh sách sinh viên');
@@ -324,12 +309,12 @@ export default function ClassDetail({ classId, onBack }) {
 
     const parsedStudents = lines.map(line => {
       const parts = line.split(/[,;\t]/).map(p => p.trim());
-      // Hỗ trợ dạng: Mã SV, Họ tên, Ngày sinh hoặc Họ tên, Email, Mã SV
+      // Định dạng chuẩn: Mã sinh viên, Họ và tên, Ngày tháng năm sinh
       let code = parts[0] || '';
       let name = parts[1] || '';
       let dob = parts[2] || '';
 
-      // Nếu cột 0 là chữ dài có dấu (Họ tên) và cột 1 là mã
+      // Tự động nhận diện nếu người dùng dán đảo Họ tên trước, Mã sau
       if (parts[0] && parts[0].includes(' ') && parts[1] && !parts[1].includes(' ')) {
         name = parts[0];
         code = parts[1];
@@ -337,7 +322,7 @@ export default function ClassDetail({ classId, onBack }) {
 
       return {
         student_code: code || `SV-${Date.now().toString().slice(-4)}`,
-        name: name || parts[0] || 'Sinh viên',
+        name: name || code || 'Sinh viên',
         birth_date: dob || '---',
         email: `${code.toLowerCase().replace(/[^a-z0-9]/g, '')}@student.edu.vn`
       };
@@ -355,41 +340,6 @@ export default function ClassDetail({ classId, onBack }) {
         alert(`Đã thêm thành công ${parsedStudents.length} sinh viên vào lớp!`);
       } else {
         alert(res.message || 'Lỗi khi thêm danh sách sinh viên');
-      }
-    } catch (err) {
-      alert('Lỗi: ' + err.message);
-    } finally {
-      setIsSubmittingStudent(false);
-    }
-  };
-
-  // Thêm từ tài khoản sinh viên đã có trong hệ thống
-  const handleAddExistingUsers = async () => {
-    if (selectedUserIds.length === 0) {
-      alert('Vui lòng chọn ít nhất một sinh viên');
-      return;
-    }
-
-    const selectedList = systemUsers
-      .filter(u => selectedUserIds.includes(u.id))
-      .map(u => ({
-        name: u.name || u.email.split('@')[0],
-        email: u.email,
-        student_code: `SV-${u.id}`,
-        birth_date: '---'
-      }));
-
-    try {
-      setIsSubmittingStudent(true);
-      const res = await addStudentsToClassApi(classId, {
-        students: selectedList
-      });
-
-      if (res.success) {
-        setShowAddStudentModal(false);
-        await loadClassDetail();
-      } else {
-        alert(res.message || 'Lỗi khi thêm sinh viên');
       }
     } catch (err) {
       alert('Lỗi: ' + err.message);
@@ -419,7 +369,6 @@ export default function ClassDetail({ classId, onBack }) {
   // Lọc sinh viên theo tên, mã SV hoặc ngày sinh
   const filteredStudents = students.filter(s => 
     (s.name && s.name.toLowerCase().includes(searchStudentQuery.toLowerCase())) ||
-    (s.email && s.email.toLowerCase().includes(searchStudentQuery.toLowerCase())) ||
     (s.student_code && s.student_code.toLowerCase().includes(searchStudentQuery.toLowerCase())) ||
     (s.birth_date && s.birth_date.toLowerCase().includes(searchStudentQuery.toLowerCase()))
   );
@@ -577,7 +526,6 @@ export default function ClassDetail({ classId, onBack }) {
                       <th className="px-4 py-3">Mã SV</th>
                       <th className="px-4 py-3">Họ và tên</th>
                       <th className="px-4 py-3">Ngày tháng năm sinh</th>
-                      <th className="px-4 py-3">Email</th>
                       <th className="px-4 py-3">Ngày thêm</th>
                       <th className="px-4 py-3 text-right">Thao tác</th>
                     </tr>
@@ -585,7 +533,7 @@ export default function ClassDetail({ classId, onBack }) {
                   <tbody className="divide-y divide-slate-100">
                     {filteredStudents.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="px-4 py-8 text-center text-slate-400">
+                        <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
                           Không tìm thấy sinh viên nào khớp với từ khóa "{searchStudentQuery}"
                         </td>
                       </tr>
@@ -595,7 +543,7 @@ export default function ClassDetail({ classId, onBack }) {
                           <td className="px-4 py-3 text-center text-slate-400 font-medium">
                             {idx + 1}
                           </td>
-                          <td className="px-4 py-3 text-slate-800 font-mono font-bold">
+                          <td className="px-4 py-3 text-slate-900 font-mono font-bold">
                             {stu.student_code || '---'}
                           </td>
                           <td className="px-4 py-3">
@@ -608,9 +556,6 @@ export default function ClassDetail({ classId, onBack }) {
                           </td>
                           <td className="px-4 py-3 text-slate-600 font-mono">
                             {stu.birth_date || '---'}
-                          </td>
-                          <td className="px-4 py-3 text-slate-500">
-                            {stu.email || '---'}
                           </td>
                           <td className="px-4 py-3 text-slate-400 text-[11px]">
                             {stu.joined_at ? new Date(stu.joined_at).toLocaleDateString('vi-VN') : 'Vừa xong'}
@@ -635,15 +580,15 @@ export default function ClassDetail({ classId, onBack }) {
         )}
       </main>
 
-      {/* 3. MODAL THÊM SINH VIÊN VÀO LỚP */}
+      {/* 3. MODAL THÊM SINH VIÊN VÀO LỚP (ĐÃ XÓA CHỌN TỪ TÀI KHOẢN CÓ SẴN) */}
       {showAddStudentModal && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-2xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[92vh]">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[92vh]">
             {/* Header Modal */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50/50">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
               <div>
                 <h2 className="text-sm font-bold text-slate-900">Thêm học sinh vào lớp {classInfo?.name}</h2>
-                <p className="text-[11px] text-slate-500">Hỗ trợ nhập trực tiếp từ tệp Excel (Mã SV - Họ và tên - Ngày sinh)</p>
+                <p className="text-[11px] text-slate-400">Chọn cách bạn muốn thêm học sinh</p>
               </div>
               <button 
                 onClick={() => setShowAddStudentModal(false)}
@@ -653,24 +598,12 @@ export default function ClassDetail({ classId, onBack }) {
               </button>
             </div>
 
-            {/* Các tab chọn hình thức thêm */}
-            <div className="flex border-b border-slate-100 px-5 pt-2 bg-slate-50/30">
-              <button
-                type="button"
-                onClick={() => setAddMode('excel')}
-                className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 transition-colors ${
-                  addMode === 'excel'
-                    ? 'border-[#d82a7a] text-[#d82a7a]'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                <FileSpreadsheet className="w-3.5 h-3.5" />
-                <span>Nhập từ Excel (.xlsx)</span>
-              </button>
+            {/* Các tab chọn hình thức thêm: Thêm từng bạn | Dán danh sách | Nhập từ Excel */}
+            <div className="flex border-b border-slate-100 px-5 pt-2 bg-slate-50/50">
               <button
                 type="button"
                 onClick={() => setAddMode('single')}
-                className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors ${
+                className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
                   addMode === 'single'
                     ? 'border-[#d82a7a] text-[#d82a7a]'
                     : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -681,34 +614,134 @@ export default function ClassDetail({ classId, onBack }) {
               <button
                 type="button"
                 onClick={() => setAddMode('bulk')}
-                className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors ${
+                className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
                   addMode === 'bulk'
                     ? 'border-[#d82a7a] text-[#d82a7a]'
                     : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
-                Dán danh sách dòng
+                Dán danh sách nhiều bạn
               </button>
               <button
                 type="button"
-                onClick={() => setAddMode('existing')}
-                className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors ${
-                  addMode === 'existing'
+                onClick={() => setAddMode('excel')}
+                className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
+                  addMode === 'excel'
                     ? 'border-[#d82a7a] text-[#d82a7a]'
                     : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
-                Tài khoản có sẵn
+                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Nhập từ tệp Excel (.xlsx)</span>
               </button>
             </div>
 
             {/* Thân Modal theo từng chế độ */}
             <div className="p-5 overflow-y-auto flex-1">
-              {/* CHẾ ĐỘ 1: NHẬP TỪ EXCEL */}
+              {/* CHẾ ĐỘ 1: THÊM TỪNG BẠN (MÃ SINH VIÊN - HỌ VÀ TÊN - NGÀY THÁNG NĂM SINH) */}
+              {addMode === 'single' && (
+                <form onSubmit={handleAddSingleStudent} className="space-y-3.5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Mã sinh viên <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="VD: 23IT001"
+                      value={studentCode}
+                      onChange={(e) => setStudentCode(e.target.value)}
+                      className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-[#d82a7a]"
+                      autoFocus
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Họ và tên học sinh <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="VD: Nguyễn Văn An"
+                      value={studentName}
+                      onChange={(e) => setStudentName(e.target.value)}
+                      className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-[#d82a7a]"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Ngày tháng năm sinh
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="VD: 15/08/2004"
+                      value={studentBirthDate}
+                      onChange={(e) => setStudentBirthDate(e.target.value)}
+                      className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-[#d82a7a]"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddStudentModal(false)}
+                      className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg"
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSubmittingStudent || !studentName.trim() || !studentCode.trim()}
+                      className="px-5 py-2 bg-[#d82a7a] hover:bg-[#c2226b] disabled:opacity-60 text-white text-xs font-bold rounded-lg shadow-xs flex items-center gap-1.5 cursor-pointer"
+                    >
+                      {isSubmittingStudent && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                      <span>Thêm học sinh</span>
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* CHẾ ĐỘ 2: DÁN DANH SÁCH DÒNG (MÃ SINH VIÊN, HỌ VÀ TÊN, NGÀY THÁNG NĂM SINH) */}
+              {addMode === 'bulk' && (
+                <div className="space-y-3.5">
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Dán danh sách sinh viên vào ô bên dưới, mỗi học sinh trên một dòng (Định dạng: <code className="bg-slate-100 px-1 py-0.5 rounded text-[#d82a7a]">Mã sinh viên, Họ và tên, Ngày tháng năm sinh</code>):
+                  </p>
+                  <textarea
+                    rows={6}
+                    value={bulkInput}
+                    onChange={(e) => setBulkInput(e.target.value)}
+                    placeholder="23IT001, Nguyễn Văn An, 15/08/2004&#10;23IT002, Trần Thị Bình, 20/11/2004&#10;23IT003, Lê Hoàng Cường, 05/03/2004"
+                    className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-[#d82a7a] font-mono leading-relaxed"
+                  />
+
+                  <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddStudentModal(false)}
+                      className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg"
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      onClick={handleAddBulkStudents}
+                      disabled={isSubmittingStudent || !bulkInput.trim()}
+                      className="px-5 py-2 bg-[#d82a7a] hover:bg-[#c2226b] disabled:opacity-60 text-white text-xs font-bold rounded-lg shadow-xs flex items-center gap-1.5 cursor-pointer"
+                    >
+                      {isSubmittingStudent && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                      <span>Thêm danh sách</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* CHẾ ĐỘ 3: NHẬP TỪ TỆP EXCEL */}
               {addMode === 'excel' && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700">Tệp Excel chứa danh sách học sinh:</span>
+                    <span className="text-xs font-bold text-slate-700">Tệp Excel chứa danh sách sinh viên:</span>
                     <button
                       type="button"
                       onClick={handleDownloadExcelTemplate}
@@ -741,7 +774,7 @@ export default function ClassDetail({ classId, onBack }) {
                       {excelFileName ? `Đã chọn: ${excelFileName}` : 'Nhấp để chọn tệp Excel (.xlsx, .xls, .csv)'}
                     </p>
                     <p className="text-[11px] text-slate-400 mt-0.5">
-                      3 cột: Mã sinh viên - Họ và tên - Ngày tháng năm sinh
+                      3 cột chuẩn: Mã sinh viên - Họ và tên - Ngày tháng năm sinh
                     </p>
                   </div>
 
@@ -807,186 +840,6 @@ export default function ClassDetail({ classId, onBack }) {
                     >
                       {isSubmittingStudent && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                       <span>Xác nhận nhập {excelStudents.length > 0 ? `${excelStudents.length} bạn` : ''}</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* CHẾ ĐỘ 2: THÊM TỪNG BẠN */}
-              {addMode === 'single' && (
-                <form onSubmit={handleAddSingleStudent} className="space-y-3.5">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Mã sinh viên (MSSV)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="VD: 23IT001"
-                      value={studentCode}
-                      onChange={(e) => setStudentCode(e.target.value)}
-                      className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-[#d82a7a]"
-                      autoFocus
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Họ và tên học sinh <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="VD: Nguyễn Văn An"
-                      value={studentName}
-                      onChange={(e) => setStudentName(e.target.value)}
-                      className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-[#d82a7a]"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Ngày tháng năm sinh
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="VD: 15/08/2004"
-                      value={studentBirthDate}
-                      onChange={(e) => setStudentBirthDate(e.target.value)}
-                      className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-[#d82a7a]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Email học sinh (Tùy chọn)
-                    </label>
-                    <input
-                      type="email"
-                      placeholder="VD: student@test.com"
-                      value={studentEmail}
-                      onChange={(e) => setStudentEmail(e.target.value)}
-                      className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-[#d82a7a]"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
-                    <button
-                      type="button"
-                      onClick={() => setShowAddStudentModal(false)}
-                      className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg"
-                    >
-                      Hủy
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={isSubmittingStudent || !studentName.trim()}
-                      className="px-5 py-2 bg-[#d82a7a] hover:bg-[#c2226b] disabled:opacity-60 text-white text-xs font-bold rounded-lg shadow-xs flex items-center gap-1.5"
-                    >
-                      {isSubmittingStudent && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                      <span>Thêm học sinh</span>
-                    </button>
-                  </div>
-                </form>
-              )}
-
-              {/* CHẾ ĐỘ 3: DÁN DANH SÁCH DÒNG */}
-              {addMode === 'bulk' && (
-                <div className="space-y-3.5">
-                  <p className="text-xs text-slate-500 leading-relaxed">
-                    Dán danh sách sinh viên vào ô bên dưới, mỗi học sinh trên một dòng (Định dạng chuẩn: <code className="bg-slate-100 px-1 py-0.5 rounded text-[#d82a7a]">Mã_SV, Họ và tên, Ngày_sinh</code>):
-                  </p>
-                  <textarea
-                    rows={6}
-                    value={bulkInput}
-                    onChange={(e) => setBulkInput(e.target.value)}
-                    placeholder="23IT001, Nguyễn Văn An, 15/08/2004&#10;23IT002, Trần Thị Bình, 20/11/2004&#10;23IT003, Lê Hoàng Cường, 05/03/2004"
-                    className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-[#d82a7a] font-mono leading-relaxed"
-                  />
-
-                  <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
-                    <button
-                      type="button"
-                      onClick={() => setShowAddStudentModal(false)}
-                      className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg"
-                    >
-                      Hủy
-                    </button>
-                    <button
-                      onClick={handleAddBulkStudents}
-                      disabled={isSubmittingStudent || !bulkInput.trim()}
-                      className="px-5 py-2 bg-[#d82a7a] hover:bg-[#c2226b] disabled:opacity-60 text-white text-xs font-bold rounded-lg shadow-xs flex items-center gap-1.5"
-                    >
-                      {isSubmittingStudent && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                      <span>Thêm danh sách</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* CHẾ ĐỘ 4: TÀI KHOẢN CÓ SẴN */}
-              {addMode === 'existing' && (
-                <div className="space-y-3.5">
-                  <p className="text-xs text-slate-500">
-                    Chọn các tài khoản sinh viên đã có trong hệ thống để đưa vào lớp:
-                  </p>
-
-                  <div className="max-h-60 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100">
-                    {systemUsers.length === 0 ? (
-                      <div className="p-4 text-center text-xs text-slate-400">
-                        Chưa có tài khoản sinh viên nào khác
-                      </div>
-                    ) : (
-                      systemUsers.map((u) => {
-                        const isSelected = selectedUserIds.includes(u.id);
-                        return (
-                          <label
-                            key={u.id}
-                            className={`flex items-center justify-between p-3 cursor-pointer hover:bg-slate-50 transition-colors ${
-                              isSelected ? 'bg-pink-50/30' : ''
-                            }`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={() => {
-                                  if (isSelected) {
-                                    setSelectedUserIds(prev => prev.filter(id => id !== u.id));
-                                  } else {
-                                    setSelectedUserIds(prev => [...prev, u.id]);
-                                  }
-                                }}
-                                className="w-4 h-4 text-[#d82a7a] rounded border-slate-300 focus:ring-[#d82a7a]"
-                              />
-                              <div>
-                                <p className="text-xs font-semibold text-slate-900">{u.name || 'Chưa đặt tên'}</p>
-                                <p className="text-[11px] text-slate-400">{u.email}</p>
-                              </div>
-                            </div>
-                            <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
-                              Sinh viên
-                            </span>
-                          </label>
-                        );
-                      })
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
-                    <button
-                      type="button"
-                      onClick={() => setShowAddStudentModal(false)}
-                      className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg"
-                    >
-                      Hủy
-                    </button>
-                    <button
-                      onClick={handleAddExistingUsers}
-                      disabled={isSubmittingStudent || selectedUserIds.length === 0}
-                      className="px-5 py-2 bg-[#d82a7a] hover:bg-[#c2226b] disabled:opacity-60 text-white text-xs font-bold rounded-lg shadow-xs flex items-center gap-1.5"
-                    >
-                      {isSubmittingStudent && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                      <span>Thêm {selectedUserIds.length} bạn vào lớp</span>
                     </button>
                   </div>
                 </div>
