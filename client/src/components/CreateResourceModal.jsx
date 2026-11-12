@@ -791,14 +791,6 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
                 {questions.length} câu hỏi
               </h3>
             </div>
-            
-            <button
-              onClick={() => handleAddQuestionByType('single')}
-              className="px-3 py-1.5 bg-pink-50 hover:bg-pink-100 text-[#d82a7a] text-xs font-bold rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Thêm nhanh trắc nghiệm</span>
-            </button>
           </div>
 
           {questions.length === 0 ? (
