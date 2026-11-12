@@ -177,3 +177,125 @@ export async function submitExamResult(resultData) {
   }
 }
 
+/**
+ * =============================================================
+ * API QUẢN LÝ LỚP HỌC & SINH VIÊN (CLASSES & STUDENTS)
+ * =============================================================
+ */
+
+/**
+ * Lấy danh sách toàn bộ các lớp học (kèm số lượng học sinh)
+ */
+export async function fetchClasses() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/classes`);
+    const json = await res.json();
+    if (json.success) return json.data;
+    throw new Error(json.message || 'Lỗi tải danh sách lớp học');
+  } catch (err) {
+    console.warn('⚠️ Lỗi gọi API lấy danh sách lớp học:', err);
+    // Fallback dữ liệu mặc định nếu backend tạm thời không phản hồi
+    return [
+      {
+        id: 'class-cntt-k23a',
+        name: 'CNTT K23A',
+        description: 'Lớp Công nghệ thông tin K23A',
+        color: '#22c55e',
+        student_count: 0
+      }
+    ];
+  }
+}
+
+/**
+ * Lấy thông tin chi tiết một lớp học kèm danh sách học sinh
+ */
+export async function fetchClassById(id) {
+  if (!id) return null;
+  try {
+    const res = await fetch(`${API_BASE_URL}/classes?id=${id}`);
+    const json = await res.json();
+    if (json.success) return json.data;
+    throw new Error(json.message || 'Lỗi tải thông tin lớp học');
+  } catch (err) {
+    console.warn(`⚠️ Lỗi gọi API lấy chi tiết lớp học ${id}:`, err);
+    return null;
+  }
+}
+
+/**
+ * Tạo một lớp học mới
+ */
+export async function createClassApi(classData) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/classes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(classData)
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Cập nhật tên hoặc thông tin lớp học
+ */
+export async function updateClassApi(id, classData) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/classes?id=${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(classData)
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Xóa một lớp học
+ */
+export async function deleteClassApi(id) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/classes?id=${id}`, {
+      method: 'DELETE'
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Thêm sinh viên (1 hoặc nhiều) vào lớp học
+ */
+export async function addStudentsToClassApi(classId, studentPayload) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/classes?id=${classId}&action=add_student`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(studentPayload)
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Xóa sinh viên khỏi lớp học
+ */
+export async function deleteStudentFromClassApi(classId, studentId) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/classes?id=${classId}&studentId=${studentId}`, {
+      method: 'DELETE'
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+

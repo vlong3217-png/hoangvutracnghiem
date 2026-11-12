@@ -327,6 +327,180 @@ app.get('/api/submissions/:username', async (req, res) => {
   }
 });
 
+// -------------------------------------------------------------
+// 5. CLASSES & STUDENTS API (Quản lý Lớp học & Sinh viên)
+// -------------------------------------------------------------
+
+// Lấy danh sách toàn bộ lớp học kèm số lượng học sinh
+app.get('/api/classes', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        c.id, 
+        c.name, 
+        c.description, 
+        c.color, 
+        c.created_at, 
+        c.updated_at,
+        COUNT(cs.id)::int as student_count
+      FROM classes c
+      LEFT JOIN class_students cs ON c.id = cs.class_id
+      GROUP BY c.id
+      ORDER BY c.created_at DESC
+    `);
+    res.json({ success: true, data: result.rows });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Tạo lớp học mới
+app.post('/api/classes', async (req, res) => {
+  const { name, description, color } = req.body;
+  if (!name || !name.trim()) {
+    return res.status(400).json({ success: false, message: 'Tên lớp học không được để trống' });
+  }
+
+  const id = `class-${Date.now()}`;
+  try {
+    const result = await pool.query(`
+      INSERT INTO classes (id, name, description, color)
+      VALUES ($1, $2, $3, $4)
+      RETURNING *, 0 as student_count
+    `, [id, name.trim(), description || '', color || '#22c55e']);
+
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Lấy thông tin chi tiết 1 lớp học kèm danh sách sinh viên
+app.get('/api/classes/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const classRes = await pool.query('SELECT * FROM classes WHERE id = $1', [id]);
+    if (classRes.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy lớp học' });
+    }
+
+    const studentsRes = await pool.query(`
+      SELECT id, class_id, name, email, student_code, joined_at
+      FROM class_students
+      WHERE class_id = $1
+      ORDER BY joined_at DESC
+    `, [id]);
+
+    const classData = {
+      ...classRes.rows[0],
+      student_count: studentsRes.rows.length,
+      students: studentsRes.rows
+    };
+
+    res.json({ success: true, data: classData });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Cập nhật thông tin lớp học (đổi tên, màu, mô tả)
+app.put('/api/classes/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name, description, color } = req.body;
+
+  try {
+    const result = await pool.query(`
+      UPDATE classes 
+      SET 
+        name = COALESCE($1, name),
+        description = COALESCE($2, description),
+        color = COALESCE($3, color),
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = $4
+      RETURNING *
+    `, [name ? name.trim() : null, description, color, id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy lớp học' });
+    }
+
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Xóa lớp học
+app.delete('/api/classes/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.query('DELETE FROM classes WHERE id = $1', [id]);
+    res.json({ success: true, message: 'Đã xóa lớp học thành công' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Thêm sinh viên vào lớp (hỗ trợ 1 hoặc nhiều sinh viên)
+app.post('/api/classes/:id/students', async (req, res) => {
+  const { id: classId } = req.params;
+  const { name, email, student_code, students } = req.body;
+
+  try {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const inserted = [];
+      if (Array.isArray(students) && students.length > 0) {
+        for (const s of students) {
+          if (s.name && s.name.trim()) {
+            const sid = `stu-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+            const r = await client.query(`
+              INSERT INTO class_students (id, class_id, name, email, student_code)
+              VALUES ($1, $2, $3, $4, $5)
+              RETURNING *
+            `, [sid, classId, s.name.trim(), s.email || '', s.student_code || '']);
+            inserted.push(r.rows[0]);
+          }
+        }
+      } else if (name && name.trim()) {
+        const sid = `stu-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+        const r = await client.query(`
+          INSERT INTO class_students (id, class_id, name, email, student_code)
+          VALUES ($1, $2, $3, $4, $5)
+          RETURNING *
+        `, [sid, classId, name.trim(), email || '', student_code || '']);
+        inserted.push(r.rows[0]);
+      } else {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ success: false, message: 'Thông tin sinh viên không hợp lệ' });
+      }
+
+      await client.query('COMMIT');
+      res.json({ success: true, data: inserted, message: `Đã thêm ${inserted.length} sinh viên vào lớp` });
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Xóa sinh viên khỏi lớp
+app.delete('/api/classes/:id/students/:studentId', async (req, res) => {
+  const { id: classId, studentId } = req.params;
+  try {
+    await pool.query('DELETE FROM class_students WHERE class_id = $1 AND id = $2', [classId, studentId]);
+    res.json({ success: true, message: 'Đã xóa sinh viên khỏi lớp' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // Khởi chạy server
 async function startServer() {
   await initDatabase();

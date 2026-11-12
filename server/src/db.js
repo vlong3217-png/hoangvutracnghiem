@@ -76,6 +76,37 @@ export async function initDatabase() {
       );
     `);
 
+    // 5. Bảng Lớp học (Classes)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS classes (
+        id VARCHAR(100) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        description TEXT,
+        color VARCHAR(50) DEFAULT '#22c55e',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // 6. Bảng Sinh viên trong Lớp (Class Students)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS class_students (
+        id VARCHAR(100) PRIMARY KEY,
+        class_id VARCHAR(100) REFERENCES classes(id) ON DELETE CASCADE,
+        name VARCHAR(150) NOT NULL,
+        email VARCHAR(150),
+        student_code VARCHAR(50),
+        joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Tạo lớp mặc định nếu chưa có
+    await client.query(`
+      INSERT INTO classes (id, name, description, color)
+      VALUES ('class-cntt-k23a', 'CNTT K23A', 'Lớp Công nghệ thông tin K23A', '#22c55e')
+      ON CONFLICT (id) DO NOTHING;
+    `);
+
     console.log('✅ Khởi tạo các bảng PostgreSQL trên Neon thành công!');
   } catch (error) {
     console.error('❌ Lỗi khi khởi tạo CSDL:', error);

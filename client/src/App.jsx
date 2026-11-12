@@ -8,6 +8,8 @@ import ExamResult from './components/ExamResult';
 import TeacherManage from './components/TeacherManage';
 import ExamDetailManage from './components/ExamDetailManage';
 import CreateResourceModal from './components/CreateResourceModal';
+import ClassList from './components/ClassList';
+import ClassDetail from './components/ClassDetail';
 import LoginPage from './components/LoginPage';
 import QuizizzLogo from './components/QuizizzLogo';
 import { 
@@ -261,6 +263,18 @@ function ExamCreateRoute({ onAddExam }) {
         if (onAddExam) await onAddExam(newExam);
         navigate('/manage');
       }}
+    />
+  );
+}
+
+// Wrapper component cho route chi tiết lớp học: /classes/:classId
+function ClassDetailRoute() {
+  const { classId } = useParams();
+  const navigate = useNavigate();
+  return (
+    <ClassDetail 
+      classId={classId} 
+      onBack={() => navigate('/classes')} 
     />
   );
 }
@@ -531,18 +545,32 @@ export default function App() {
               <QuizizzLogo className="w-8 h-8 text-[#d82a7a]" />
             </div>
 
-            {/* Mục duy nhất: Trang chủ (Quản lý đề thi) */}
+            {/* Mục Trang chủ (Quản lý đề thi) */}
             <button
               onClick={() => navigate('/manage')}
               className={`flex flex-col items-center gap-1 text-[10px] w-full py-2.5 transition-all cursor-pointer ${
-                location.pathname === '/manage'
+                location.pathname === '/manage' || location.pathname.startsWith('/manage/exam')
                   ? 'text-slate-900 font-bold border-l-2 border-[#d82a7a] bg-pink-50/20'
                   : 'text-slate-500 hover:text-slate-800'
               }`}
               title="Trang chủ - Quản lý danh sách đề thi"
             >
-              <Home className="w-5 h-5 text-[#d82a7a]" />
+              <Home className={`w-5 h-5 ${location.pathname === '/manage' || location.pathname.startsWith('/manage/exam') ? 'text-[#d82a7a]' : 'text-slate-500'}`} />
               <span className="scale-90 font-bold">Trang chủ</span>
+            </button>
+
+            {/* Mục Học sinh (Quản lý các lớp học & sinh viên) chuẩn theo Ảnh 1 & 2 */}
+            <button
+              onClick={() => navigate('/classes')}
+              className={`flex flex-col items-center gap-1 text-[10px] w-full py-2.5 transition-all cursor-pointer ${
+                location.pathname.startsWith('/classes')
+                  ? 'text-slate-900 font-bold border-l-2 border-[#d82a7a] bg-pink-50/20'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+              title="Học sinh - Các lớp học của tôi"
+            >
+              <Users className={`w-5 h-5 ${location.pathname.startsWith('/classes') ? 'text-[#d82a7a]' : 'text-slate-500'}`} />
+              <span className="scale-90 font-bold">Học sinh</span>
             </button>
           </div>
 
@@ -574,18 +602,28 @@ export default function App() {
           <button
             onClick={() => navigate('/manage')}
             className={`flex flex-col items-center justify-center gap-0.5 text-xs font-bold cursor-pointer ${
-              location.pathname === '/manage' ? 'text-[#d82a7a]' : 'text-slate-500'
+              location.pathname === '/manage' || location.pathname.startsWith('/manage/exam') ? 'text-[#d82a7a]' : 'text-slate-500'
             }`}
           >
-            <QuizizzLogo className="w-5 h-5 text-[#d82a7a]" />
+            <Home className="w-5 h-5" />
             <span className="text-[10px]">Trang chủ</span>
           </button>
 
-          <div className="flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-full text-slate-800 text-xs font-semibold">
+          <button
+            onClick={() => navigate('/classes')}
+            className={`flex flex-col items-center justify-center gap-0.5 text-xs font-bold cursor-pointer ${
+              location.pathname.startsWith('/classes') ? 'text-[#d82a7a]' : 'text-slate-500'
+            }`}
+          >
+            <Users className="w-5 h-5" />
+            <span className="text-[10px]">Học sinh</span>
+          </button>
+
+          <div className="flex items-center gap-2 px-2.5 py-1 bg-slate-100 rounded-full text-slate-800 text-xs font-semibold">
             <div className="w-5 h-5 rounded-full bg-slate-800 text-white text-[10px] flex items-center justify-center font-bold">
               {currentUser.name.charAt(0)}
             </div>
-            <span className="max-w-[120px] truncate">{currentUser.name}</span>
+            <span className="max-w-[80px] truncate">{currentUser.name}</span>
           </div>
 
           <button
@@ -684,6 +722,32 @@ export default function App() {
                 )
               }
             />
+
+            {/* Quản lý danh sách các lớp học (Hình 1) */}
+            <Route 
+              path="/classes" 
+              element={
+                canAccessManagement ? (
+                  <ClassList onSelectClass={(classId) => navigate(`/classes/${classId}`)} />
+                ) : (
+                  <Navigate to="/exams" replace />
+                )
+              } 
+            />
+
+            {/* Quản lý chi tiết 1 lớp học & học sinh (Hình 2) */}
+            <Route 
+              path="/classes/:classId" 
+              element={
+                canAccessManagement ? (
+                  <ClassDetailRoute />
+                ) : (
+                  <Navigate to="/exams" replace />
+                )
+              } 
+            />
+
+            <Route path="/manage/classes" element={<Navigate to="/classes" replace />} />
 
             {/* Phòng làm bài thi theo ID: /exam/:examId */}
             <Route 
