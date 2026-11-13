@@ -55,8 +55,21 @@ export default function ExamList({ exams, currentUser, onSelectExam, onOpenTeach
     return { prog, totalQ, answeredCount, isCompleted, percent, hasStarted };
   };
 
+  // Lọc bài thi theo lớp học của sinh viên (Chỉ hiển thị đề thi đã giao cho lớp của sinh viên đó)
+  const isStudent = currentUser?.role === 'student';
+  const studentClassId = currentUser?.class_id;
+  const studentClassName = currentUser?.class_name;
+
+  const accessibleExams = exams.filter(exam => {
+    if (!isStudent) return true; // Giáo viên / Quản trị viên xem tất cả
+    const assigned = Array.isArray(exam.assigned_classes) ? exam.assigned_classes : [];
+    if (assigned.length === 0) return false;
+    return (studentClassId && assigned.includes(studentClassId)) ||
+           (studentClassName && assigned.includes(studentClassName));
+  });
+
   // Lọc theo search
-  const searchedExams = exams.filter(exam => 
+  const searchedExams = accessibleExams.filter(exam => 
     exam.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (exam.author && exam.author.toLowerCase().includes(searchQuery.toLowerCase()))
   );
@@ -183,15 +196,21 @@ export default function ExamList({ exams, currentUser, onSelectExam, onOpenTeach
         ) : displayedExams.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center animate-in fade-in duration-200">
             <div className="w-20 h-20 rounded-full bg-pink-50 flex items-center justify-center text-4xl mb-4 text-[#d82a7a] shadow-xs">
-              {activeTab === 'completed' ? '🏆' : '📝'}
+              {activeTab === 'completed' ? '🏆' : (isStudent && accessibleExams.length === 0 ? '📚' : '📝')}
             </div>
             <h2 className="text-lg font-bold text-slate-800 mb-1">
-              {activeTab === 'completed' ? 'Chưa có bài thi nào hoàn thành' : 'Chưa có đề thi nào'}
+              {activeTab === 'completed' 
+                ? 'Chưa có bài thi nào hoàn thành' 
+                : (isStudent && accessibleExams.length === 0 
+                    ? 'Chưa có đề thi nào được giao' 
+                    : 'Chưa có đề thi nào')}
             </h2>
             <p className="text-xs text-slate-500 max-w-sm">
               {activeTab === 'completed' 
                 ? 'Hãy hoàn thành các bài thi ở mục "Đang chạy" để theo dõi kết quả tại đây!'
-                : 'Hiện không có bài thi nào phù hợp với bộ lọc tìm kiếm.'}
+                : (isStudent && accessibleExams.length === 0
+                    ? `Hiện giáo viên chưa giao đề thi nào cho lớp ${studentClassName ? `"${studentClassName}"` : 'của bạn'}. Khi giáo viên giao bài, đề thi sẽ tự động xuất hiện tại đây.`
+                    : 'Hiện không có bài thi nào phù hợp với bộ lọc tìm kiếm.')}
             </p>
           </div>
         ) : (

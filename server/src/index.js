@@ -179,6 +179,17 @@ app.get('/api/users', async (req, res) => {
 // 3. EXAMS API (Lấy danh sách đề thi & chi tiết đề thi kèm câu hỏi)
 // -------------------------------------------------------------
 // Hàm xử lý lấy chi tiết 1 đề thi kèm toàn bộ câu hỏi
+function parseAssignedClasses(val) {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  try {
+    const p = JSON.parse(val);
+    return Array.isArray(p) ? p : [];
+  } catch {
+    return [];
+  }
+}
+
 async function getExamDetailById(id, res) {
   try {
     const examRes = await pool.query('SELECT * FROM exams WHERE id = $1', [id]);
@@ -212,6 +223,7 @@ async function getExamDetailById(id, res) {
         durationMinutes: exam.duration_minutes,
         shuffleQuestions: Boolean(exam.shuffle_questions),
         shuffleAnswers: Boolean(exam.shuffle_answers),
+        assigned_classes: parseAssignedClasses(exam.assigned_classes),
         questions
       }
     });
@@ -247,6 +259,7 @@ app.get('/api/exams', async (req, res) => {
       duration: row.duration_minutes,
       shuffleQuestions: Boolean(row.shuffle_questions),
       shuffleAnswers: Boolean(row.shuffle_answers),
+      assigned_classes: parseAssignedClasses(row.assigned_classes),
       totalQuestions: parseInt(row.question_count, 10),
       statusBadge: `${row.question_count} Qs`,
       theme: themes[idx % themes.length],
@@ -277,9 +290,16 @@ app.delete('/api/exams/:id', async (req, res) => {
 });
 
 // Cập nhật câu hỏi của đề thi
-app.put('/api/exams/:id', async (req, res) => {
-  const { id } = req.params;
-  const { title, description, subject, difficulty, durationMinutes, shuffleQuestions, shuffleAnswers, questions } = req.body;
+app.put(['/api/exams', '/api/exams/:id'], async (req, res) => {
+  const id = req.params.id || req.query.id || req.body.id || req.body.examId;
+  const { title, description, subject, difficulty, durationMinutes, shuffleQuestions, shuffleAnswers, questions, assigned_classes, assignedClasses } = req.body;
+  const rawAssigned = assigned_classes !== undefined ? assigned_classes : assignedClasses;
+  const jsonAssigned = rawAssigned !== undefined ? (Array.isArray(rawAssigned) ? JSON.stringify(rawAssigned) : String(rawAssigned)) : null;
+
+  if (!id) {
+    return res.status(400).json({ success: false, message: 'Thiếu exam id' });
+  }
+
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -293,8 +313,9 @@ app.put('/api/exams/:id', async (req, res) => {
           duration_minutes = COALESCE($5, duration_minutes),
           shuffle_questions = COALESCE($6, shuffle_questions),
           shuffle_answers = COALESCE($7, shuffle_answers),
+          assigned_classes = COALESCE($8, assigned_classes),
           updated_at = CURRENT_TIMESTAMP
-      WHERE id = $8
+      WHERE id = $9
     `, [
       title, 
       description, 
@@ -303,6 +324,7 @@ app.put('/api/exams/:id', async (req, res) => {
       durationMinutes,
       shuffleQuestions !== undefined ? Boolean(shuffleQuestions) : null,
       shuffleAnswers !== undefined ? Boolean(shuffleAnswers) : null,
+      jsonAssigned,
       id
     ]);
 
@@ -337,19 +359,6 @@ app.put('/api/exams/:id', async (req, res) => {
             points: q.points || null
           }),
           qIdx
-        ]);
-      }
-          JSON.stringify({
-            parts: q.parts || null,
-            categories: q.categories || null,
-            items: q.items || null,
-            sentences: q.sentences || null,
-            draggableItems: q.draggableItems || null,
-            blanks: q.blanks || null,
-            sampleAnswer: q.sampleAnswer || null,
-            criteria: q.criteria || q.rubric || null,
-            maxScore: q.maxScore || null
-          })
         ]);
       }
     }

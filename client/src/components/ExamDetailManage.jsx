@@ -19,12 +19,13 @@ import {
   Shuffle,
   ArrowUp,
   ArrowDown,
-  Loader2
+  Loader2,
+  Users
 } from 'lucide-react';
 import QuestionEditor from './QuestionEditor';
 import CreateResourceModal from './CreateResourceModal';
 import QuizizzLogo from './QuizizzLogo';
-import { fetchExamById } from '../services/api';
+import { fetchExamById, fetchClasses, updateExamApi } from '../services/api';
 
 // Helper chuyển đổi tên dạng câu hỏi đồng nhất 100% với hệ thống
 const getQuestionTypeName = (type) => {
@@ -77,6 +78,87 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
   const [isFullEditMode, setIsFullEditMode] = useState(false); // Mở trang chỉnh sửa toàn diện (giống Thêm tài nguyên)
   const [showAddModal, setShowAddModal] = useState(false);
   const [copiedSuccess, setCopiedSuccess] = useState(false);
+
+  // Quản lý Modal Giao bài cho lớp học
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [classesList, setClassesList] = useState([]);
+  const [isLoadingClasses, setIsLoadingClasses] = useState(false);
+  const [isSavingAssign, setIsSavingAssign] = useState(false);
+
+  const handleOpenAssignModal = async () => {
+    setShowAssignModal(true);
+    setIsLoadingClasses(true);
+    try {
+      const list = await fetchClasses();
+      setClassesList(Array.isArray(list) ? list : []);
+    } catch (err) {
+      console.error('Lỗi tải danh sách lớp học:', err);
+    } finally {
+      setIsLoadingClasses(false);
+    }
+  };
+
+  const handleToggleAssignClass = async (targetClass) => {
+    const currentAssigned = Array.isArray(internalExam.assigned_classes)
+      ? [...internalExam.assigned_classes]
+      : [];
+
+    const isAssigned = currentAssigned.some(cid => cid === targetClass.id || cid === targetClass.name);
+
+    let updatedAssigned;
+    if (isAssigned) {
+      // Hủy giao bài cho lớp này
+      updatedAssigned = currentAssigned.filter(cid => cid !== targetClass.id && cid !== targetClass.name);
+    } else {
+      // Giao bài cho lớp này (lưu id)
+      updatedAssigned = [...currentAssigned, targetClass.id];
+    }
+
+    setIsSavingAssign(true);
+    try {
+      const res = await updateExamApi(internalExam.id, {
+        assigned_classes: updatedAssigned
+      });
+      if (res && res.success !== false) {
+        const updatedExam = { ...internalExam, assigned_classes: updatedAssigned };
+        setInternalExam(updatedExam);
+        if (onUpdateExam) {
+          onUpdateExam(updatedExam);
+        }
+      } else {
+        alert('Không thể lưu phân công bài thi. Vui lòng thử lại!');
+      }
+    } catch (err) {
+      console.error('Lỗi giao bài:', err);
+      alert('Lỗi kết nối khi giao bài thi.');
+    } finally {
+      setIsSavingAssign(false);
+    }
+  };
+
+  const handleUnassignAll = async () => {
+    if (!window.confirm('Bạn có chắc chắn muốn hủy giao bài thi này cho toàn bộ các lớp? Sinh viên các lớp sẽ không còn nhìn thấy bài thi này.')) {
+      return;
+    }
+
+    setIsSavingAssign(true);
+    try {
+      const res = await updateExamApi(internalExam.id, {
+        assigned_classes: []
+      });
+      if (res && res.success !== false) {
+        const updatedExam = { ...internalExam, assigned_classes: [] };
+        setInternalExam(updatedExam);
+        if (onUpdateExam) {
+          onUpdateExam(updatedExam);
+        }
+      }
+    } catch (err) {
+      console.error('Lỗi hủy giao bài:', err);
+    } finally {
+      setIsSavingAssign(false);
+    }
+  };
 
   // Quản lý kéo thả sắp xếp lại thứ tự câu hỏi tại trang Chi tiết
   const [draggedIndex, setDraggedIndex] = useState(null);
@@ -530,8 +612,26 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
           </div>
         </div>
 
-        {/* Nút hành động góc phải: Chỉ giữ Bắt đầu ngay (Đã bỏ Xem trước và Giao bài) */}
-        <div className="flex items-center gap-3 shrink-0">
+        {/* Nút hành động góc phải: Giao bài & Bắt đầu ngay */}
+        <div className="flex items-center gap-2.5 shrink-0">
+          <button
+            type="button"
+            onClick={handleOpenAssignModal}
+            className={`px-4 py-2.5 text-xs font-bold rounded-lg flex items-center gap-2 transition-all cursor-pointer shadow-xs border ${
+              (internalExam.assigned_classes && internalExam.assigned_classes.length > 0)
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100 hover:border-emerald-400'
+                : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50 hover:border-slate-400'
+            }`}
+            title="Giao bài thi này cho các lớp học"
+          >
+            <Users className="w-3.5 h-3.5" />
+            <span>
+              {internalExam.assigned_classes && internalExam.assigned_classes.length > 0
+                ? `Đã giao (${internalExam.assigned_classes.length} lớp)`
+                : 'Giao bài'}
+            </span>
+          </button>
+
           <button 
             onClick={() => onPlayExam(exam)}
             className="px-5 py-2.5 bg-[#d82a7a] hover:bg-[#c2226b] text-white text-xs font-bold rounded-lg flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
@@ -934,6 +1034,151 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
                 className="w-full py-2.5 bg-[#d82a7a] hover:bg-[#c2226b] text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-xs"
               >
                 Xác nhận
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* POPUP MODAL: GIAO BÀI CHO LỚP HỌC */}
+      {showAssignModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col border border-slate-100">
+            {/* Header modal */}
+            <div className="flex items-start justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-pink-50 text-[#d82a7a] flex items-center justify-center font-bold">
+                  <Users className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-base">Giao bài cho lớp học</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Chỉ sinh viên thuộc các lớp được giao mới nhìn thấy bài thi này.
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowAssignModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Thanh trạng thái & Nút Hủy toàn bộ */}
+            <div className="flex items-center justify-between px-1 py-0.5 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-slate-700">Trạng thái:</span>
+                {(internalExam.assigned_classes && internalExam.assigned_classes.length > 0) ? (
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 flex items-center gap-1">
+                    <Check className="w-3 h-3" /> Đang giao cho {internalExam.assigned_classes.length} lớp
+                  </span>
+                ) : (
+                  <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 font-semibold border border-amber-200">
+                    Chưa giao cho lớp nào
+                  </span>
+                )}
+              </div>
+
+              {(internalExam.assigned_classes && internalExam.assigned_classes.length > 0) && (
+                <button
+                  type="button"
+                  onClick={handleUnassignAll}
+                  disabled={isSavingAssign}
+                  className="text-rose-600 hover:text-rose-700 font-bold text-xs hover:underline cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                >
+                  <Trash2 className="w-3 h-3" /> Hủy toàn bộ giao bài
+                </button>
+              )}
+            </div>
+
+            {/* Danh sách các lớp học */}
+            <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 min-h-[200px] max-h-[380px]">
+              {isLoadingClasses ? (
+                <div className="flex flex-col items-center justify-center py-12 text-slate-400 gap-2">
+                  <Loader2 className="w-6 h-6 animate-spin text-[#d82a7a]" />
+                  <span className="text-xs">Đang tải danh sách lớp học...</span>
+                </div>
+              ) : classesList.length === 0 ? (
+                <div className="text-center py-12 text-slate-400 space-y-2">
+                  <Users className="w-10 h-10 mx-auto text-slate-300 stroke-[1.5]" />
+                  <p className="text-xs font-semibold text-slate-600">Chưa có lớp học nào trong hệ thống</p>
+                  <p className="text-[11px] text-slate-400">Vui lòng vào menu "Học sinh" để tạo lớp học trước.</p>
+                </div>
+              ) : (
+                classesList.map(cls => {
+                  const assigned = Array.isArray(internalExam.assigned_classes) ? internalExam.assigned_classes : [];
+                  const isAssigned = assigned.some(cid => cid === cls.id || cid === cls.name);
+
+                  return (
+                    <div 
+                      key={cls.id}
+                      className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${
+                        isAssigned 
+                          ? 'border-emerald-300 bg-emerald-50/40' 
+                          : 'border-slate-200 bg-white hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="w-3.5 h-10 rounded-full" 
+                          style={{ backgroundColor: cls.color || '#22c55e' }}
+                        />
+                        <div>
+                          <div className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                            <span>{cls.name}</span>
+                            {isAssigned && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 flex items-center gap-0.5">
+                                <Check className="w-2.5 h-2.5" /> Đã giao
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
+                            <Users className="w-3 h-3 text-slate-400" />
+                            <span>{cls.student_count || 0} học sinh</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        {isAssigned ? (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleAssignClass(cls)}
+                            disabled={isSavingAssign}
+                            className="px-3.5 py-1.5 border border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                            title="Hủy giao đề thi cho lớp này"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                            <span>Hủy giao bài</span>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleAssignClass(cls)}
+                            disabled={isSavingAssign}
+                            className="px-4 py-1.5 bg-[#d82a7a] hover:bg-[#c2226b] text-white rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs disabled:opacity-50"
+                            title="Giao đề thi này cho lớp"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                            <span>Giao bài</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Footer Modal */}
+            <div className="pt-2 border-t border-slate-100 flex justify-end">
+              <button 
+                type="button"
+                onClick={() => setShowAssignModal(false)}
+                className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+              >
+                Hoàn tất
               </button>
             </div>
           </div>

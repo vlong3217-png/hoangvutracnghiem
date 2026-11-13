@@ -1,5 +1,16 @@
 import { getPool } from './db.js';
 
+function parseAssignedClasses(val) {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  try {
+    const p = JSON.parse(val);
+    return Array.isArray(p) ? p : [];
+  } catch {
+    return [];
+  }
+}
+
 export default async function handler(req, res) {
   // Bật CORS cho mọi thiết bị
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -98,7 +109,10 @@ export default async function handler(req, res) {
 
     // 2. CẬP NHẬT ĐỀ THI & CÂU HỎI (PUT /api/exams?id=...)
     if (req.method === 'PUT' && id) {
-      const { title, description, subject, difficulty, durationMinutes, shuffleQuestions, shuffleAnswers, questions } = req.body;
+      const { title, description, subject, difficulty, durationMinutes, shuffleQuestions, shuffleAnswers, questions, assigned_classes, assignedClasses } = req.body;
+      const rawAssigned = assigned_classes !== undefined ? assigned_classes : assignedClasses;
+      const jsonAssigned = rawAssigned !== undefined ? (Array.isArray(rawAssigned) ? JSON.stringify(rawAssigned) : String(rawAssigned)) : null;
+
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
@@ -112,8 +126,9 @@ export default async function handler(req, res) {
               duration_minutes = COALESCE($5, duration_minutes),
               shuffle_questions = COALESCE($6, shuffle_questions),
               shuffle_answers = COALESCE($7, shuffle_answers),
+              assigned_classes = COALESCE($8, assigned_classes),
               updated_at = CURRENT_TIMESTAMP
-          WHERE id = $8
+          WHERE id = $9
         `, [
           title, 
           description, 
@@ -122,6 +137,7 @@ export default async function handler(req, res) {
           durationMinutes,
           shuffleQuestions !== undefined ? Boolean(shuffleQuestions) : null,
           shuffleAnswers !== undefined ? Boolean(shuffleAnswers) : null,
+          jsonAssigned,
           id
         ]);
 
@@ -213,6 +229,7 @@ export default async function handler(req, res) {
           durationMinutes: exam.duration_minutes,
           shuffleQuestions: Boolean(exam.shuffle_questions),
           shuffleAnswers: Boolean(exam.shuffle_answers),
+          assigned_classes: parseAssignedClasses(exam.assigned_classes),
           questions
         }
       });
@@ -239,6 +256,7 @@ export default async function handler(req, res) {
         duration: row.duration_minutes,
         shuffleQuestions: Boolean(row.shuffle_questions),
         shuffleAnswers: Boolean(row.shuffle_answers),
+        assigned_classes: parseAssignedClasses(row.assigned_classes),
         totalQuestions: parseInt(row.question_count, 10),
         statusBadge: `${row.question_count} Qs`,
         theme: themes[idx % themes.length],
