@@ -34,6 +34,25 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
   const [selectedExamDetail, setSelectedExamDetail] = useState(null);
   const [loadingDetailId, setLoadingDetailId] = useState(null);
   const [deletingExamId, setDeletingExamId] = useState(null);
+  const [isBatchDeleting, setIsBatchDeleting] = useState(false);
+
+  const handleDeleteSelected = async () => {
+    if (selectedExams.length === 0) return;
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedExams.length} hoạt động đã chọn?`)) {
+      return;
+    }
+    setIsBatchDeleting(true);
+    try {
+      for (const id of selectedExams) {
+        if (onDeleteExam) await onDeleteExam(id);
+      }
+      setSelectedExams([]);
+    } catch (err) {
+      alert('Lỗi khi xóa hoạt động: ' + err.message);
+    } finally {
+      setIsBatchDeleting(false);
+    }
+  };
 
   // Khi click vào xem chi tiết đề thi: Điều hướng sang route /manage/exam/:id
   const handleOpenExamDetail = (exam) => {
@@ -314,25 +333,61 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
         {/* BẢNG DANH SÁCH HOẠT ĐỘNG KIỂU WORDWALL */}
         <div className="bg-white border border-slate-200 rounded-2xl shadow-2xs">
           {/* Header Bảng */}
-          <div className="hidden md:grid px-5 py-3.5 border-b border-slate-200 bg-white grid-cols-12 items-center text-xs font-semibold text-slate-500">
-            <div className="col-span-8 flex items-center gap-4">
-              <input
-                type="checkbox"
-                checked={selectedExams.length === filteredExams.length && filteredExams.length > 0}
-                onChange={handleSelectAll}
-                className="w-4 h-4 rounded border-slate-300 text-[#d82a7a] focus:ring-[#d82a7a] accent-[#d82a7a] cursor-pointer"
-              />
-              <span className="flex items-center gap-1 cursor-pointer hover:text-slate-700">
-                Chi tiết hoạt động
-                <ArrowUpDown className="w-3 h-3" />
-              </span>
-            </div>
+          {selectedExams.length > 0 ? (
+            <div className="px-5 py-2.5 border-b border-rose-200 bg-rose-50/70 flex items-center justify-between text-xs font-semibold animate-in fade-in duration-150">
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={selectedExams.length === filteredExams.length && filteredExams.length > 0}
+                  onChange={handleSelectAll}
+                  className="w-4 h-4 rounded border-rose-300 text-rose-600 focus:ring-rose-500 accent-rose-600 cursor-pointer"
+                />
+                <span className="text-rose-900 font-bold">
+                  Đã chọn {selectedExams.length} hoạt động
+                </span>
+                <button
+                  onClick={() => setSelectedExams([])}
+                  className="text-slate-500 hover:text-slate-800 underline ml-2 cursor-pointer font-medium"
+                >
+                  Bỏ chọn
+                </button>
+              </div>
 
-            <div className="col-span-4 flex items-center justify-end gap-1 cursor-pointer hover:text-slate-700 text-right pr-28">
-              <span>Thời gian tạo</span>
-              <ChevronDown className="w-3.5 h-3.5" />
+              <button
+                disabled={isBatchDeleting}
+                onClick={handleDeleteSelected}
+                className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white text-xs font-bold rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{isBatchDeleting ? 'Đang xóa...' : `Xóa (${selectedExams.length})`}</span>
+              </button>
             </div>
-          </div>
+          ) : (
+            <div className="hidden md:grid px-5 py-3.5 border-b border-slate-200 bg-white grid-cols-12 items-center text-xs font-semibold text-slate-500">
+              <div className="col-span-7 flex items-center gap-3 sm:gap-4 min-w-0">
+                <input
+                  type="checkbox"
+                  checked={false}
+                  onChange={handleSelectAll}
+                  className="w-4 h-4 rounded border-slate-300 text-[#d82a7a] focus:ring-[#d82a7a] accent-[#d82a7a] cursor-pointer"
+                />
+                <div className="w-10 shrink-0 hidden sm:block" />
+                <span className="flex items-center gap-1 cursor-pointer hover:text-slate-700">
+                  Chi tiết hoạt động
+                  <ArrowUpDown className="w-3 h-3" />
+                </span>
+              </div>
+
+              <div className="col-span-2 flex items-center justify-end gap-1 cursor-pointer hover:text-slate-700 text-right pr-4">
+                <span>Thời gian tạo</span>
+                <ChevronDown className="w-3.5 h-3.5" />
+              </div>
+
+              <div className="col-span-3 text-right text-slate-400">
+                {/* Khoảng trống cho cột thao tác */}
+              </div>
+            </div>
+          )}
 
           {/* Danh sách các hàng */}
           <div className="divide-y divide-slate-100">
@@ -412,16 +467,42 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
                       {exam.createdAtText || `${idx + 1} tháng trước`}
                     </div>
 
-                    {/* Cột phải: Các nút Thao tác (Chơi, Share, More) */}
+                    {/* Cột phải: Các nút Thao tác (Chơi, Share, More, Xóa khi chọn) */}
                     <div className="md:col-span-3 flex items-center justify-between md:justify-end gap-2 pt-2.5 md:pt-0 border-t md:border-t-0 border-slate-100 relative">
                       <span className="md:hidden text-[11px] text-slate-400">
                         {exam.createdAtText || `${idx + 1} tháng trước`}
                       </span>
                       <div className="flex items-center gap-1.5 sm:gap-2">
-                      <button
-                        onClick={() => onPlayExam ? onPlayExam(exam) : null}
-                        className="px-3 py-1.5 border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors"
-                      >
+                        {/* Nút Xóa màu đỏ hiện lên khi tích chọn ô */}
+                        {isChecked && (
+                          <button
+                            disabled={deletingExamId === exam.id}
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (window.confirm(`Bạn có chắc chắn muốn xóa bài thi "${exam.title}"?`)) {
+                                setDeletingExamId(exam.id);
+                                try {
+                                  if (onDeleteExam) await onDeleteExam(exam.id);
+                                  setSelectedExams(prev => prev.filter(item => item !== exam.id));
+                                } catch (err) {
+                                  alert('Lỗi khi xóa bài thi: ' + err.message);
+                                } finally {
+                                  setDeletingExamId(null);
+                                }
+                              }
+                            }}
+                            className="px-2.5 py-1.5 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white text-xs font-bold rounded-lg flex items-center gap-1 shadow-2xs transition-all cursor-pointer shrink-0 animate-in fade-in zoom-in-95"
+                            title="Xóa hoạt động này"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>{deletingExamId === exam.id ? 'Đang xóa...' : 'Xóa'}</span>
+                          </button>
+                        )}
+
+                        <button
+                          onClick={() => onPlayExam ? onPlayExam(exam) : null}
+                          className="px-3 py-1.5 border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors"
+                        >
                         <Play className="w-3 h-3 fill-slate-700" />
                         <span>Chơi</span>
                       </button>
