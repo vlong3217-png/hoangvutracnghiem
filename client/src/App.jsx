@@ -285,14 +285,6 @@ export default function App() {
 
   const [users, setUsers] = useState([
     {
-      id: "user-student",
-      name: "Nguyễn Văn An",
-      email: "student@test.com",
-      password: "123",
-      role: "student",
-      roleName: "Sinh viên"
-    },
-    {
       id: "user-admin-vlong",
       name: "Long Hoàng Vũ",
       email: "vlong3217@gmail.com",
@@ -306,7 +298,17 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState(() => {
     try {
       const saved = localStorage.getItem('QUIZIZZ_CURRENT_USER') || localStorage.getItem('WAYGROUND_CURRENT_USER');
-      return saved ? JSON.parse(saved) : null;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Tự động dọn dẹp tài khoản sinh viên mẫu cũ
+        if (parsed.email === 'student@test.com' || parsed.id === 'user-student') {
+          localStorage.removeItem('QUIZIZZ_CURRENT_USER');
+          localStorage.removeItem('WAYGROUND_CURRENT_USER');
+          return null;
+        }
+        return parsed;
+      }
+      return null;
     } catch {
       return null;
     }

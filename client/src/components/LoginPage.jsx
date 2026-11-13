@@ -42,8 +42,8 @@ function parseJwt(token) {
   }
 }
 export default function LoginPage({ onLogin, registeredUsers }) {
-  const [emailOrUser, setEmailOrUser] = useState('student@test.com');
-  const [password, setPassword] = useState('123');
+  const [emailOrUser, setEmailOrUser] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -194,15 +194,20 @@ export default function LoginPage({ onLogin, registeredUsers }) {
     e.preventDefault();
     setError('');
     setLoading(true);
-    const res = await loginUser(emailOrUser, password);
+    const cleanUser = emailOrUser.trim();
+    const cleanPass = password.trim();
+    const res = await loginUser(cleanUser, cleanPass);
     setLoading(false);
     if (!res.success) {
-      const found = registeredUsers.find(
-        u => (u.email.toLowerCase() === emailOrUser.toLowerCase() || u.name.toLowerCase() === emailOrUser.toLowerCase()) && 
-             u.password === password
+      const found = (registeredUsers || []).find(
+        u => (u.email?.toLowerCase() === cleanUser.toLowerCase() || 
+              u.name?.toLowerCase() === cleanUser.toLowerCase() ||
+              u.student_code?.toLowerCase() === cleanUser.toLowerCase() ||
+              u.username?.toLowerCase() === cleanUser.toLowerCase()) && 
+             u.password === cleanPass
       );
       if (!found) {
-        setError(res.message || 'Email/Tên người dùng hoặc mật khẩu không chính xác!');
+        setError(res.message || 'Mã sinh viên hoặc mật khẩu không chính xác!');
         return;
       }
       onLogin(found);
@@ -307,22 +312,11 @@ export default function LoginPage({ onLogin, registeredUsers }) {
               <div className="flex-1 h-px bg-slate-200"></div>
             </div>
           </div>
-          {/* HỘP GỢI Ý ĐĂNG NHẬP MẪU CHO SINH VIÊN */}
-          <div className="mb-4 p-3 bg-pink-50/50 border border-pink-200/70 rounded-xl text-xs text-slate-700 flex items-start gap-2.5 shadow-2xs">
-            <span className="text-base leading-none">💡</span>
-            <div className="leading-relaxed">
-              <span className="font-bold text-slate-800">Tài khoản Sinh viên: </span>
-              <span className="text-[#c71e72] font-mono font-bold">student@test.com</span>
-              <span className="mx-1.5 text-slate-300">•</span>
-              <span className="font-bold text-slate-800">Mật khẩu: </span>
-              <span className="text-[#c71e72] font-mono font-bold">123</span>
-            </div>
-          </div>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Input Email / Username */}
+            {/* Input Mã SV / Tên người dùng */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5 pl-0.5">
-                Nhập địa chỉ email hoặc tên người dùng
+                Mã sinh viên
               </label>
               <div className="border border-slate-300 rounded-xl px-3.5 py-2.5 bg-white flex items-center gap-2.5 focus-within:border-[#d82a7a] focus-within:ring-1 focus-within:ring-[#d82a7a]/20 transition-all">
                 <Mail className="w-4 h-4 text-slate-600 shrink-0" />
@@ -331,15 +325,15 @@ export default function LoginPage({ onLogin, registeredUsers }) {
                   required
                   value={emailOrUser}
                   onChange={(e) => setEmailOrUser(e.target.value)}
-                  placeholder="name@example.com hoặc username"
+                  placeholder="Nhập mã sinh viên (VD: DTC245200819)"
                   className="w-full text-xs text-slate-900 placeholder:text-slate-400 outline-none bg-transparent"
                 />
               </div>
             </div>
-            {/* Input Password */}
+            {/* Input Password (Ngày tháng năm sinh) */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5 pl-0.5">
-                Nhập mật khẩu của bạn
+                Mật khẩu (Ngày tháng năm sinh)
               </label>
               <div className="border border-[#e77a9e] rounded-xl px-3.5 py-2.5 bg-white flex items-center gap-2.5 focus-within:border-[#d82a7a] focus-within:ring-1 focus-within:ring-[#d82a7a]/20 transition-all">
                 <Asterisk className="w-4 h-4 text-slate-600 shrink-0" />
@@ -348,7 +342,7 @@ export default function LoginPage({ onLogin, registeredUsers }) {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Mật khẩu của bạn"
+                  placeholder="VD: 05012006 hoặc 05/01/2006"
                   className="w-full text-xs text-slate-900 placeholder:text-slate-400 outline-none bg-transparent tracking-wide"
                 />
                 <button
@@ -375,7 +369,7 @@ export default function LoginPage({ onLogin, registeredUsers }) {
           <div className="mt-5 text-center">
             <button
               type="button"
-              onClick={() => alert("Mật khẩu tài khoản sinh viên mẫu là: 123")}
+              onClick={() => alert("Mật khẩu sinh viên là Ngày tháng năm sinh của bạn (Ví dụ: 05012006 hoặc 05/01/2006).\n\nNếu bạn không thể đăng nhập, vui lòng liên hệ Giảng viên để kiểm tra lại thông tin.")}
               className="text-xs font-semibold text-blue-600 hover:underline block mx-auto cursor-pointer"
             >
               Quên mật khẩu?
