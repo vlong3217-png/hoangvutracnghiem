@@ -24,21 +24,59 @@ import {
   Shuffle
 } from 'lucide-react';
 import { gradeEssayWithGemini, getGeminiApiKey, setGeminiApiKey } from '../services/geminiService';
+import { getExamProgress, saveExamProgress, clearExamProgress } from '../services/examProgress';
 
-export default function ExamRoom({ exam, onSubmitExam, onBack }) {
-  const [currentIdx, setCurrentIdx] = useState(0);
+export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
+  // Đọc tiến độ đã lưu trước đó nếu có (cho học sinh hiện tại)
+  const initialSavedRef = useRef(null);
+  if (initialSavedRef.current === null) {
+    initialSavedRef.current = getExamProgress(currentUser, exam?.id);
+  }
+  const saved = initialSavedRef.current && !initialSavedRef.current.completed ? initialSavedRef.current : null;
+
+  const [currentIdx, setCurrentIdx] = useState(() => {
+    if (saved && typeof saved.currentIdx === 'number') {
+      const total = (exam.questions || []).length;
+      return total > 0 ? Math.min(Math.max(0, saved.currentIdx), total - 1) : 0;
+    }
+    return 0;
+  });
   const [slideDirection, setSlideDirection] = useState('next'); // 'next' | 'prev'
-  const [score, setScore] = useState(0);
-  const [streak, setStreak] = useState(0);
-  const [maxStreak, setMaxStreak] = useState(0);
+  const [score, setScore] = useState(() => saved?.score || 0);
+  const [streak, setStreak] = useState(() => saved?.streak || 0);
+  const [maxStreak, setMaxStreak] = useState(() => saved?.maxStreak || 0);
   const [startTime] = useState(() => Date.now());
-  const [selectedAnswers, setSelectedAnswers] = useState({});
+  const [selectedAnswers, setSelectedAnswers] = useState(() => saved?.selectedAnswers || {});
   const [answeredState, setAnsweredState] = useState(null);
   const [shortInputText, setShortInputText] = useState('');
   const [showInstantAnswer, setShowInstantAnswer] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [isImageZoomed, setIsImageZoomed] = useState(false);
+  const [restoredBanner, setRestoredBanner] = useState(() => {
+    return Boolean(saved && (saved.currentIdx > 0 || Object.keys(saved.selectedAnswers || {}).length > 0));
+  });
+
+  // Tự động ẩn banner khôi phục sau 5 giây
+  useEffect(() => {
+    if (restoredBanner) {
+      const timer = setTimeout(() => setRestoredBanner(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [restoredBanner]);
+
+  // Đặt lại bài thi từ đầu nếu học sinh muốn
+  const handleResetProgress = () => {
+    if (window.confirm('Bạn có chắc chắn muốn làm lại từ câu đầu tiên? Tiến độ làm bài hiện tại sẽ được đặt lại.')) {
+      clearExamProgress(currentUser, exam.id);
+      setSelectedAnswers({});
+      setCurrentIdx(0);
+      setScore(0);
+      setStreak(0);
+      setMaxStreak(0);
+      setRestoredBanner(false);
+    }
+  };
 
   // Refs giữ trạng thái mới nhất để tránh stale closure trong setTimeout
   const selectedAnswersRef = useRef(selectedAnswers);
@@ -61,6 +99,26 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
   useEffect(() => {
     maxStreakRef.current = maxStreak;
   }, [maxStreak]);
+
+  // TỰ ĐỘNG LƯU TIẾN ĐỘ LÀM BÀI MỖI KHI CÂU HỎI HOẶC ĐÁP ÁN THAY ĐỔI
+  useEffect(() => {
+    if (!exam?.id) return;
+    const totalQ = (exam.questions || []).length;
+    const answeredCount = Object.keys(selectedAnswers).length;
+    const percent = totalQ > 0 ? Math.min(100, Math.round((answeredCount / totalQ) * 100)) : 0;
+
+    saveExamProgress(currentUser, exam.id, {
+      currentIdx,
+      selectedAnswers,
+      score,
+      streak,
+      maxStreak,
+      answeredCount,
+      totalQuestions: totalQ,
+      percent,
+      completed: false
+    });
+  }, [currentIdx, selectedAnswers, score, streak, maxStreak]);
 
   // Cập nhật chuỗi câu đúng liên tiếp (streak & maxStreak)
   const recordOutcome = (isCorrect) => {
@@ -697,6 +755,18 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
       setCurrentIdx(prev => prev + 1);
     } else {
       const elapsedSeconds = Math.max(1, Math.round((Date.now() - startTime) / 1000));
+      // Lưu trạng thái hoàn thành vào tiến độ
+      saveExamProgress(currentUser, exam.id, {
+        currentIdx: questions.length - 1,
+        selectedAnswers: selectedAnswersRef.current,
+        score: scoreRef.current || score,
+        streak: maxStreakRef.current || streak,
+        maxStreak: maxStreakRef.current || maxStreak,
+        answeredCount: questions.length,
+        totalQuestions: questions.length,
+        percent: 100,
+        completed: true
+      });
       onSubmitExam({
         exam,
         questions,
@@ -811,6 +881,32 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
           </button>
         </div>
       </header>
+
+      {/* BANNER THÔNG BÁO KHÔI PHỤC TIẾN ĐỘ */}
+      {restoredBanner && (
+        <div className="bg-purple-950/90 border-b border-purple-500/30 px-4 py-2 text-white text-xs flex items-center justify-between animate-in fade-in duration-200">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span>
+              Đã khôi phục tiến độ làm bài: Đang ở <strong>câu {currentIdx + 1}/{questions.length}</strong> (Đã trả lời {Object.keys(selectedAnswers).length}/{questions.length} câu - {questions.length > 0 ? Math.round((Object.keys(selectedAnswers).length / questions.length) * 100) : 0}%)
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleResetProgress}
+              className="text-amber-300 hover:text-amber-200 underline text-[11px] font-semibold cursor-pointer"
+            >
+              Làm lại từ đầu
+            </button>
+            <button
+              onClick={() => setRestoredBanner(false)}
+              className="text-white/60 hover:text-white p-0.5 cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 2. BODY KHÔNG GIAN BÀI THI CHÍNH (CÓ HIỆU ỨNG CHUYỂN CÂU HỎI TRƯỢT MƯỢT MÀ) */}
       <main
@@ -1719,22 +1815,25 @@ export default function ExamRoom({ exam, onSubmitExam, onBack }) {
       {showExitConfirm && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-[#240520] border border-white/20 rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl animate-in fade-in zoom-in-95">
-            <h3 className="text-lg font-bold text-white mb-2">Bạn muốn dừng bài thi?</h3>
+            <h3 className="text-lg font-bold text-white mb-2">Tạm dừng bài thi?</h3>
             <p className="text-xs text-slate-300 mb-6 leading-relaxed">
-              Bạn có chắc chắn muốn quay trở lại trang quản lý hoạt động?
+              Tiến độ của bạn <span className="text-[#f43f5e] font-bold">({questions.length > 0 ? Math.round((Object.keys(selectedAnswers).length / questions.length) * 100) : 0}%)</span> đã được lưu tự động. Bạn có thể quay lại làm tiếp bất kỳ lúc nào!
             </p>
             <div className="flex items-center justify-center gap-3">
               <button
                 onClick={() => setShowExitConfirm(false)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/20 text-white transition-colors"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
               >
                 Tiếp tục thi
               </button>
               <button
-                onClick={onBack}
-                className="px-5 py-2 rounded-xl text-xs font-bold bg-[#d82a7a] hover:bg-[#c2226b] text-white transition-colors shadow-md"
+                onClick={() => {
+                  setShowExitConfirm(false);
+                  onBack();
+                }}
+                className="px-5 py-2 rounded-xl text-xs font-bold bg-[#d82a7a] hover:bg-[#c2226b] text-white transition-colors shadow-md cursor-pointer"
               >
-                Thoát ra
+                Lưu & Thoát ra
               </button>
             </div>
           </div>

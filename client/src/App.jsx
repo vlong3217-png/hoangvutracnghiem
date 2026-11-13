@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 
 // Wrapper component để xử lý route /exam/:id trực tiếp (khi truy cập hoặc F5 trang bài thi)
-function ExamRoomRoute({ onBack, onSubmitExam, isOpeningExam, onLoadedExam }) {
+function ExamRoomRoute({ onBack, onSubmitExam, isOpeningExam, onLoadedExam, currentUser }) {
   const { examId } = useParams();
   const [examData, setExamData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -87,6 +87,7 @@ function ExamRoomRoute({ onBack, onSubmitExam, isOpeningExam, onLoadedExam }) {
   return (
     <ExamRoom
       exam={examData}
+      currentUser={currentUser}
       onSubmitExam={(resultData) => {
         onSubmitExam({
           ...resultData,
@@ -654,6 +655,7 @@ export default function App() {
               element={
                 <ExamList 
                   exams={exams} 
+                  currentUser={currentUser}
                   onSelectExam={handleSelectExam}
                   onOpenTeacherManage={() => navigate('/manage')}
                   onLogout={handleLogout}
@@ -758,6 +760,7 @@ export default function App() {
                 <ExamRoomRoute 
                   onSubmitExam={handleSubmitExam}
                   onBack={handleGoHome}
+                  currentUser={currentUser}
                   onLoadedExam={(full) => {
                     setActiveExam(full);
                     try {

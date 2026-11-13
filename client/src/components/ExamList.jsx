@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Search, 
   Home, 
@@ -11,11 +11,28 @@ import {
   Loader2
 } from 'lucide-react';
 import QuizizzLogo from './QuizizzLogo';
+import { getExamProgress, getAllUserProgress } from '../services/examProgress';
 
-export default function ExamList({ exams, onSelectExam, onOpenTeacherManage, onLogout, isLoading }) {
+export default function ExamList({ exams, currentUser, onSelectExam, onOpenTeacherManage, onLogout, isLoading }) {
   const [activeTab, setActiveTab] = useState('running'); // 'running' (Đang chạy), 'completed' (Hoàn thành)
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedExamId, setSelectedExamId] = useState(null);
+
+  // Đọc danh sách tiến độ làm bài của học sinh hiện tại
+  const [userProgressMap, setUserProgressMap] = useState(() => getAllUserProgress(currentUser));
+
+  useEffect(() => {
+    setUserProgressMap(getAllUserProgress(currentUser));
+    const handleProgressUpdate = () => {
+      setUserProgressMap(getAllUserProgress(currentUser));
+    };
+    window.addEventListener('exam-progress-updated', handleProgressUpdate);
+    window.addEventListener('storage', handleProgressUpdate);
+    return () => {
+      window.removeEventListener('exam-progress-updated', handleProgressUpdate);
+      window.removeEventListener('storage', handleProgressUpdate);
+    };
+  }, [currentUser]);
 
   const handleCardClick = (exam) => {
     setSelectedExamId(exam.id);
@@ -25,11 +42,30 @@ export default function ExamList({ exams, onSelectExam, onOpenTeacherManage, onL
     }, 280);
   };
 
+  // Tính toán thông tin tiến độ của một đề thi
+  const getExamProgressInfo = (exam) => {
+    const prog = userProgressMap[exam.id] || getExamProgress(currentUser, exam.id);
+    const totalQ = (exam.questions && exam.questions.length) || Number(exam.totalQuestions) || 0;
+    const answeredCount = prog?.answeredCount ?? (prog?.selectedAnswers ? Object.keys(prog.selectedAnswers).length : 0);
+    const isCompleted = Boolean(prog?.completed || (totalQ > 0 && answeredCount >= totalQ));
+    const percent = isCompleted 
+      ? 100 
+      : (totalQ > 0 ? Math.min(99, Math.round((answeredCount / totalQ) * 100)) : 0);
+    const hasStarted = answeredCount > 0 || (prog && prog.currentIdx > 0);
+    return { prog, totalQ, answeredCount, isCompleted, percent, hasStarted };
+  };
+
   // Lọc theo search
-  const filteredExams = exams.filter(exam => 
+  const searchedExams = exams.filter(exam => 
     exam.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (exam.author && exam.author.toLowerCase().includes(searchQuery.toLowerCase()))
   );
+
+  // Phân loại theo tab Đang chạy và Hoàn thành
+  const runningExams = searchedExams.filter(exam => !getExamProgressInfo(exam).isCompleted);
+  const completedExams = searchedExams.filter(exam => getExamProgressInfo(exam).isCompleted);
+
+  const displayedExams = activeTab === 'running' ? runningExams : completedExams;
 
   // Theme màu sắc của thẻ chuẩn theo ảnh Quizizz / Wayground
   const getCardHeaderBg = (theme) => {
@@ -97,7 +133,7 @@ export default function ExamList({ exams, onSelectExam, onOpenTeacherManage, onL
         </div>
       </header>
 
-      {/* 2. TAB SUB-NAV (Đang chạy, Hoàn thành, Tạo) */}
+      {/* 2. TAB SUB-NAV (Đang chạy, Hoàn thành) */}
       <div className="bg-white border-b border-slate-200 px-4 sm:px-8 pt-3 sm:pt-4 overflow-x-auto scrollbar-none">
         <div className="flex items-center gap-6 sm:gap-8 text-xs sm:text-sm font-semibold text-slate-600 min-w-max">
           <button 
@@ -110,6 +146,9 @@ export default function ExamList({ exams, onSelectExam, onOpenTeacherManage, onL
           >
             <span>Đang chạy</span>
             <Hourglass className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-700" />
+            <span className="text-[11px] font-bold px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-600">
+              {runningExams.length}
+            </span>
           </button>
 
           <button 
@@ -122,6 +161,9 @@ export default function ExamList({ exams, onSelectExam, onOpenTeacherManage, onL
           >
             <span>Hoàn thành</span>
             <Hourglass className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 rotate-180" />
+            <span className="text-[11px] font-bold px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-600">
+              {completedExams.length}
+            </span>
           </button>
         </div>
       </div>
@@ -138,21 +180,26 @@ export default function ExamList({ exams, onSelectExam, onOpenTeacherManage, onL
               Đang kết nối và đồng bộ dữ liệu đề thi từ CSDL đám mây. Vui lòng chờ trong giây lát!
             </p>
           </div>
-        ) : filteredExams.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
+        ) : displayedExams.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center animate-in fade-in duration-200">
             <div className="w-20 h-20 rounded-full bg-pink-50 flex items-center justify-center text-4xl mb-4 text-[#d82a7a] shadow-xs">
-              📝
+              {activeTab === 'completed' ? '🏆' : '📝'}
             </div>
-            <h2 className="text-lg font-bold text-slate-800 mb-1">Chưa có đề thi nào</h2>
+            <h2 className="text-lg font-bold text-slate-800 mb-1">
+              {activeTab === 'completed' ? 'Chưa có bài thi nào hoàn thành' : 'Chưa có đề thi nào'}
+            </h2>
             <p className="text-xs text-slate-500 max-w-sm">
-              Dữ liệu mẫu đã được xóa sạch. Hệ thống sẵn sàng để bạn tải lên các đề thi mới!
+              {activeTab === 'completed' 
+                ? 'Hãy hoàn thành các bài thi ở mục "Đang chạy" để theo dõi kết quả tại đây!'
+                : 'Hiện không có bài thi nào phù hợp với bộ lọc tìm kiếm.'}
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {filteredExams.map((exam, idx) => {
+            {displayedExams.map((exam, idx) => {
               const hasBanner = exam.cardTheme === 'image' && exam.bannerImage;
               const isClicked = selectedExamId === exam.id;
+              const progressInfo = getExamProgressInfo(exam);
 
               return (
                 <div 
@@ -218,21 +265,25 @@ export default function ExamList({ exams, onSelectExam, onOpenTeacherManage, onL
 
                   {/* CHÂN THẺ - THANH TIẾN ĐỘ / BADGE TRẠNG THÁI */}
                   <div className="mt-3.5 pt-2">
-                    {exam.bottomType === 'green_accuracy' && (
-                      <div className="w-full py-1.5 px-3 bg-[#42d99d] text-[#0d593c] text-[10px] font-bold rounded-md text-center shadow-2xs">
-                        {exam.accuracy || 'Độ chính xác 85%'}
+                    {progressInfo.isCompleted ? (
+                      <div className="w-full py-1.5 px-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10.5px] font-bold rounded-full text-center flex items-center justify-center gap-1.5 shadow-2xs">
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Hoàn thành (100%)</span>
                       </div>
-                    )}
-
-                    {exam.bottomType === 'dark_accuracy' && (
-                      <div className="w-full py-1.5 px-3 bg-[#2d3748] text-amber-300 text-[10px] font-bold rounded-md text-center shadow-2xs flex items-center justify-center gap-1">
-                        <span>{exam.accuracy || 'Độ chính xác 100%'}</span>
+                    ) : progressInfo.hasStarted && progressInfo.percent > 0 ? (
+                      <div className="w-full py-1.5 px-3 bg-purple-100/90 text-purple-900 text-[10.5px] font-bold rounded-full text-center relative overflow-hidden shadow-2xs border border-purple-200/60">
+                        {/* Lớp màu tiến độ % mờ phía sau */}
+                        <div 
+                          className="absolute inset-y-0 left-0 bg-[#d82a7a]/20 rounded-full transition-all duration-300"
+                          style={{ width: `${progressInfo.percent}%` }}
+                        />
+                        <span className="relative z-10 flex items-center justify-center gap-1">
+                          <span>Bắt đầu làm bài ({progressInfo.percent}%)</span>
+                        </span>
                       </div>
-                    )}
-
-                    {(exam.bottomType === 'purple_pill' || !exam.bottomType) && (
+                    ) : (
                       <div className="w-full py-1 px-3 bg-purple-100 text-purple-700 text-[10px] font-medium rounded-full text-center truncate">
-                        {exam.bottomText || 'Bắt đầu làm bài'}
+                        Bắt đầu làm bài
                       </div>
                     )}
                   </div>
