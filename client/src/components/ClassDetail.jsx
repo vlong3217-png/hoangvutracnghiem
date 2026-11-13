@@ -661,26 +661,14 @@ export default function ClassDetail({ classId, onBack }) {
                               {stu.joined_at ? new Date(stu.joined_at).toLocaleDateString('vi-VN') : 'Vừa xong'}
                             </td>
                             <td className="px-4 py-3 text-right">
-                              {isChecked ? (
-                                <button
-                                  disabled={deletingStudentId === stu.id}
-                                  onClick={() => handleDeleteStudent(stu.id, stu.name)}
-                                  className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white text-xs font-bold rounded-lg shadow-2xs transition-all cursor-pointer animate-in fade-in zoom-in-95"
-                                  title="Xóa sinh viên khỏi lớp"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                  <span>{deletingStudentId === stu.id ? 'Đang xóa...' : 'Xóa'}</span>
-                                </button>
-                              ) : (
-                                <button
-                                  disabled={deletingStudentId === stu.id}
-                                  onClick={() => handleDeleteStudent(stu.id, stu.name)}
-                                  className="text-slate-400 hover:text-rose-600 p-1.5 rounded-md transition-colors cursor-pointer"
-                                  title="Xóa sinh viên khỏi lớp"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              )}
+                              <button
+                                disabled={deletingStudentId === stu.id}
+                                onClick={() => handleDeleteStudent(stu.id, stu.name)}
+                                className="text-slate-400 hover:text-rose-600 p-1.5 rounded-md transition-colors cursor-pointer"
+                                title="Xóa sinh viên khỏi lớp"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
                             </td>
                           </tr>
                         );

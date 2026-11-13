@@ -467,38 +467,12 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
                       {exam.createdAtText || `${idx + 1} tháng trước`}
                     </div>
 
-                    {/* Cột phải: Các nút Thao tác (Chơi, Share, More, Xóa khi chọn) */}
+                    {/* Cột phải: Các nút Thao tác (Chơi, Share, More) */}
                     <div className="md:col-span-3 flex items-center justify-between md:justify-end gap-2 pt-2.5 md:pt-0 border-t md:border-t-0 border-slate-100 relative">
                       <span className="md:hidden text-[11px] text-slate-400">
                         {exam.createdAtText || `${idx + 1} tháng trước`}
                       </span>
                       <div className="flex items-center gap-1.5 sm:gap-2">
-                        {/* Nút Xóa màu đỏ hiện lên khi tích chọn ô */}
-                        {isChecked && (
-                          <button
-                            disabled={deletingExamId === exam.id}
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              if (window.confirm(`Bạn có chắc chắn muốn xóa bài thi "${exam.title}"?`)) {
-                                setDeletingExamId(exam.id);
-                                try {
-                                  if (onDeleteExam) await onDeleteExam(exam.id);
-                                  setSelectedExams(prev => prev.filter(item => item !== exam.id));
-                                } catch (err) {
-                                  alert('Lỗi khi xóa bài thi: ' + err.message);
-                                } finally {
-                                  setDeletingExamId(null);
-                                }
-                              }
-                            }}
-                            className="px-2.5 py-1.5 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white text-xs font-bold rounded-lg flex items-center gap-1 shadow-2xs transition-all cursor-pointer shrink-0 animate-in fade-in zoom-in-95"
-                            title="Xóa hoạt động này"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            <span>{deletingExamId === exam.id ? 'Đang xóa...' : 'Xóa'}</span>
-                          </button>
-                        )}
-
                         <button
                           onClick={() => onPlayExam ? onPlayExam(exam) : null}
                           className="px-3 py-1.5 border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors"
