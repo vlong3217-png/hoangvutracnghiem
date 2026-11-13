@@ -290,3 +290,18 @@ export async function deleteStudentFromClassApi(classId, studentId) {
   }
 }
 
+/**
+ * Xóa nhiều sinh viên khỏi lớp học cùng lúc
+ */
+export async function deleteMultipleStudentsFromClassApi(classId, studentIds) {
+  try {
+    const ids = Array.isArray(studentIds) ? studentIds.join(',') : studentIds;
+    const res = await fetch(`${API_BASE_URL}/classes?id=${classId}&studentIds=${encodeURIComponent(ids)}`, {
+      method: 'DELETE'
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+

@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   }
 
   const pool = getPool();
-  const { id, studentId, action } = req.query;
+  const { id, studentId, studentIds, action } = req.query;
 
   try {
     // Đảm bảo bảng classes và class_students tồn tại
@@ -209,6 +209,17 @@ export default async function handler(req, res) {
 
     // 4. DELETE: Xóa lớp học HOẶC Xóa học sinh khỏi lớp
     if (req.method === 'DELETE') {
+      const rawIds = studentIds || req.body?.studentIds;
+      if (rawIds) {
+        const list = (Array.isArray(rawIds) ? rawIds : rawIds.toString().split(','))
+          .map(s => s.trim())
+          .filter(Boolean);
+        if (list.length > 0) {
+          await pool.query('DELETE FROM class_students WHERE id = ANY($1)', [list]);
+          return res.json({ success: true, message: `Đã xóa ${list.length} sinh viên khỏi lớp` });
+        }
+      }
+
       if (studentId) {
         // Xóa học sinh khỏi lớp
         await pool.query('DELETE FROM class_students WHERE id = $1', [studentId]);

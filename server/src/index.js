@@ -490,6 +490,24 @@ app.post('/api/classes/:id/students', async (req, res) => {
   }
 });
 
+// Xóa nhiều sinh viên khỏi lớp
+app.delete('/api/classes/:id/students', async (req, res) => {
+  const { id: classId } = req.params;
+  const { studentIds } = req.query;
+  const bodyIds = req.body?.studentIds;
+  try {
+    const raw = studentIds || bodyIds || '';
+    const ids = (Array.isArray(raw) ? raw : raw.split(',')).map(s => s.trim()).filter(Boolean);
+    if (ids.length > 0) {
+      await pool.query('DELETE FROM class_students WHERE class_id = $1 AND id = ANY($2)', [classId, ids]);
+      return res.json({ success: true, message: `Đã xóa ${ids.length} sinh viên khỏi lớp` });
+    }
+    return res.status(400).json({ success: false, message: 'Không có sinh viên nào để xóa' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // Xóa sinh viên khỏi lớp
 app.delete('/api/classes/:id/students/:studentId', async (req, res) => {
   const { id: classId, studentId } = req.params;

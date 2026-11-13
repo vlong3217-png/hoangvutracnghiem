@@ -20,7 +20,8 @@ import {
   fetchClassById, 
   updateClassApi, 
   addStudentsToClassApi, 
-  deleteStudentFromClassApi 
+  deleteStudentFromClassApi,
+  deleteMultipleStudentsFromClassApi 
 } from '../services/api';
 
 export default function ClassDetail({ classId, onBack }) {
@@ -28,6 +29,9 @@ export default function ClassDetail({ classId, onBack }) {
   const [students, setStudents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchStudentQuery, setSearchStudentQuery] = useState('');
+  const [selectedStudents, setSelectedStudents] = useState([]);
+  const [isBatchDeleting, setIsBatchDeleting] = useState(false);
+  const [deletingStudentId, setDeletingStudentId] = useState(null);
 
   // Sửa tên lớp học
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -348,6 +352,31 @@ export default function ClassDetail({ classId, onBack }) {
     }
   };
 
+  // Lọc sinh viên theo tên, mã SV hoặc ngày sinh
+  const filteredStudents = students.filter(s => 
+    (s.name && s.name.toLowerCase().includes(searchStudentQuery.toLowerCase())) ||
+    (s.student_code && s.student_code.toLowerCase().includes(searchStudentQuery.toLowerCase())) ||
+    (s.birth_date && s.birth_date.toLowerCase().includes(searchStudentQuery.toLowerCase()))
+  );
+
+  // Chọn tất cả sinh viên
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedStudents(filteredStudents.map(s => s.id));
+    } else {
+      setSelectedStudents([]);
+    }
+  };
+
+  // Tích chọn 1 sinh viên
+  const handleSelectOne = (id) => {
+    if (selectedStudents.includes(id)) {
+      setSelectedStudents(prev => prev.filter(item => item !== id));
+    } else {
+      setSelectedStudents(prev => [...prev, id]);
+    }
+  };
+
   // Xóa sinh viên khỏi lớp
   const handleDeleteStudent = async (studentId, name) => {
     if (!window.confirm(`Bạn có chắc chắn muốn xóa sinh viên "${name}" khỏi lớp này?`)) {
@@ -355,23 +384,48 @@ export default function ClassDetail({ classId, onBack }) {
     }
 
     try {
+      setDeletingStudentId(studentId);
       const res = await deleteStudentFromClassApi(classId, studentId);
       if (res.success) {
         setStudents(prev => prev.filter(s => s.id !== studentId));
+        setSelectedStudents(prev => prev.filter(id => id !== studentId));
       } else {
         alert(res.message || 'Lỗi xóa sinh viên');
       }
     } catch (err) {
       alert('Lỗi: ' + err.message);
+    } finally {
+      setDeletingStudentId(null);
     }
   };
 
-  // Lọc sinh viên theo tên, mã SV hoặc ngày sinh
-  const filteredStudents = students.filter(s => 
-    (s.name && s.name.toLowerCase().includes(searchStudentQuery.toLowerCase())) ||
-    (s.student_code && s.student_code.toLowerCase().includes(searchStudentQuery.toLowerCase())) ||
-    (s.birth_date && s.birth_date.toLowerCase().includes(searchStudentQuery.toLowerCase()))
-  );
+  // Xóa hàng loạt sinh viên đã chọn
+  const handleDeleteSelectedStudents = async () => {
+    if (selectedStudents.length === 0) return;
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedStudents.length} sinh viên đã chọn khỏi lớp?`)) {
+      return;
+    }
+
+    setIsBatchDeleting(true);
+    try {
+      const res = await deleteMultipleStudentsFromClassApi(classId, selectedStudents);
+      if (res.success) {
+        setStudents(prev => prev.filter(s => !selectedStudents.includes(s.id)));
+        setSelectedStudents([]);
+      } else {
+        // Fallback: xóa từng sinh viên
+        for (const sid of selectedStudents) {
+          await deleteStudentFromClassApi(classId, sid);
+        }
+        setStudents(prev => prev.filter(s => !selectedStudents.includes(s.id)));
+        setSelectedStudents([]);
+      }
+    } catch (err) {
+      alert('Lỗi khi xóa sinh viên: ' + err.message);
+    } finally {
+      setIsBatchDeleting(false);
+    }
+  };
 
   return (
     <div className="flex-1 flex flex-row min-h-screen bg-white text-slate-800 font-sans">
@@ -518,11 +572,44 @@ export default function ClassDetail({ classId, onBack }) {
           /* NẾU ĐÃ CÓ HỌC SINH -> BẢNG DANH SÁCH HỌC SINH (BAO GỒM MÃ SV - HỌ VÀ TÊN - NGÀY SINH) */
           <div className="pt-6">
             <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
+              {/* Thanh thao tác khi có ô được tích */}
+              {selectedStudents.length > 0 && (
+                <div className="px-5 py-2.5 border-b border-rose-200 bg-rose-50/70 flex items-center justify-between text-xs font-semibold animate-in fade-in duration-150">
+                  <div className="flex items-center gap-3">
+                    <span className="text-rose-900 font-bold">
+                      Đã chọn {selectedStudents.length} sinh viên
+                    </span>
+                    <button
+                      onClick={() => setSelectedStudents([])}
+                      className="text-slate-500 hover:text-slate-800 underline ml-2 cursor-pointer font-medium"
+                    >
+                      Bỏ chọn
+                    </button>
+                  </div>
+
+                  <button
+                    disabled={isBatchDeleting}
+                    onClick={handleDeleteSelectedStudents}
+                    className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white text-xs font-bold rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>{isBatchDeleting ? 'Đang xóa...' : `Xóa (${selectedStudents.length})`}</span>
+                  </button>
+                </div>
+              )}
+
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs text-slate-700">
                   <thead className="bg-slate-50/80 text-[11px] font-bold text-slate-500 uppercase border-b border-slate-200">
                     <tr>
-                      <th className="px-4 py-3 w-12 text-center">STT</th>
+                      <th className="px-4 py-3 w-12 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedStudents.length === filteredStudents.length && filteredStudents.length > 0}
+                          onChange={handleSelectAll}
+                          className="w-4 h-4 rounded border-slate-300 text-[#d82a7a] focus:ring-[#d82a7a] accent-[#d82a7a] cursor-pointer"
+                        />
+                      </th>
                       <th className="px-4 py-3">Mã SV</th>
                       <th className="px-4 py-3">Họ và tên</th>
                       <th className="px-4 py-3">Ngày tháng năm sinh</th>
@@ -538,39 +625,66 @@ export default function ClassDetail({ classId, onBack }) {
                         </td>
                       </tr>
                     ) : (
-                      filteredStudents.map((stu, idx) => (
-                        <tr key={stu.id || idx} className="hover:bg-slate-50/60 transition-colors">
-                          <td className="px-4 py-3 text-center text-slate-500 font-medium">
-                            {idx + 1}
-                          </td>
-                          <td className="px-4 py-3 text-slate-900 font-bold">
-                            {stu.student_code || '---'}
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-7 h-7 rounded-full bg-pink-100 text-[#d82a7a] font-bold flex items-center justify-center text-xs shrink-0">
-                                {stu.name ? stu.name.charAt(0).toUpperCase() : 'S'}
+                      filteredStudents.map((stu, idx) => {
+                        const isChecked = selectedStudents.includes(stu.id);
+
+                        return (
+                          <tr 
+                            key={stu.id || idx} 
+                            className={`hover:bg-slate-50/60 transition-colors ${
+                              isChecked ? 'bg-pink-50/20' : ''
+                            }`}
+                          >
+                            <td className="px-4 py-3 text-center">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => handleSelectOne(stu.id)}
+                                className="w-4 h-4 rounded border-slate-300 text-[#d82a7a] focus:ring-[#d82a7a] accent-[#d82a7a] cursor-pointer"
+                              />
+                            </td>
+                            <td className="px-4 py-3 text-slate-900 font-bold">
+                              {stu.student_code || '---'}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-7 h-7 rounded-full bg-pink-100 text-[#d82a7a] font-bold flex items-center justify-center text-xs shrink-0">
+                                  {stu.name ? stu.name.charAt(0).toUpperCase() : 'S'}
+                                </div>
+                                <span className="font-semibold text-slate-900">{stu.name}</span>
                               </div>
-                              <span className="font-semibold text-slate-900">{stu.name}</span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-slate-700 font-medium">
-                            {stu.birth_date || '---'}
-                          </td>
-                          <td className="px-4 py-3 text-slate-500 text-xs">
-                            {stu.joined_at ? new Date(stu.joined_at).toLocaleDateString('vi-VN') : 'Vừa xong'}
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <button
-                              onClick={() => handleDeleteStudent(stu.id, stu.name)}
-                              className="text-slate-400 hover:text-rose-600 p-1 rounded-md transition-colors"
-                              title="Xóa sinh viên khỏi lớp"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))
+                            </td>
+                            <td className="px-4 py-3 text-slate-700 font-medium">
+                              {stu.birth_date || '---'}
+                            </td>
+                            <td className="px-4 py-3 text-slate-500 text-xs">
+                              {stu.joined_at ? new Date(stu.joined_at).toLocaleDateString('vi-VN') : 'Vừa xong'}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              {isChecked ? (
+                                <button
+                                  disabled={deletingStudentId === stu.id}
+                                  onClick={() => handleDeleteStudent(stu.id, stu.name)}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white text-xs font-bold rounded-lg shadow-2xs transition-all cursor-pointer animate-in fade-in zoom-in-95"
+                                  title="Xóa sinh viên khỏi lớp"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <span>{deletingStudentId === stu.id ? 'Đang xóa...' : 'Xóa'}</span>
+                                </button>
+                              ) : (
+                                <button
+                                  disabled={deletingStudentId === stu.id}
+                                  onClick={() => handleDeleteStudent(stu.id, stu.name)}
+                                  className="text-slate-400 hover:text-rose-600 p-1.5 rounded-md transition-colors cursor-pointer"
+                                  title="Xóa sinh viên khỏi lớp"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>
