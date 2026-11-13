@@ -540,10 +540,10 @@ export default function ClassDetail({ classId, onBack }) {
                     ) : (
                       filteredStudents.map((stu, idx) => (
                         <tr key={stu.id || idx} className="hover:bg-slate-50/60 transition-colors">
-                          <td className="px-4 py-3 text-center text-slate-400 font-medium">
+                          <td className="px-4 py-3 text-center text-slate-500 font-medium">
                             {idx + 1}
                           </td>
-                          <td className="px-4 py-3 text-slate-900 font-mono font-bold">
+                          <td className="px-4 py-3 text-slate-900 font-bold">
                             {stu.student_code || '---'}
                           </td>
                           <td className="px-4 py-3">
@@ -554,10 +554,10 @@ export default function ClassDetail({ classId, onBack }) {
                               <span className="font-semibold text-slate-900">{stu.name}</span>
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-slate-600 font-mono">
+                          <td className="px-4 py-3 text-slate-700 font-medium">
                             {stu.birth_date || '---'}
                           </td>
-                          <td className="px-4 py-3 text-slate-400 text-[11px]">
+                          <td className="px-4 py-3 text-slate-500 text-xs">
                             {stu.joined_at ? new Date(stu.joined_at).toLocaleDateString('vi-VN') : 'Vừa xong'}
                           </td>
                           <td className="px-4 py-3 text-right">
@@ -714,7 +714,7 @@ export default function ClassDetail({ classId, onBack }) {
                     value={bulkInput}
                     onChange={(e) => setBulkInput(e.target.value)}
                     placeholder="23IT001, Nguyễn Văn An, 15/08/2004&#10;23IT002, Trần Thị Bình, 20/11/2004&#10;23IT003, Lê Hoàng Cường, 05/03/2004"
-                    className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-[#d82a7a] font-mono leading-relaxed"
+                    className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-[#d82a7a] leading-relaxed"
                   />
 
                   <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
@@ -812,10 +812,10 @@ export default function ClassDetail({ classId, onBack }) {
                           <tbody className="divide-y divide-slate-100">
                             {excelStudents.map((st, idx) => (
                               <tr key={idx} className="hover:bg-slate-50/60">
-                                <td className="px-3 py-1.5 text-center text-slate-400 font-mono text-[11px]">{idx + 1}</td>
-                                <td className="px-3 py-1.5 font-mono font-semibold text-slate-900">{st.student_code}</td>
+                                <td className="px-3 py-1.5 text-center text-slate-500 text-[11px]">{idx + 1}</td>
+                                <td className="px-3 py-1.5 font-bold text-slate-900">{st.student_code}</td>
                                 <td className="px-3 py-1.5 font-medium text-slate-800">{st.name}</td>
-                                <td className="px-3 py-1.5 text-slate-600">{st.birth_date}</td>
+                                <td className="px-3 py-1.5 text-slate-700">{st.birth_date}</td>
                               </tr>
                             ))}
                           </tbody>

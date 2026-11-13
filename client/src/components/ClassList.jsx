@@ -837,10 +837,10 @@ export default function ClassList({ onSelectClass }) {
                       <tbody className="divide-y divide-slate-100">
                         {parsedStudents.map((st, idx) => (
                           <tr key={idx} className="hover:bg-slate-50/60">
-                            <td className="px-3 py-1.5 text-center text-slate-400 font-mono text-[11px]">{idx + 1}</td>
-                            <td className="px-3 py-1.5 font-mono font-semibold text-slate-900">{st.student_code}</td>
+                            <td className="px-3 py-1.5 text-center text-slate-500 text-[11px]">{idx + 1}</td>
+                            <td className="px-3 py-1.5 font-bold text-slate-900">{st.student_code}</td>
                             <td className="px-3 py-1.5 font-medium text-slate-800">{st.name}</td>
-                            <td className="px-3 py-1.5 text-slate-600">{st.birth_date}</td>
+                            <td className="px-3 py-1.5 text-slate-700">{st.birth_date}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -1060,7 +1060,7 @@ export default function ClassList({ onSelectClass }) {
                 value={importText}
                 onChange={(e) => setImportText(e.target.value)}
                 placeholder="CNTT K23A&#10;CNTT K23B&#10;Kinh tế K22..."
-                className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-[#d82a7a] font-mono leading-relaxed"
+                className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-[#d82a7a] leading-relaxed"
               />
 
               <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
