@@ -80,3 +80,4 @@ export function getAllUserProgress(user) {
   } catch (e) {}
   return result;
 }
+

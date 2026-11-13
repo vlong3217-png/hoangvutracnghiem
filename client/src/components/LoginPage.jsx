@@ -47,6 +47,7 @@ export default function LoginPage({ onLogin, registeredUsers }) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showContactAdmin, setShowContactAdmin] = useState(false);
   // Quản lý Google Client ID
   const defaultClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || localStorage.getItem('QUIZIZZ_GOOGLE_CLIENT_ID') || '249147434256-tlu69jjva0l5gl7sorsh05b7rlbmembo.apps.googleusercontent.com';
   const [googleClientId, setGoogleClientId] = useState(defaultClientId);
@@ -365,15 +366,23 @@ export default function LoginPage({ onLogin, registeredUsers }) {
               </button>
             </div>
           </form>
-          {/* Quên mật khẩu */}
+          {/* Bạn chưa có tài khoản? */}
           <div className="mt-5 text-center">
             <button
               type="button"
-              onClick={() => alert("Mật khẩu sinh viên là Ngày tháng năm sinh của bạn (Ví dụ: 05012006 hoặc 05/01/2006).\n\nNếu bạn không thể đăng nhập, vui lòng liên hệ Giảng viên để kiểm tra lại thông tin.")}
+              onClick={() => {
+                setShowContactAdmin(true);
+                alert("Hãy liên hệ với admin để cung cấp tài khoản");
+              }}
               className="text-xs font-semibold text-blue-600 hover:underline block mx-auto cursor-pointer"
             >
-              Quên mật khẩu?
+              Bạn chưa có tài khoản?
             </button>
+            {showContactAdmin && (
+              <p className="mt-2.5 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-2.5 animate-in fade-in leading-relaxed">
+                📢 Hãy liên hệ với admin để cung cấp tài khoản
+              </p>
+            )}
           </div>
         </div>
         </div>
