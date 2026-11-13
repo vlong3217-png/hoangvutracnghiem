@@ -491,39 +491,13 @@ export default function ClassList({ onSelectClass }) {
                         setExcelParseError('');
                         setExcelFileName('');
                       }}
-                      className="w-full text-left px-3.5 py-2.5 hover:bg-emerald-50 flex items-start gap-2.5 text-slate-800 font-medium group transition-colors"
+                      className="w-full text-left px-3.5 py-2.5 hover:bg-emerald-50 rounded-lg flex items-start gap-2.5 text-slate-800 font-medium group transition-colors cursor-pointer"
                     >
                       <FileSpreadsheet className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
                       <div>
                         <div className="font-bold text-slate-900 group-hover:text-emerald-700">Nhập từ tệp Excel (.xlsx, .csv)</div>
                         <div className="text-[11px] text-slate-400 mt-0.5">Mã SV - Họ và tên - Ngày sinh</div>
                       </div>
-                    </button>
-
-                    <div className="border-t border-slate-100 my-1" />
-
-                    {/* Mục 2: Dán danh sách tên lớp */}
-                    <button
-                      onClick={() => {
-                        setShowImportDropdown(false);
-                        setShowImportModal(true);
-                      }}
-                      className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center gap-2 text-slate-700 font-medium"
-                    >
-                      <Upload className="w-3.5 h-3.5 text-slate-500" />
-                      <span>Dán danh sách tên lớp</span>
-                    </button>
-
-                    {/* Mục 3: Nhập từ Google Classroom */}
-                    <button
-                      onClick={() => {
-                        setShowImportDropdown(false);
-                        alert('Tính năng đồng bộ Google Classroom đang sẵn sàng kết nối.');
-                      }}
-                      className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center gap-2 text-slate-700 font-medium"
-                    >
-                      <BookOpen className="w-3.5 h-3.5 text-slate-500" />
-                      <span>Nhập từ Google Classroom</span>
                     </button>
                   </div>
                 </>
