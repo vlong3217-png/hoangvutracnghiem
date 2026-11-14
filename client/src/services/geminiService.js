@@ -193,30 +193,70 @@ export async function parseQuestionsWithGemini(rawText, customApiKey = '') {
   }
 
   const prompt = `
-Bạn là một chuyên gia khảo thí và tạo đề thi giáo dục.
-Nhiệm vụ của bạn: Đọc nội dung văn bản dưới đây (được trích xuất từ file Word/Excel/PDF/Text) và chuyển đổi thành danh sách các câu hỏi thi trắc nghiệm/tự luận chuẩn.
+Bạn là một chuyên gia khảo thí và tạo đề thi giáo dục hàng đầu.
+Nhiệm vụ của bạn: Đọc nội dung văn bản dưới đây (được trích xuất từ file Word/Excel/PDF/Text) và chuyển đổi thành danh sách các câu hỏi thi chuẩn xác, nhận diện ĐÚNG dạng câu hỏi tương ứng trong hệ thống.
+
+Hệ thống hỗ trợ 7 dạng câu hỏi sau:
+1. "single": Trắc nghiệm 1 đáp án đúng (A, B, C, D).
+   - "options": [{ "id": "A", "text": "..." }, ...]
+   - "correctAnswer": "A"
+
+2. "multiple": Chọn nhiều đáp án đúng (có từ 2 đáp án đúng trở lên).
+   - "options": [{ "id": "A", "text": "..." }, ...]
+   - "correctAnswer": ["A", "C"]
+
+3. "true_false_multi": Đúng/Sai theo từng ý (thường có tiêu đề "Chọn đáp án Đúng hoặc Sai...", "Các phát biểu sau đúng hay sai", và các ý 1, 2, 3... hoặc a, b, c... kèm Đúng / Sai).
+   - "question": "Tiêu đề câu hỏi..."
+   - "parts": [
+       { "id": "1", "text": "Nội dung phát biểu 1", "isCorrect": true },
+       { "id": "2", "text": "Nội dung phát biểu 2", "isCorrect": false }
+     ]
+
+4. "drag_drop": Kéo thả ghép nối / Ghép đáp án tương ứng (thường có bảng 2 cột ghép cặp vế câu - đáp án, hoặc tiêu đề "Kéo thả các đáp án đúng tương ứng...").
+   - "question": "Tiêu đề câu hỏi..."
+   - "sentences": [
+       { "id": 1, "prefix": "Vế câu hỏi hoặc phát biểu 1", "correctWord": "Đáp án ghép 1", "suffix": "" },
+       { "id": 2, "prefix": "Vế câu hỏi hoặc phát biểu 2", "correctWord": "Đáp án ghép 2", "suffix": "" }
+     ]
+   - "draggableItems": ["Đáp án ghép 1", "Đáp án ghép 2", ...]
+
+5. "categorize": Phân loại vào các cột / nhóm (thường có tiêu đề "Kéo thả các yếu tố vào các cột tương ứng...", "Phân loại...", và các cột nhóm kèm các mục thuộc từng nhóm).
+   - "question": "Tiêu đề câu hỏi..."
+   - "categories": [
+       { "id": "cat1", "name": "Tên cột/nhóm 1" },
+       { "id": "cat2", "name": "Tên cột/nhóm 2" }
+     ]
+   - "items": [
+       { "id": "item1", "text": "Mục 1 thuộc nhóm 1", "categoryId": "cat1" },
+       { "id": "item2", "text": "Mục 2 thuộc nhóm 1", "categoryId": "cat1" },
+       { "id": "item3", "text": "Mục 3 thuộc nhóm 2", "categoryId": "cat2" }
+     ]
+
+6. "short_answer": Điền từ khuyết hoặc trả lời ngắn.
+   - "question": "Câu hỏi có chỗ trống hoặc câu hỏi điền từ..."
+   - "correctAnswer": "Từ hoặc cụm từ cần điền"
+
+7. "essay": Tự luận.
+   - "question": "Nội dung câu hỏi tự luận..."
+   - "sampleAnswer": "Dàn ý đáp án gợi ý..."
+   - "criteria": "Tiêu chí chấm điểm..."
+   - "points": 10
 
 Yêu cầu định dạng đầu ra:
-Trả về DUY NHẤT một mảng JSON các object theo cấu trúc sau (không kèm markdown thừa):
+Trả về DUY NHẤT một mảng JSON các object theo cấu trúc trên (không kèm markdown \`\`\`json hay text thừa):
 [
   {
     "id": "1",
-    "type": "single", // "single" (Trắc nghiệm 1 đáp án), "multiple" (Nhiều đáp án đúng), "true_false_multi" (Đúng/Sai các ý), "short_answer" (Điền từ ngắn), hoặc "essay" (Tự luận)
-    "question": "Nội dung câu hỏi...",
-    "options": [
-      { "id": "A", "text": "Nội dung đáp án A" },
-      { "id": "B", "text": "Nội dung đáp án B" },
-      { "id": "C", "text": "Nội dung đáp án C" },
-      { "id": "D", "text": "Nội dung đáp án D" }
-    ],
-    "correctAnswer": "A", // Nếu multiple thì là mảng: ["A", "B"]. Nếu short_answer thì là text ngắn.
-    "explanation": "Giải thích chi tiết vì sao chọn đáp án này..."
+    "type": "true_false_multi", // hoặc "single", "multiple", "drag_drop", "categorize", "short_answer", "essay"
+    "question": "...",
+    ... (các trường theo đúng cấu trúc từng dạng ở trên)
+    "explanation": "Giải thích chi tiết (nếu có)"
   }
 ]
 
 Lưu ý:
-- Tự động nhận diện đáp án đúng nếu trong đề có đánh dấu (ví dụ: gạch chân, in đậm, dấu *, hoặc dòng Đáp án: A). Nếu không ghi rõ, hãy dùng kiến thức chuẩn xác để chọn đáp án đúng.
-- Giữ nguyên văn phong câu hỏi và các lựa chọn.
+- Phân tích cẩn thận các dạng Đúng/Sai (true_false_multi), Kéo thả ghép nối (drag_drop) và Phân loại vào cột (categorize) theo đúng cấu trúc mẫu ở trên.
+- Giữ nguyên nội dung và văn phong câu hỏi.
 
 Nội dung tài liệu cần phân tích:
 """
