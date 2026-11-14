@@ -539,9 +539,19 @@ app.post('/api/classes/:id/students', async (req, res) => {
     try {
       await client.query('BEGIN');
 
+      // Kiểm tra trùng sinh viên trong lớp
+      const existingRes = await client.query(`
+        SELECT id, name, student_code FROM class_students WHERE class_id = $1
+      `, [classId]);
+      const existingCodes = new Set(existingRes.rows.map(r => (r.student_code || '').trim().toLowerCase()).filter(Boolean));
+      const existingNames = new Set(existingRes.rows.map(r => (r.name || '').trim().toLowerCase()).filter(Boolean));
+
       const inserted = [];
       if (Array.isArray(students) && students.length > 0) {
         for (const s of students) {
+          const codeClean = (s.student_code || '').trim().toLowerCase();
+          const nameClean = (s.name || '').trim().toLowerCase();
+
           if (s.name && s.name.trim()) {
             const sid = `stu-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
             const r = await client.query(`
@@ -550,9 +560,22 @@ app.post('/api/classes/:id/students', async (req, res) => {
               RETURNING *
             `, [sid, classId, s.name.trim(), s.email || '', s.student_code || '', s.birth_date || '']);
             inserted.push(r.rows[0]);
+            if (codeClean) existingCodes.add(codeClean);
+            if (nameClean) existingNames.add(nameClean);
           }
         }
       } else if (name && name.trim()) {
+        const codeClean = (student_code || '').trim().toLowerCase();
+        const nameClean = name.trim().toLowerCase();
+
+        if (codeClean && existingCodes.has(codeClean)) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ 
+            success: false, 
+            message: `Mã sinh viên "${student_code}" đã tồn tại trong lớp này!` 
+          });
+        }
+
         const sid = `stu-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
         const r = await client.query(`
           INSERT INTO class_students (id, class_id, name, email, student_code, birth_date)

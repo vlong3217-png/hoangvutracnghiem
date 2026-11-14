@@ -94,9 +94,20 @@ export default async function handler(req, res) {
         const client = await pool.connect();
         try {
           await client.query('BEGIN');
+
+          // Kiểm tra sinh viên đã tồn tại trong lớp để phát hiện trùng
+          const existingRes = await client.query(`
+            SELECT id, name, student_code FROM class_students WHERE class_id = $1
+          `, [targetClassId]);
+          const existingCodes = new Set(existingRes.rows.map(r => (r.student_code || '').trim().toLowerCase()).filter(Boolean));
+          const existingNames = new Set(existingRes.rows.map(r => (r.name || '').trim().toLowerCase()).filter(Boolean));
+
           const inserted = [];
           if (Array.isArray(students) && students.length > 0) {
             for (const s of students) {
+              const codeClean = (s.student_code || '').trim().toLowerCase();
+              const nameClean = (s.name || '').trim().toLowerCase();
+
               if (s.name && s.name.trim()) {
                 const sid = `stu-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
                 const r = await client.query(`
@@ -105,9 +116,23 @@ export default async function handler(req, res) {
                   RETURNING *
                 `, [sid, targetClassId, s.name.trim(), s.email || '', s.student_code || '', s.birth_date || '']);
                 inserted.push(r.rows[0]);
+                if (codeClean) existingCodes.add(codeClean);
+                if (nameClean) existingNames.add(nameClean);
               }
             }
           } else if (stuName && stuName.trim()) {
+            const codeClean = (student_code || '').trim().toLowerCase();
+            const nameClean = stuName.trim().toLowerCase();
+
+            // Nếu trùng mã sinh viên hoặc họ tên trong lớp
+            if (codeClean && existingCodes.has(codeClean)) {
+              await client.query('ROLLBACK');
+              return res.status(400).json({ 
+                success: false, 
+                message: `Mã sinh viên "${student_code}" đã tồn tại trong lớp này!` 
+              });
+            }
+
             const sid = `stu-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
             const r = await client.query(`
               INSERT INTO class_students (id, class_id, name, email, student_code, birth_date)
