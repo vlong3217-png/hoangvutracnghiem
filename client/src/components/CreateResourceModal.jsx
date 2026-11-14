@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import mammoth from 'mammoth';
 import { 
@@ -33,6 +34,7 @@ import { parseQuestionsWithGemini } from '../services/geminiService';
 import QuestionEditor from './QuestionEditor';
 
 export default function CreateResourceModal({ onBack, onSaveExam, initialExam }) {
+  const navigate = useNavigate();
   const [examTitle, setExamTitle] = useState(initialExam?.title || 'Bài Quiz không có tiêu đề');
   const [subject, setSubject] = useState(initialExam?.subject || 'Khoa học Xã hội');
   const [level, setLevel] = useState(initialExam?.level || initialExam?.difficulty || 'Đại học');
@@ -598,26 +600,13 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
     }
   };
 
-  // Khi bấm nút quay lại ArrowLeft -> cũng lưu lại đề thi nếu đã có câu hỏi
-  const handleBackWithSave = async () => {
-    if (onSaveExam && questions.length > 0) {
-      const savedExam = {
-        ...initialExam,
-        id: initialExam?.id || `exam-${Date.now()}`,
-        title: examTitle.trim() || 'Bài Quiz không có tiêu đề',
-        subject: subject || 'Khoa học',
-        level: level || 'Đại học',
-        difficulty: level || 'Đại học',
-        duration: Number(duration) || 30,
-        durationMinutes: Number(duration) || 30,
-        shuffleQuestions: Boolean(shuffleQuestions),
-        shuffleAnswers: Boolean(shuffleAnswers),
-        totalQuestions: questions.length,
-        questions
-      };
-      await onSaveExam(savedExam);
+  // Nút quay lại: Quay lại ngay lập tức và KHÔNG lưu thay đổi
+  const handleBackWithoutSave = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      navigate(-1);
     }
-    if (onBack) onBack();
   };
 
   return (
@@ -625,11 +614,12 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
       {/* 1. TOPBAR CHUẨN THEO ẢNH NGƯỜI DÙNG CUNG CẤP */}
       <header className="bg-white border-b border-slate-200 px-3 sm:px-6 py-2.5 flex items-center justify-between sticky top-0 z-30 shadow-2xs">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-          {/* Nút quay lại bo tròn viền xám mỏng */}
+          {/* Nút quay lại bo tròn viền xám mỏng - KHÔNG LƯU THAY ĐỔI */}
           <button 
-            onClick={handleBackWithSave}
-            className="w-8 h-8 rounded-lg border border-slate-200 hover:border-slate-300 bg-white flex items-center justify-center text-slate-600 hover:text-slate-900 transition-colors shadow-2xs shrink-0"
-            title="Quay lại danh sách"
+            type="button"
+            onClick={handleBackWithoutSave}
+            className="w-8 h-8 rounded-lg border border-slate-200 hover:border-slate-300 hover:bg-slate-50 bg-white flex items-center justify-center text-slate-600 hover:text-slate-900 transition-colors shadow-2xs shrink-0 cursor-pointer"
+            title="Quay lại (Không lưu thay đổi)"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
