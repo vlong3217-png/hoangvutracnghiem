@@ -211,40 +211,10 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
           
           <nav className="space-y-1">
             <button
-              onClick={() => navigate('/manage/create')}
-              className="w-full flex items-center gap-3 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition-colors text-left"
-            >
-              <Edit3 className="w-4 h-4 text-slate-500" />
-              <span>Tạo</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('history')}
-              className={`w-full flex items-center gap-3 px-3 py-2 text-xs font-medium rounded-xl transition-colors text-left ${
-                activeTab === 'history' ? 'bg-slate-100 text-slate-900 font-bold' : 'text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <Clock className="w-4 h-4 text-slate-400" />
-              <span>Trước đây đã sử dụng</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('shared')}
-              className={`w-full flex items-center gap-3 px-3 py-2 text-xs font-medium rounded-xl transition-colors text-left ${
-                activeTab === 'shared' ? 'bg-slate-100 text-slate-900 font-bold' : 'text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <Share className="w-4 h-4 text-slate-400" />
-              <span>Được chia sẻ với tôi</span>
-            </button>
-
-            <button
               onClick={() => setActiveTab('all')}
-              className={`w-full flex items-center gap-3 px-3 py-2 text-xs font-medium rounded-xl transition-colors text-left ${
-                activeTab === 'all' ? 'bg-slate-100 text-slate-900 font-bold' : 'text-slate-600 hover:bg-slate-50'
-              }`}
+              className="w-full flex items-center gap-3 px-3 py-2 text-xs font-bold bg-slate-100 text-slate-900 rounded-xl transition-colors text-left"
             >
-              <LayoutGrid className="w-4 h-4 text-slate-400" />
+              <LayoutGrid className="w-4 h-4 text-slate-600" />
               <span>Tất cả các hoạt động</span>
             </button>
           </nav>
@@ -254,42 +224,6 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
 
       {/* VÙNG NỘI DUNG CHÍNH (BÊN PHẢI) */}
       <main className="flex-1 p-3.5 sm:p-6 lg:p-8 max-w-6xl w-full min-w-0">
-        {/* THANH CHUYỂN TAB TRÊN DI ĐỘNG */}
-        <div className="flex md:hidden items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none mb-3">
-          <button
-            onClick={() => setActiveTab('created')}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-              activeTab === 'created' ? 'bg-[#d82a7a] text-white shadow-2xs' : 'bg-white text-slate-600 border border-slate-200'
-            }`}
-          >
-            Đã tạo ({exams.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('history')}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-              activeTab === 'history' ? 'bg-[#d82a7a] text-white shadow-2xs' : 'bg-white text-slate-600 border border-slate-200'
-            }`}
-          >
-            Đã sử dụng
-          </button>
-          <button
-            onClick={() => setActiveTab('shared')}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-              activeTab === 'shared' ? 'bg-[#d82a7a] text-white shadow-2xs' : 'bg-white text-slate-600 border border-slate-200'
-            }`}
-          >
-            Được chia sẻ
-          </button>
-          <button
-            onClick={() => setActiveTab('all')}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-              activeTab === 'all' ? 'bg-[#d82a7a] text-white shadow-2xs' : 'bg-white text-slate-600 border border-slate-200'
-            }`}
-          >
-            Tất cả
-          </button>
-        </div>
-
         {/* THANH TÌM KIẾM BO TRÒN TRÊN CÙNG */}
         <div className="relative mb-4 sm:mb-8">
           <Search className="w-4 h-4 text-slate-400 absolute left-4 top-3" />
@@ -303,30 +237,16 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
         </div>
 
         {/* TIÊU ĐỀ SECTION & NÚT THÊM TÀI NGUYÊN MÀU HỒNG CÁNH SEN */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-6">
           <h1 className="text-base sm:text-xl font-bold text-slate-900 tracking-tight truncate">Được tạo bởi tôi</h1>
           
           <button
             onClick={() => navigate('/manage/create')}
-            className="px-3 sm:px-4 py-2 bg-[#d82a7a] hover:bg-[#c2226b] text-white text-xs font-bold rounded-lg flex items-center gap-1.5 shadow-xs transition-colors"
+            className="px-3 sm:px-4 py-2 bg-[#d82a7a] hover:bg-[#c2226b] text-white text-xs font-bold rounded-lg flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Thêm tài nguyên</span>
             <ChevronDown className="w-3.5 h-3.5 opacity-80" />
-          </button>
-        </div>
-
-        {/* PILL LỌC ĐÃ TẠO (X/50) */}
-        <div className="hidden md:block mb-6">
-          <button 
-            onClick={() => setActiveTab('created')}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-              activeTab === 'created'
-                ? 'bg-white border-slate-300 text-slate-800 shadow-2xs'
-                : 'bg-transparent border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            {isLoading ? 'Đang tải...' : `Đã tạo (${exams.length}/50)`}
           </button>
         </div>
 
