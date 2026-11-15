@@ -23,8 +23,7 @@ import {
   fetchClasses, 
   createClassApi, 
   updateClassApi, 
-  deleteClassApi,
-  addStudentsToClassApi 
+  deleteClassApi
 } from '../services/api';
 
 export default function ClassList({ onSelectClass }) {
@@ -47,8 +46,6 @@ export default function ClassList({ onSelectClass }) {
 
   // Modal Nhập từ Excel
   const [showExcelModal, setShowExcelModal] = useState(false);
-  const [excelTargetMode, setExcelTargetMode] = useState('existing'); // 'existing' | 'new'
-  const [excelTargetClassId, setExcelTargetClassId] = useState('');
   const [excelNewClassName, setExcelNewClassName] = useState('');
   const [parsedStudents, setParsedStudents] = useState([]);
   const [excelFileName, setExcelFileName] = useState('');
@@ -80,9 +77,6 @@ export default function ClassList({ onSelectClass }) {
       const data = await fetchClasses();
       if (Array.isArray(data)) {
         setClasses(data);
-        if (data.length > 0 && !excelTargetClassId) {
-          setExcelTargetClassId(data[0].id);
-        }
       }
     } catch (err) {
       console.error('Lỗi khi tải danh sách lớp học:', err);
@@ -343,8 +337,13 @@ export default function ClassList({ onSelectClass }) {
     }
   };
 
-  // Xác nhận nhập sinh viên từ Excel vào hệ thống CSDL
+  // Xác nhận tạo lớp mới và nhập sinh viên từ Excel vào hệ thống CSDL
   const handleConfirmImportExcel = async () => {
+    if (!excelNewClassName.trim()) {
+      alert('Vui lòng nhập tên lớp học mới!');
+      return;
+    }
+
     if (parsedStudents.length === 0) {
       alert('Chưa có danh sách sinh viên nào được phân tích từ Excel!');
       return;
@@ -352,52 +351,22 @@ export default function ClassList({ onSelectClass }) {
 
     try {
       setIsSubmitting(true);
-      let targetId = excelTargetClassId;
-
-      // Nếu người dùng chọn Tạo lớp mới từ tệp Excel
-      if (excelTargetMode === 'new') {
-        if (!excelNewClassName.trim()) {
-          alert('Vui lòng nhập tên lớp học mới!');
-          return;
-        }
-
-        const createRes = await createClassApi({
-          name: excelNewClassName.trim(),
-          description: `Nhập từ tệp ${excelFileName} (${parsedStudents.length} sinh viên)`,
-          color: colorPalette[Math.floor(Math.random() * colorPalette.length)].value,
-          students: parsedStudents
-        });
-
-        if (createRes.success) {
-          setShowExcelModal(false);
-          setParsedStudents([]);
-          setExcelFileName('');
-          await loadClasses();
-          alert(`🎉 Đã tạo lớp "${excelNewClassName}" và nhập thành công ${parsedStudents.length} sinh viên vào CSDL Neon!`);
-          return;
-        } else {
-          throw new Error(createRes.message || 'Lỗi khi tạo lớp mới');
-        }
-      }
-
-      // Nếu chọn nhập vào lớp đã có sẵn (vd: CNTT K23A)
-      if (!targetId) {
-        alert('Vui lòng chọn lớp học cần nhập sinh viên!');
-        return;
-      }
-
-      const addRes = await addStudentsToClassApi(targetId, {
+      const createRes = await createClassApi({
+        name: excelNewClassName.trim(),
+        description: `Tạo từ tệp Excel: ${excelFileName} (${parsedStudents.length} sinh viên)`,
+        color: colorPalette[Math.floor(Math.random() * colorPalette.length)].value,
         students: parsedStudents
       });
 
-      if (addRes.success) {
+      if (createRes.success) {
         setShowExcelModal(false);
         setParsedStudents([]);
         setExcelFileName('');
+        setExcelNewClassName('');
         await loadClasses();
-        alert(`🎉 Đã nhập thành công ${parsedStudents.length} sinh viên vào lớp học trên CSDL Neon!`);
+        alert(`🎉 Đã tạo lớp "${excelNewClassName}" và nhập thành công ${parsedStudents.length} sinh viên vào CSDL Neon!`);
       } else {
-        throw new Error(addRes.message || 'Lỗi khi thêm sinh viên vào lớp');
+        throw new Error(createRes.message || 'Lỗi khi tạo lớp mới từ Excel');
       }
     } catch (err) {
       alert('Lỗi: ' + err.message);
@@ -640,7 +609,7 @@ export default function ClassList({ onSelectClass }) {
                   <FileSpreadsheet className="w-4 h-4" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-bold text-slate-900">Nhập sinh viên từ tệp Excel</h2>
+                  <h2 className="text-sm font-bold text-slate-900">Tạo lớp học mới từ tệp Excel</h2>
                   <p className="text-[11px] text-slate-500">Định dạng chuẩn 3 cột: Mã sinh viên - Họ và tên - Ngày tháng năm sinh</p>
                 </div>
               </div>
@@ -653,80 +622,19 @@ export default function ClassList({ onSelectClass }) {
             </div>
 
             <div className="p-5 overflow-y-auto space-y-4 flex-1">
-              {/* 1. Chọn đích đến: Lớp học có sẵn hay Tạo lớp mới */}
-              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-                <label className="block text-xs font-bold text-slate-800 mb-2">
-                  Lựa chọn đích đến:
+              {/* Nhập tên lớp học mới */}
+              <div>
+                <label className="block text-xs font-bold text-slate-800 mb-1.5">
+                  Tên lớp học mới: <span className="text-rose-500">*</span>
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <label className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-colors ${
-                    excelTargetMode === 'existing' ? 'bg-white border-[#d82a7a] shadow-xs' : 'border-slate-200 hover:bg-white'
-                  }`}>
-                    <input
-                      type="radio"
-                      name="excelTargetMode"
-                      checked={excelTargetMode === 'existing'}
-                      onChange={() => setExcelTargetMode('existing')}
-                      className="text-[#d82a7a] focus:ring-[#d82a7a]"
-                    />
-                    <div className="text-xs">
-                      <div className="font-bold text-slate-900">Nhập vào lớp đã có</div>
-                      <div className="text-[10px] text-slate-400">Chọn lớp có sẵn trong danh sách</div>
-                    </div>
-                  </label>
-
-                  <label className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-colors ${
-                    excelTargetMode === 'new' ? 'bg-white border-[#d82a7a] shadow-xs' : 'border-slate-200 hover:bg-white'
-                  }`}>
-                    <input
-                      type="radio"
-                      name="excelTargetMode"
-                      checked={excelTargetMode === 'new'}
-                      onChange={() => setExcelTargetMode('new')}
-                      className="text-[#d82a7a] focus:ring-[#d82a7a]"
-                    />
-                    <div className="text-xs">
-                      <div className="font-bold text-slate-900">Tạo lớp học mới</div>
-                      <div className="text-[10px] text-slate-400">Tạo lớp và thêm sinh viên ngay</div>
-                    </div>
-                  </label>
-                </div>
-
-                {/* Chọn lớp có sẵn */}
-                {excelTargetMode === 'existing' && (
-                  <div className="mt-3">
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                      Chọn lớp học tiếp nhận:
-                    </label>
-                    <select
-                      value={excelTargetClassId}
-                      onChange={(e) => setExcelTargetClassId(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-[#d82a7a]"
-                    >
-                      {classes.map(c => (
-                        <option key={c.id} value={c.id}>
-                          {c.name} ({c.student_count || 0} sinh viên)
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                {/* Nhập tên lớp mới */}
-                {excelTargetMode === 'new' && (
-                  <div className="mt-3">
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                      Tên lớp học mới:
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="VD: CNTT K23A, Kế toán K24..."
-                      value={excelNewClassName}
-                      onChange={(e) => setExcelNewClassName(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-[#d82a7a]"
-                    />
-                  </div>
-                )}
+                <input
+                  type="text"
+                  placeholder="VD: CNTT K23A, Kế toán K24..."
+                  value={excelNewClassName}
+                  onChange={(e) => setExcelNewClassName(e.target.value)}
+                  className="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-[#d82a7a] focus:ring-1 focus:ring-[#d82a7a] transition-all"
+                  required
+                />
               </div>
 
               {/* 2. Vùng Tải tệp Excel hoặc Tải file mẫu */}
@@ -842,7 +750,7 @@ export default function ClassList({ onSelectClass }) {
                 {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 <span>
                   {parsedStudents.length > 0 
-                    ? `Xác nhận nhập ${parsedStudents.length} sinh viên`
+                    ? `Tạo lớp và Nhập ${parsedStudents.length} sinh viên`
                     : 'Chọn tệp Excel để nhập'}
                 </span>
               </button>
