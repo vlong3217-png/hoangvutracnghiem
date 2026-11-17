@@ -205,11 +205,12 @@ Hệ thống hỗ trợ 7 dạng câu hỏi sau:
    - "options": [{ "id": "A", "text": "..." }, ...]
    - "correctAnswer": ["A", "C"]
 
-3. "true_false_multi": Đúng/Sai theo từng ý (thường có tiêu đề "Chọn đáp án Đúng hoặc Sai...", "Các phát biểu sau đúng hay sai", và các ý 1, 2, 3... hoặc a, b, c... kèm Đúng / Sai).
-   - "question": "Tiêu đề câu hỏi..."
+3. "true_false_multi": Dạng câu hỏi "Đoạn văn" (Đoạn văn đọc hiểu hoặc tình huống, gồm các ý con: Đúng/Sai hoặc Điền vào chỗ trống).
+   - "question": "Nội dung đoạn văn đọc hiểu hoặc câu hỏi tình huống chung..."
    - "parts": [
-       { "id": "1", "text": "Nội dung phát biểu 1", "isCorrect": true },
-       { "id": "2", "text": "Nội dung phát biểu 2", "isCorrect": false }
+       { "id": "A", "type": "true_false", "text": "Nội dung phát biểu 1", "isCorrect": true },
+       { "id": "B", "type": "true_false", "text": "Nội dung phát biểu 2", "isCorrect": false },
+       { "id": "C", "type": "fill_blank", "text": "Từ hoặc số còn thiếu trong câu là...", "correctAnswer": "từ khóa" }
      ]
 
 4. "drag_drop": Kéo thả ghép nối / Ghép đáp án tương ứng (thường có bảng 2 cột ghép cặp vế câu - đáp án, hoặc tiêu đề "Kéo thả các đáp án đúng tương ứng...").
@@ -256,7 +257,7 @@ Trả về DUY NHẤT một mảng JSON các object theo cấu trúc trên (khô
 ]
 
 Lưu ý:
-- Phân tích cẩn thận các dạng Đúng/Sai (true_false_multi), Kéo thả ghép nối (drag_drop) và Phân loại vào cột (categorize) theo đúng cấu trúc mẫu ở trên.
+- Phân tích cẩn thận các dạng Đoạn văn (true_false_multi: có thể gồm các ý Đúng/Sai hoặc Điền vào chỗ trống), Kéo thả ghép nối (drag_drop) và Phân loại vào cột (categorize) theo đúng cấu trúc mẫu ở trên.
 - Giữ nguyên nội dung và văn phong câu hỏi.
 
 Nội dung tài liệu cần phân tích:

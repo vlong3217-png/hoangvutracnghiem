@@ -27,8 +27,17 @@ export function evaluateUserAnswers(questions = [], selectedAnswers = {}) {
       const subAns = typeof userAns === 'object' && userAns !== null ? userAns : {};
       const parts = q.parts || [];
       const correctParts = parts.filter(p => {
-        const expected = p.isCorrect !== undefined ? Boolean(p.isCorrect) : (p.correct !== undefined ? Boolean(p.correct) : true);
-        return subAns[p.id] !== undefined && Boolean(subAns[p.id]) === expected;
+        const isFill = p.type === 'fill_blank' || (p.correctAnswer !== undefined && p.correctAnswer !== '' && p.type !== 'true_false');
+        if (isFill) {
+          const userVal = String(subAns[p.id] || '').trim().toLowerCase();
+          const accepted = Array.isArray(p.correctAnswer)
+            ? p.correctAnswer.map(c => String(c).trim().toLowerCase())
+            : String(p.correctAnswer || '').split(/[,|]/).map(c => c.trim().toLowerCase()).filter(Boolean);
+          return userVal.length > 0 && accepted.includes(userVal);
+        } else {
+          const expected = p.isCorrect !== undefined ? Boolean(p.isCorrect) : (p.correct !== undefined ? Boolean(p.correct) : true);
+          return subAns[p.id] !== undefined && Boolean(subAns[p.id]) === expected;
+        }
       });
       isCorrect = parts.length > 0 && correctParts.length === parts.length;
     } else if (q.type === 'short_answer' || q.type === 'fill_blank') {

@@ -145,11 +145,12 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
     }
   };
 
-  // STATE DÀNH CHO DẠNG ĐÚNG/SAI NHIỀU PHẦN (A, B, C, D)
+  // STATE DÀNH CHO DẠNG ĐOẠN VĂN (A, B, C, D: ĐÚNG/SAI HOẶC ĐIỀN CHỖ TRỐNG)
   // activePartId: 'A' | 'B' | 'C' | 'D'
   const [activePartId, setActivePartId] = useState('A');
-  // multiTfAnswers: { [partId]: true | false }
+  // multiTfAnswers: { [partId]: true | false | string }
   const [multiTfAnswers, setMultiTfAnswers] = useState({});
+  const [partInputText, setPartInputText] = useState('');
 
   // STATE DÀNH CHO DẠNG PHÂN LOẠI VÀO CỘT (Categorize)
   const [columnAssignments, setColumnAssignments] = useState({});
@@ -228,6 +229,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
   useEffect(() => {
     setShowInstantAnswer(false);
     setAnsweredState(null);
+    setPartInputText('');
     setMultiSelectedOpts(Array.isArray(selectedAnswers[currentQ.id]) ? selectedAnswers[currentQ.id] : []);
 
     if (currentQ.type === 'true_false_multi' || currentQ.type === 'true_false') {
@@ -369,14 +371,68 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
     }, 2000);
   };
 
-  // Chuyển sang phần tiếp theo hoặc câu tiếp theo khi hết 2 giây ở Đúng/Sai
+  // -------------------------------------------------------------
+  // XỬ LÝ DẠNG ĐOẠN VĂN: PHẦN CON ĐIỀN VÀO CHỖ TRỐNG
+  // -------------------------------------------------------------
+  const handleSelectFillBlankPart = (partId, textVal) => {
+    if (answeredState || !textVal || !textVal.trim()) return;
+
+    const partObj = (currentQ.parts || []).find(p => p.id === partId);
+    if (!partObj) return;
+
+    const expected = partObj.correctAnswer || '';
+    const acceptedAnswers = Array.isArray(expected)
+      ? expected.map(s => String(s).trim().toLowerCase())
+      : String(expected).split(/[,|]/).map(s => s.trim().toLowerCase()).filter(Boolean);
+
+    const isPartCorrect = acceptedAnswers.some(ans => ans === textVal.trim().toLowerCase());
+
+    const updated = {
+      ...multiTfAnswers,
+      [partId]: textVal.trim()
+    };
+    setMultiTfAnswers(updated);
+    selectedAnswersRef.current = { ...selectedAnswersRef.current, [currentQ.id]: updated };
+    setSelectedAnswers(prev => ({ ...prev, [currentQ.id]: updated }));
+
+    setAnsweredState({
+      isCorrect: isPartCorrect,
+      isPartStep: true,
+      answeredPartId: partId,
+      correctWord: Array.isArray(expected) ? expected[0] : expected
+    });
+
+    if (isPartCorrect) {
+      playSound(true);
+      recordOutcome(true);
+      setScore(prev => {
+        const next = prev + 150;
+        scoreRef.current = next;
+        return next;
+      });
+      try {
+        confetti({ particleCount: 35, spread: 50, origin: { y: 0.7 } });
+      } catch (e) { }
+    } else {
+      playSound(false);
+      recordOutcome(false);
+    }
+
+    setTimeout(() => {
+      setPartInputText('');
+      handleNextPartOrQuestion(partId);
+    }, 2000);
+  };
+
+  // Chuyển sang phần tiếp theo hoặc câu tiếp theo khi hết 2 giây ở Đoạn văn
   const handleNextPartOrQuestion = (currentPart = activePartId) => {
     const parts = currentQ.parts || [];
     const currentPartIndex = parts.findIndex(p => p.id === currentPart);
 
-    // Nếu còn phần con tiếp theo trong câu Đúng/Sai (A -> B -> C -> D)
+    // Nếu còn phần con tiếp theo trong câu Đoạn văn (A -> B -> C -> D)
     if (currentPartIndex < parts.length - 1) {
       setActivePartId(parts[currentPartIndex + 1].id);
+      setPartInputText('');
       setAnsweredState(null); // Reset footer để làm tiếp phần mới
     } else {
       // Đã xong phần cuối cùng (D) -> Chuyển sang câu hỏi tiếp theo của đề thi
@@ -926,7 +982,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
 
           <span className="flex items-center gap-1 px-2 py-0.5 sm:px-3 sm:py-1 bg-white/5 border border-white/10 text-slate-200 font-bold text-[11px] sm:text-xs rounded-lg shadow-sm">
             {(currentQ.type === 'true_false_multi' || currentQ.type === 'true_false')
-              ? 'Đúng / Sai'
+              ? 'Đoạn văn'
               : currentQ.type === 'categorize'
                 ? 'Phân loại'
                 : currentQ.type === 'drag_drop'
@@ -1052,11 +1108,16 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
             </div>
 
             {/* Pill nhỏ ngăn cách: Phần 1 / Phần 2 / Phần 3 / Phần 4 */}
-            <div className="flex justify-center -my-1 sm:-my-2 relative z-10">
-              <span className="px-4 py-1 sm:px-5 sm:py-1.5 rounded-full bg-[#4a1240]/80 backdrop-blur-xs border border-white/20 text-xs sm:text-sm font-semibold text-slate-100 tracking-wider shadow-md">
-                Phần {activePartIndex >= 0 ? activePartIndex + 1 : 1}
-              </span>
-            </div>
+            {(() => {
+              const isFillBlankPart = activePartObj?.type === 'fill_blank' || (activePartObj?.correctAnswer !== undefined && activePartObj?.correctAnswer !== '' && activePartObj?.type !== 'true_false');
+              return (
+                <div className="flex justify-center -my-1 sm:-my-2 relative z-10">
+                  <span className="px-4 py-1 sm:px-5 sm:py-1.5 rounded-full bg-[#4a1240]/80 backdrop-blur-xs border border-white/20 text-xs sm:text-sm font-semibold text-slate-100 tracking-wider shadow-md">
+                    Phần {activePartIndex >= 0 ? activePartIndex + 1 : 1} {isFillBlankPart ? '• Điền vào chỗ trống' : '• Đúng / Sai'}
+                  </span>
+                </div>
+              );
+            })()}
 
             {/* Box 2: NỘI DUNG CÂU PHÁT BIỂU CỤ THỂ CỦA PHẦN ĐANG CHỌN */}
             <div className="bg-black/35 backdrop-blur-md border border-white/15 rounded-2xl sm:rounded-3xl p-5 sm:p-10 text-center shadow-2xl flex items-center justify-center min-h-[100px] sm:min-h-[160px] flex-1">
@@ -1065,18 +1126,52 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
               </p>
             </div>
 
-            {/* Box 3: 2 NÚT ĐÁP ÁN LỚN: [ĐÚNG] VÀ [SAI] MỞ RỘNG TOÀN DIỆN */}
+            {/* Box 3: GIAO DIỆN TRẢ LỜI CHO Ý ĐANG CHỌN (ĐIỀN VÀO CHỖ TRỐNG HOẶC NÚT ĐÚNG / SAI) */}
             {(() => {
               const currentPartKey = activePartObj?.id || activePartId;
+              const isFillBlankPart = activePartObj?.type === 'fill_blank' || (activePartObj?.correctAnswer !== undefined && activePartObj?.correctAnswer !== '' && activePartObj?.type !== 'true_false');
+
+              if (isFillBlankPart) {
+                const userSelectedText = multiTfAnswers[currentPartKey] || '';
+                return (
+                  <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-2xl mx-auto shrink-0">
+                    <input
+                      type="text"
+                      disabled={Boolean(answeredState)}
+                      value={answeredState ? (userSelectedText || partInputText) : partInputText}
+                      onChange={(e) => setPartInputText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && partInputText.trim() && !answeredState) {
+                          handleSelectFillBlankPart(currentPartKey, partInputText);
+                        }
+                      }}
+                      placeholder="Nhập câu trả lời điền vào chỗ trống..."
+                      className={`w-full h-16 sm:h-20 px-6 rounded-2xl bg-black/40 border-2 text-white text-lg sm:text-2xl font-bold focus:outline-none shadow-inner placeholder-white/40 transition-all ${
+                        answeredState
+                          ? answeredState.isCorrect
+                            ? 'border-[#1cb059] bg-[#1cb059]/20'
+                            : 'border-[#e53e3e] bg-[#e53e3e]/20'
+                          : 'border-white/20 focus:border-pink-500'
+                      }`}
+                    />
+                    <button
+                      disabled={Boolean(answeredState) || !partInputText.trim()}
+                      onClick={() => handleSelectFillBlankPart(currentPartKey, partInputText)}
+                      className="w-full sm:w-auto px-8 h-16 sm:h-20 rounded-2xl bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-black text-lg sm:text-xl shadow-xl transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0 active:scale-[0.98]"
+                    >
+                      <span>XÁC NHẬN</span>
+                      <Check className="w-6 h-6 stroke-[3]" />
+                    </button>
+                  </div>
+                );
+              }
+
               const userSelectedVal = multiTfAnswers[currentPartKey]; // true | false | undefined
               const expectedVal = activePartObj?.isCorrect !== undefined
                 ? Boolean(activePartObj.isCorrect)
                 : (activePartObj?.correct !== undefined ? Boolean(activePartObj.correct) : true);
 
               // Xử lý màu sắc khi đã có kết quả answeredState (giống hệt dạng trắc nghiệm 4 đáp án):
-              // - Ô người dùng chọn: nếu đúng thì xanh lá (#1cb059), nếu sai thì đỏ (#e53e3e)
-              // - Ô đáp án đúng mà người dùng không chọn: sáng xanh lá (#1cb059) để người học biết
-              // - Ô còn lại: mờ đi (opacity-35)
               let trueBtnBg = 'bg-[#9cb800] hover:bg-[#8ca500] border-transparent';
               let falseBtnBg = 'bg-[#9b51e0] hover:bg-[#8c40d1] border-transparent';
               let trueExtra = '';
@@ -1745,12 +1840,16 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
             {answeredState.isCorrect ? (
               <>
                 <Check className="w-5 h-5 sm:w-7 sm:h-7 stroke-[3.5]" />
-                <span>Câu đúng</span>
+                <span>{answeredState.isPartStep ? 'Ý đúng' : 'Câu đúng'}</span>
               </>
             ) : (
               <>
                 <X className="w-5 h-5 sm:w-7 sm:h-7 stroke-[3.5]" />
-                <span>Câu sai</span>
+                <span>
+                  {answeredState.correctWord
+                    ? `Chưa đúng! Đáp án: ${answeredState.correctWord}`
+                    : (answeredState.isPartStep ? 'Ý sai' : 'Câu sai')}
+                </span>
               </>
             )}
           </div>

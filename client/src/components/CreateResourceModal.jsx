@@ -219,25 +219,34 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
       );
     }
 
-    // 2. Đúng / Sai theo ý (true_false_multi)
+    // 2. Dạng Đoạn văn (true_false_multi: gồm Đúng / Sai & Điền vào chỗ trống)
     if (q.parts && Array.isArray(q.parts)) {
       return (
         <div className="mt-3 space-y-2 pl-0 sm:pl-9">
-          {q.parts.map((part, pIdx) => (
-            <div key={pIdx} className="p-2.5 rounded-xl bg-white border border-slate-200 flex items-center justify-between text-xs shadow-2xs">
-              <div className="flex items-center gap-2.5">
-                <span className="font-bold text-slate-500 w-5 h-5 rounded-md bg-slate-100 flex items-center justify-center text-[11px]">
-                  {part.id || String.fromCharCode(97 + pIdx)}
-                </span>
-                <span className="text-slate-800">{part.text}</span>
+          {q.parts.map((part, pIdx) => {
+            const isFill = part.type === 'fill_blank' || (part.correctAnswer !== undefined && part.correctAnswer !== '' && part.type !== 'true_false');
+            return (
+              <div key={pIdx} className="p-2.5 rounded-xl bg-white border border-slate-200 flex items-center justify-between text-xs shadow-2xs">
+                <div className="flex items-center gap-2.5">
+                  <span className="font-bold text-slate-500 w-5 h-5 rounded-md bg-slate-100 flex items-center justify-center text-[11px]">
+                    {part.id || String.fromCharCode(97 + pIdx)}
+                  </span>
+                  <span className="text-slate-800">{part.text}</span>
+                </div>
+                {isFill ? (
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    Điền: {part.correctAnswer || '(Chưa có)'}
+                  </span>
+                ) : (
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                    part.isCorrect ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-rose-100 text-rose-700 border border-rose-200'
+                  }`}>
+                    {part.isCorrect ? 'ĐÚNG' : 'SAI'}
+                  </span>
+                )}
               </div>
-              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                part.isCorrect ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-rose-100 text-rose-700 border border-rose-200'
-              }`}>
-                {part.isCorrect ? 'ĐÚNG' : 'SAI'}
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       );
     }
@@ -340,14 +349,14 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
     },
     {
       id: 'true_false_multi',
-      name: 'Đúng / Sai theo ý',
-      tag: 'Chuẩn Bộ GD&ĐT',
+      name: 'Đoạn văn',
+      tag: 'Đọc hiểu & Phân tích',
       color: 'bg-purple-500',
       icon: ToggleLeft,
-      desc: 'Mỗi câu hỏi có nhiều ý nhỏ a), b), c), d). Thí sinh phải xác định từng ý là Đúng hay Sai.',
+      desc: 'Câu hỏi dựa trên một đoạn văn bản. Các ý con bên dưới có thể chọn dạng Đúng/Sai hoặc Điền vào chỗ trống.',
       preview: {
-        q: 'Nhận định về giao thức HTTP:',
-        opts: ['a) Chạy trên cổng 80: ĐÚNG', 'b) Mã hóa mặc định: SAI', 'c) Là giao thức phi trạng thái: ĐÚNG']
+        q: 'Đọc đoạn văn và hoàn thành các ý:',
+        opts: ['a) Nhận định 1: ĐÚNG', 'b) Nhận định 2: SAI', 'c) Điền từ: [1930]']
       }
     },
     {
@@ -459,10 +468,10 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
       newQ.correctAnswer = ['A', 'B'];
     } else if (typeId === 'true_false_multi') {
       newQ.parts = [
-        { id: 'A', text: 'Mệnh đề 1', isCorrect: true },
-        { id: 'B', text: 'Mệnh đề 2', isCorrect: false },
-        { id: 'C', text: 'Mệnh đề 3', isCorrect: true },
-        { id: 'D', text: 'Mệnh đề 4', isCorrect: false }
+        { id: 'A', type: 'true_false', text: 'Mệnh đề phát biểu 1', isCorrect: true },
+        { id: 'B', type: 'true_false', text: 'Mệnh đề phát biểu 2', isCorrect: false },
+        { id: 'C', type: 'fill_blank', text: 'Điền từ còn thiếu vào vị trí này...', correctAnswer: 'đáp án mẫu' },
+        { id: 'D', type: 'true_false', text: 'Mệnh đề phát biểu 4', isCorrect: true }
       ];
     } else if (typeId === 'categorize') {
       newQ.categories = [
@@ -875,7 +884,7 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
                             </span>
                           )}
                           <span className="text-[10px] text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded-full shrink-0 font-medium">
-                            {q.type === 'multiple' ? 'Chọn nhiều đáp án đúng' : q.type === 'true_false_multi' || q.type === 'true_false' ? 'Đúng / Sai theo ý' : q.type === 'essay' ? 'Tự luận' : q.type === 'categorize' ? 'Phân loại vào cột' : q.type === 'drag_drop' ? 'Kéo thả khớp câu / Ghép nối' : q.type === 'short_answer' ? 'Điền từ / Trả lời ngắn' : 'Chọn 1 đáp án'}
+                            {q.type === 'multiple' ? 'Chọn nhiều đáp án đúng' : q.type === 'true_false_multi' || q.type === 'true_false' ? 'Đoạn văn' : q.type === 'essay' ? 'Tự luận' : q.type === 'categorize' ? 'Phân loại vào cột' : q.type === 'drag_drop' ? 'Kéo thả khớp câu / Ghép nối' : q.type === 'short_answer' ? 'Điền từ / Trả lời ngắn' : 'Chọn 1 đáp án'}
                           </span>
                         </div>
                       </div>

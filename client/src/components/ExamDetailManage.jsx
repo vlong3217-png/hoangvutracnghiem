@@ -34,7 +34,7 @@ const getQuestionTypeName = (type) => {
       return 'Chọn nhiều đáp án đúng';
     case 'true_false':
     case 'true_false_multi':
-      return 'Đúng / Sai theo ý';
+      return 'Đoạn văn';
     case 'categorize':
       return 'Phân loại vào cột';
     case 'drag_drop':
@@ -870,21 +870,33 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
                     </div>
                   )}
 
-                  {/* ĐÚNG / SAI THEO Ý */}
+                  {/* DẠNG ĐOẠN VĂN (ĐÚNG/SAI HOẶC ĐIỀN CHỖ TRỐNG) */}
                   {(q.type === 'true_false' || q.type === 'true_false_multi') && q.parts && (
                     <div className="space-y-2 pt-2 text-xs sm:text-sm">
-                      {q.parts.map((part, pIdx) => (
-                        <div key={pIdx} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
-                          <span className="text-slate-800">{part.id || String.fromCharCode(97 + pIdx)}. {part.text}</span>
-                          {showAnswer && (
-                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                              part.isCorrect ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-rose-100 text-rose-700 border border-rose-200'
-                            }`}>
-                              {part.isCorrect ? 'ĐÚNG' : 'SAI'}
-                            </span>
-                          )}
-                        </div>
-                      ))}
+                      {q.parts.map((part, pIdx) => {
+                        const isFill = part.type === 'fill_blank' || (part.correctAnswer !== undefined && part.correctAnswer !== '' && part.type !== 'true_false');
+                        return (
+                          <div key={pIdx} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2 flex-1">
+                              <span className="font-semibold text-slate-800">{part.id || String.fromCharCode(97 + pIdx)}.</span>
+                              <span className="text-slate-700">{part.text}</span>
+                            </div>
+                            {showAnswer && (
+                              isFill ? (
+                                <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
+                                  Điền: <strong className="font-bold">{part.correctAnswer || '(Chưa đặt)'}</strong>
+                                </span>
+                              ) : (
+                                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                                  part.isCorrect ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-rose-100 text-rose-700 border border-rose-200'
+                                }`}>
+                                  {part.isCorrect ? 'ĐÚNG' : 'SAI'}
+                                </span>
+                              )
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
 

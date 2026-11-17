@@ -59,12 +59,12 @@ const QUESTION_TYPES = [
   },
   {
     id: 'true_false_multi',
-    name: 'Đúng / Sai theo ý',
-    tag: 'Chuẩn Bộ GD&ĐT',
+    name: 'Đoạn văn',
+    tag: 'Đọc hiểu & Phân tích',
     badgeColor: 'bg-purple-100 text-purple-800',
     icon: Eye,
     iconColor: 'bg-purple-600 text-white',
-    desc: 'Mỗi câu có nhiều ý nhỏ a), b), c), d). Thí sinh phải xác định Đúng hoặc Sai cho từng ý.'
+    desc: 'Đoạn văn ngữ cảnh đi kèm các ý câu hỏi con theo dạng Đúng/Sai hoặc Điền vào chỗ trống.'
   },
   {
     id: 'categorize',
@@ -203,17 +203,24 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
   );
   const [isVerticalLayout, setIsVerticalLayout] = useState(false);
 
-  // Trạng thái cho dạng Đúng/Sai theo ý (true_false_multi)
-  const [tfParts, setTfParts] = useState(
-    question.parts && question.parts.length > 0
-      ? question.parts
-      : [
-        { id: 'A', text: 'Mệnh đề 1', isCorrect: true },
-        { id: 'B', text: 'Mệnh đề 2', isCorrect: false },
-        { id: 'C', text: 'Mệnh đề 3', isCorrect: true },
-        { id: 'D', text: 'Mệnh đề 4', isCorrect: false }
-      ]
-  );
+  // Trạng thái cho dạng Đoạn văn (true_false_multi: gồm các ý Đúng/Sai hoặc Điền vào chỗ trống)
+  const [tfParts, setTfParts] = useState(() => {
+    if (question.parts && question.parts.length > 0) {
+      return question.parts.map((p, idx) => ({
+        id: p.id || String.fromCharCode(65 + idx),
+        type: p.type || (p.correctAnswer !== undefined && p.correctAnswer !== '' ? 'fill_blank' : 'true_false'),
+        text: p.text || '',
+        isCorrect: p.isCorrect !== undefined ? Boolean(p.isCorrect) : true,
+        correctAnswer: p.correctAnswer || ''
+      }));
+    }
+    return [
+      { id: 'A', type: 'true_false', text: 'Mệnh đề 1', isCorrect: true, correctAnswer: '' },
+      { id: 'B', type: 'true_false', text: 'Mệnh đề 2', isCorrect: false, correctAnswer: '' },
+      { id: 'C', type: 'fill_blank', text: 'Chỗ trống cần điền...', isCorrect: true, correctAnswer: '' },
+      { id: 'D', type: 'true_false', text: 'Mệnh đề 4', isCorrect: false, correctAnswer: '' }
+    ];
+  });
 
   // Trạng thái cho dạng Điền từ / Trả lời ngắn (short_answer)
   const [shortAnswer, setShortAnswer] = useState(
@@ -1145,83 +1152,206 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
           </div>
         )}
 
-        {/* DẠNG 3: ĐÚNG / SAI THEO Ý (true_false_multi) */}
+        {/* DẠNG 3: ĐOẠN VĂN (true_false_multi: gồm các ý Đúng/Sai hoặc Điền vào chỗ trống) */}
         {questionType === 'true_false_multi' && (
-          <div className="bg-[#2d0e2b] border-2 border-[#64245f] rounded-2xl p-5 mb-6 text-white space-y-3">
-            <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
-              <span className="text-xs font-bold text-amber-300">Danh sách các ý mệnh đề (Đúng / Sai)</span>
-              <button
-                type="button"
-                onClick={() => {
-                  const nextId = String.fromCharCode(65 + tfParts.length);
-                  setTfParts([...tfParts, { id: nextId, text: `Mệnh đề ${tfParts.length + 1}`, isCorrect: true }]);
-                }}
-                className="px-3 py-1 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Thêm mệnh đề</span>
-              </button>
+          <div className="bg-[#240520] border-2 border-white/15 rounded-2xl sm:rounded-3xl p-4 sm:p-6 mb-6 text-white space-y-5 shadow-2xl">
+            {/* Header thanh công cụ */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+              <div>
+                <span className="text-xs font-bold text-purple-300 uppercase tracking-wider block">
+                  Thiết lập các ý theo đoạn văn
+                </span>
+                <span className="text-[11px] text-slate-300 font-normal">
+                  Đoạn văn đọc hiểu được nhập ở khung trên. Mỗi ý con bên dưới có thể chọn dạng "Đúng / Sai" hoặc "Điền vào chỗ trống".
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextId = String.fromCharCode(65 + tfParts.length);
+                    setTfParts([...tfParts, { id: nextId, type: 'true_false', text: `Mệnh đề ${tfParts.length + 1}`, isCorrect: true, correctAnswer: '' }]);
+                  }}
+                  className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-md transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Thêm ý Đúng/Sai</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextId = String.fromCharCode(65 + tfParts.length);
+                    setTfParts([...tfParts, { id: nextId, type: 'fill_blank', text: `Ý ${tfParts.length + 1} (chỗ trống)...`, isCorrect: true, correctAnswer: '' }]);
+                  }}
+                  className="px-3 py-1.5 bg-[#d82a7a] hover:bg-[#c2226b] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-md transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Thêm ý Điền từ</span>
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-2.5">
-              {tfParts.map((part, pIdx) => (
-                <div key={part.id || pIdx} className="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/10">
-                  <span className="w-6 h-6 rounded-full bg-purple-600/80 text-white font-bold text-xs flex items-center justify-center shrink-0">
-                    {part.id}
-                  </span>
-                  <input
-                    type="text"
-                    value={part.text}
-                    onChange={(e) => {
-                      const updated = [...tfParts];
-                      updated[pIdx].text = e.target.value;
-                      setTfParts(updated);
-                    }}
-                    placeholder={`Nội dung mệnh đề ${part.id}...`}
-                    className="flex-1 bg-transparent text-white font-normal text-sm outline-none border-b border-white/20 focus:border-purple-400 py-1"
-                  />
-                  {/* Hai nút chuyển đổi Đúng / Sai */}
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const updated = [...tfParts];
-                        updated[pIdx].isCorrect = true;
-                        setTfParts(updated);
-                      }}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${part.isCorrect
-                        ? 'bg-emerald-500 text-white shadow-xs'
-                        : 'bg-white/10 text-white/50 hover:bg-white/20'
-                        }`}
-                    >
-                      ĐÚNG
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const updated = [...tfParts];
-                        updated[pIdx].isCorrect = false;
-                        setTfParts(updated);
-                      }}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${!part.isCorrect
-                        ? 'bg-rose-500 text-white shadow-xs'
-                        : 'bg-white/10 text-white/50 hover:bg-white/20'
-                        }`}
-                    >
-                      SAI
-                    </button>
-                    {tfParts.length > 2 && (
-                      <button
-                        type="button"
-                        onClick={() => setTfParts(tfParts.filter((_, i) => i !== pIdx))}
-                        className="w-7 h-7 rounded-lg text-white/40 hover:text-rose-400 flex items-center justify-center transition-colors cursor-pointer"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+            {/* Chuyển đổi nhanh toàn bộ */}
+            <div className="flex items-center justify-between text-xs bg-white/5 p-2 sm:px-3 rounded-xl border border-white/10">
+              <span className="text-white/60 font-semibold">Chuyển đổi nhanh tất cả ({tfParts.length} ý):</span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTfParts(tfParts.map(p => ({ ...p, type: 'true_false' })));
+                  }}
+                  className="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-purple-200 rounded-lg text-[11px] font-bold transition-colors cursor-pointer"
+                >
+                  Tất cả Đúng/Sai
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTfParts(tfParts.map(p => ({ ...p, type: 'fill_blank' })));
+                  }}
+                  className="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-pink-200 rounded-lg text-[11px] font-bold transition-colors cursor-pointer"
+                >
+                  Tất cả Điền từ
+                </button>
+              </div>
+            </div>
+
+            {/* Danh sách các ý con */}
+            <div className="space-y-3">
+              {tfParts.map((part, pIdx) => {
+                const isFillBlank = part.type === 'fill_blank';
+
+                return (
+                  <div key={part.id || pIdx} className="bg-black/30 border border-white/10 rounded-2xl p-3 sm:p-4 space-y-3 transition-all">
+                    {/* Header từng ý: ID + Switch loại Đúng/Sai hoặc Điền từ + Xóa */}
+                    <div className="flex items-center justify-between gap-2 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-purple-600 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-sm">
+                          {part.id}
+                        </span>
+                        <span className="font-bold text-slate-200">Ý {part.id}</span>
+                      </div>
+
+                      {/* Nút chọn loại câu hỏi cho ý này */}
+                      <div className="flex items-center bg-black/40 p-0.5 rounded-lg border border-white/10 text-xs font-semibold">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = [...tfParts];
+                            updated[pIdx].type = 'true_false';
+                            setTfParts(updated);
+                          }}
+                          className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                            !isFillBlank ? 'bg-purple-600 text-white shadow-xs font-bold' : 'text-white/50 hover:text-white'
+                          }`}
+                        >
+                          Đúng / Sai
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = [...tfParts];
+                            updated[pIdx].type = 'fill_blank';
+                            setTfParts(updated);
+                          }}
+                          className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                            isFillBlank ? 'bg-[#d82a7a] text-white shadow-xs font-bold' : 'text-white/50 hover:text-white'
+                          }`}
+                        >
+                          Điền vào chỗ trống
+                        </button>
+                      </div>
+
+                      {tfParts.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setTfParts(tfParts.filter((_, i) => i !== pIdx))}
+                          className="w-7 h-7 rounded-lg text-white/40 hover:text-rose-400 flex items-center justify-center transition-colors cursor-pointer"
+                          title="Xóa ý này"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Nội dung câu hỏi của ý */}
+                    <div>
+                      <input
+                        type="text"
+                        value={part.text}
+                        onChange={(e) => {
+                          const updated = [...tfParts];
+                          updated[pIdx].text = e.target.value;
+                          setTfParts(updated);
+                        }}
+                        placeholder={isFillBlank ? `Nhập câu văn chứa chỗ trống cho ý ${part.id}... (VD: Năm thành lập Đảng là...)` : `Nhập nội dung mệnh đề nhận định cho ý ${part.id}...`}
+                        className="w-full bg-white/10 hover:bg-white/15 focus:bg-white/20 border border-white/20 focus:border-purple-400 rounded-xl px-3.5 py-2 text-white font-normal text-xs sm:text-sm outline-none transition-all"
+                      />
+                    </div>
+
+                    {/* Khu vực thiết lập đáp án đúng */}
+                    {!isFillBlank ? (
+                      /* DẠNG ĐÚNG / SAI */
+                      <div className="flex items-center gap-3 pt-1">
+                        <span className="text-[11px] text-white/60 font-semibold">Đáp án đúng:</span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = [...tfParts];
+                              updated[pIdx].isCorrect = true;
+                              setTfParts(updated);
+                            }}
+                            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                              part.isCorrect
+                                ? 'bg-emerald-500 text-white shadow-md ring-2 ring-emerald-400/50'
+                                : 'bg-white/10 text-white/50 hover:bg-white/20'
+                            }`}
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                            <span>ĐÚNG</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = [...tfParts];
+                              updated[pIdx].isCorrect = false;
+                              setTfParts(updated);
+                            }}
+                            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                              !part.isCorrect
+                                ? 'bg-rose-500 text-white shadow-md ring-2 ring-rose-400/50'
+                                : 'bg-white/10 text-white/50 hover:bg-white/20'
+                            }`}
+                          >
+                            <X className="w-3.5 h-3.5" />
+                            <span>SAI</span>
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      /* DẠNG ĐIỀN VÀO CHỖ TRỐNG */
+                      <div className="p-2.5 sm:p-3 bg-pink-950/30 border border-[#d82a7a]/40 rounded-xl flex flex-col sm:flex-row sm:items-center gap-2 text-xs">
+                        <span className="font-bold text-pink-300 shrink-0 flex items-center gap-1.5">
+                          <Check className="w-4 h-4 text-pink-400" />
+                          <span>Đáp án đúng cần điền:</span>
+                        </span>
+                        <input
+                          type="text"
+                          value={part.correctAnswer || ''}
+                          onChange={(e) => {
+                            const updated = [...tfParts];
+                            updated[pIdx].correctAnswer = e.target.value;
+                            setTfParts(updated);
+                          }}
+                          placeholder="Ví dụ: 1930 (có thể nhập nhiều đáp án đúng cách nhau bởi dấu phẩy)..."
+                          className="flex-1 bg-white text-slate-900 font-bold rounded-lg px-3 py-1.5 text-xs sm:text-sm outline-none border border-slate-200 placeholder:text-slate-400"
+                        />
+                      </div>
                     )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

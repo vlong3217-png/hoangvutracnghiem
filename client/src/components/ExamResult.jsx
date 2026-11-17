@@ -302,8 +302,26 @@ export default function ExamResult({ exam, result, onRetry, onGoHome }) {
                               <div className="space-y-1.5 pl-1">
                                 {q.parts.map(part => {
                                   const userPick = (q.userAns || {})[part.id];
-                                  const expected = part.isCorrect !== undefined ? Boolean(part.isCorrect) : Boolean(part.correct);
-                                  const isPartRight = userPick !== undefined && Boolean(userPick) === expected;
+                                  const isFill = part.type === 'fill_blank' || (part.correctAnswer !== undefined && part.correctAnswer !== '' && part.type !== 'true_false');
+
+                                  let isPartRight = false;
+                                  let userDisplay = '';
+                                  let correctDisplay = '';
+
+                                  if (isFill) {
+                                    const expected = part.correctAnswer || '';
+                                    const accepted = Array.isArray(expected)
+                                      ? expected.map(s => String(s).trim().toLowerCase())
+                                      : String(expected).split(/[,|]/).map(s => s.trim().toLowerCase()).filter(Boolean);
+                                    userDisplay = (userPick !== undefined && userPick !== '') ? String(userPick) : 'Chưa điền';
+                                    correctDisplay = Array.isArray(expected) ? expected[0] : expected;
+                                    isPartRight = userPick !== undefined && accepted.some(ans => ans === String(userPick).trim().toLowerCase());
+                                  } else {
+                                    const expected = part.isCorrect !== undefined ? Boolean(part.isCorrect) : Boolean(part.correct);
+                                    userDisplay = userPick === true ? 'ĐÚNG' : userPick === false ? 'SAI' : 'Chưa chọn';
+                                    correctDisplay = expected ? 'ĐÚNG' : 'SAI';
+                                    isPartRight = userPick !== undefined && Boolean(userPick) === expected;
+                                  }
 
                                   return (
                                     <div 
@@ -318,10 +336,10 @@ export default function ExamResult({ exam, result, onRetry, onGoHome }) {
                                       </div>
                                       <div className="flex items-center gap-2 text-[11px] shrink-0 font-bold self-end sm:self-auto">
                                         <span className={userPick === undefined ? 'text-slate-500' : isPartRight ? 'text-emerald-700' : 'text-rose-600'}>
-                                          Bạn chọn: {userPick === true ? 'ĐÚNG' : userPick === false ? 'SAI' : 'Chưa chọn'}
+                                          Bạn chọn: {userDisplay}
                                         </span>
                                         <span className="text-slate-400">|</span>
-                                        <span className="text-emerald-700 font-extrabold">Đáp án: {expected ? 'ĐÚNG' : 'SAI'}</span>
+                                        <span className="text-emerald-700 font-extrabold">Đáp án: {correctDisplay}</span>
                                         {isPartRight ? (
                                           <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[3]" />
                                         ) : (
