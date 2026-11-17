@@ -41,7 +41,7 @@ export const CATEGORY_STYLES = [
 const QUESTION_TYPES = [
   {
     id: 'single',
-    name: 'Nhiều lựa chọn (1 đáp án)',
+    name: 'Chọn 1 đáp án',
     tag: 'Phổ biến nhất',
     badgeColor: 'bg-emerald-100 text-emerald-800',
     icon: CheckCircle2,

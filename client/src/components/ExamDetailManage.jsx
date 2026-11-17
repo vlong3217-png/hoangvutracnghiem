@@ -45,7 +45,7 @@ const getQuestionTypeName = (type) => {
       return 'Tự luận (Chấm điểm AI)';
     case 'single':
     default:
-      return 'Nhiều lựa chọn (1 đáp án)';
+      return 'Chọn 1 đáp án';
   }
 };
 
