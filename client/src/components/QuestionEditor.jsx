@@ -1291,15 +1291,6 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleAddDistractorCategorize}
-                  className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer transition-colors shadow-md"
-                  title="Thêm đáp án gây nhiễu để thử thách học sinh"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>+ Thêm đáp gây nhiễu</span>
-                </button>
                 {categories.length < 5 && (
                   <button
                     type="button"
@@ -1307,7 +1298,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                     className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer transition-colors border border-white/15"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    <span>+ Thêm cột nhóm</span>
+                    <span>Thêm cột nhóm</span>
                   </button>
                 )}
               </div>
@@ -1394,7 +1385,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                         className="w-full py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-white/10 cursor-pointer shrink-0"
                       >
                         <Plus className="w-3.5 h-3.5" />
-                        <span>+ Thêm mục vào nhóm này</span>
+                        <span>Thêm mục vào nhóm này</span>
                       </button>
                     </div>
                   </div>
@@ -1418,7 +1409,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                   className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-lg text-xs flex items-center gap-1 cursor-pointer transition-colors self-start sm:self-auto shrink-0 shadow-sm"
                 >
                   <Plus className="w-3 h-3" />
-                  <span>+ Thêm đáp gây nhiễu</span>
+                  <span>Thêm đáp gây nhiễu</span>
                 </button>
               </div>
 
@@ -1426,7 +1417,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                 {distractorItems.length === 0 ? (
                   <div className="text-center py-4 text-slate-400 text-xs flex flex-col items-center justify-center gap-1">
                     <span>Chưa có đáp án gây nhiễu nào.</span>
-                    <span className="text-[11px] text-white/40">Bấm nút "Thêm đáp gây nhiễu" ở trên để bổ sung các mục đánh lừa thí sinh.</span>
+                    <span className="text-[11px] text-white/40">Bấm nút "Thêm đáp gây nhiễu" ở góc phải để bổ sung các mục đánh lừa thí sinh.</span>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
@@ -1553,7 +1544,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                   className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors self-start sm:self-auto shrink-0"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>+ Thêm từ gây nhiễu</span>
+                  <span>Thêm từ gây nhiễu</span>
                 </button>
               </div>
 
