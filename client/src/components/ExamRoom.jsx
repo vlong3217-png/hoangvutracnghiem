@@ -26,6 +26,15 @@ import {
 import { gradeEssayWithGemini, getGeminiApiKey, setGeminiApiKey } from '../services/geminiService';
 import { getExamProgress, saveExamProgress, clearExamProgress } from '../services/examProgress';
 
+// Màu sắc các cột phân loại (đồng bộ hoàn toàn giữa giao diện admin và bài làm sinh viên)
+const CATEGORY_STYLES = [
+  { header: 'bg-[#1e6f9f]', border: 'border-[#1e6f9f]', name: 'Xanh dương' },
+  { header: 'bg-[#149184]', border: 'border-[#149184]', name: 'Xanh màu lá' },
+  { header: 'bg-[#d97706]', border: 'border-[#d97706]', name: 'Cam' },
+  { header: 'bg-[#7c3aed]', border: 'border-[#7c3aed]', name: 'Tím' },
+  { header: 'bg-[#be185d]', border: 'border-[#be185d]', name: 'Hồng' }
+];
+
 export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
   // Đọc tiến độ đã lưu trước đó nếu có (cho học sinh hiện tại)
   const initialSavedRef = useRef(null);
@@ -229,12 +238,33 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
       const initialCats = {};
       cats.forEach(c => initialCats[c.id] = []);
       setColumnAssignments(initialCats);
+
       const rawItems = currentQ.items ? [...currentQ.items] : [];
-      setUnassignedItems(rawItems.map((it, idx) => ({
-        id: it.id || `item-${idx}`,
-        text: it.text || it.name || `Mục ${idx + 1}`,
-        categoryId: it.categoryId || it.targetCategory || cats[0]?.id
-      })));
+
+      // Bổ sung các distractors nếu được lưu ở mảng riêng distractors
+      if (Array.isArray(currentQ.distractors)) {
+        currentQ.distractors.forEach((d, dIdx) => {
+          const text = typeof d === 'string' ? d : (d.text || d.name || String(d));
+          if (!rawItems.some(it => it.text === text)) {
+            rawItems.push({
+              id: `dist-${dIdx}`,
+              text: text,
+              categoryId: null,
+              isDistractor: true
+            });
+          }
+        });
+      }
+
+      setUnassignedItems(rawItems.map((it, idx) => {
+        const isDist = Boolean(it.isDistractor || !it.categoryId || it.categoryId === 'distractor');
+        return {
+          id: it.id || `item-${idx}`,
+          text: it.text || it.name || `Mục ${idx + 1}`,
+          categoryId: isDist ? null : (it.categoryId || it.targetCategory),
+          isDistractor: isDist
+        };
+      }));
       setSelectedCategorizeItem(null);
     } else if (currentQ.type === 'drag_drop') {
       setSentenceSlots({});
@@ -355,8 +385,46 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
   };
 
   // -------------------------------------------------------------
-  // XỬ LÝ DẠNG PHÂN LOẠI
+  // XỬ LÝ DẠNG PHÂN LOẠI (HỖ TRỢ ĐÁP ÁN GÂY NHIỄU & CỘT MÀU SẮC)
   // -------------------------------------------------------------
+  const evaluateCategorize = (assignments) => {
+    const cats = currentQ.categories || [];
+    const allItems = currentQ.items || [];
+    const distractorTexts = (currentQ.distractors || []).map(d => typeof d === 'string' ? d.trim().toLowerCase() : (d.text || '').trim().toLowerCase());
+
+    // 1. Kiểm tra tất cả mục hợp lệ (không phải gây nhiễu): Phải nằm đúng cột của nó
+    const validItems = allItems.filter(it => !it.isDistractor && it.categoryId && it.categoryId !== 'distractor');
+    const allValidMatch = validItems.every(it => {
+      const targetColId = it.categoryId || it.targetCategory;
+      const targetCol = assignments[targetColId] || [];
+      return targetCol.some(cItem => cItem.id === it.id || cItem.text?.trim().toLowerCase() === it.text?.trim().toLowerCase());
+    });
+
+    // 2. Kiểm tra xem có mục gây nhiễu nào bị xếp vào BẤT KỲ cột nào không
+    let hasDistractorInColumn = false;
+    Object.values(assignments).forEach(colItems => {
+      (colItems || []).forEach(cItem => {
+        if (cItem.isDistractor || !cItem.categoryId || cItem.categoryId === 'distractor' || distractorTexts.includes(cItem.text?.trim().toLowerCase())) {
+          hasDistractorInColumn = true;
+        }
+      });
+    });
+
+    // 3. Kiểm tra xem có mục của cột này bị xếp sang cột khác không
+    let hasWrongPlacement = false;
+    cats.forEach(cat => {
+      const colItems = assignments[cat.id] || [];
+      colItems.forEach(cItem => {
+        const orig = allItems.find(it => it.id === cItem.id || it.text?.trim().toLowerCase() === cItem.text?.trim().toLowerCase());
+        if (orig && orig.categoryId && orig.categoryId !== cat.id) {
+          hasWrongPlacement = true;
+        }
+      });
+    });
+
+    return allValidMatch && !hasDistractorInColumn && !hasWrongPlacement;
+  };
+
   const handleDropIntoCategory = (catId, item) => {
     if (!item || answeredState) return;
     const remainingUnassigned = unassignedItems.filter(i => i.id !== item.id);
@@ -370,14 +438,9 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
     setDraggedItem(null);
     setSelectedCategorizeItem(null);
 
-    // Nếu đã phân loại hết tất cả các mục => Tự động đánh giá Đúng/Sai toàn câu
+    // Nếu đã phân loại hết tất cả các mục (kể cả distractor bị xếp vào) => Tự động đánh giá Đúng/Sai toàn câu
     if (remainingUnassigned.length === 0) {
-      const allItems = currentQ.items || [];
-      const isAllMatch = allItems.every(it => {
-        const targetColId = it.categoryId || it.targetCategory;
-        const targetCol = nextColumnAssignments[targetColId] || [];
-        return targetCol.some(cItem => cItem.id === it.id || cItem.text === it.text);
-      });
+      const isAllMatch = evaluateCategorize(nextColumnAssignments);
 
       selectedAnswersRef.current = { ...selectedAnswersRef.current, [currentQ.id]: nextColumnAssignments };
       setSelectedAnswers(prev => ({ ...prev, [currentQ.id]: nextColumnAssignments }));
@@ -403,6 +466,34 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
         handleNext();
       }, 2000);
     }
+  };
+
+  const handleSubmitCategorize = () => {
+    if (answeredState) return;
+    const isAllMatch = evaluateCategorize(columnAssignments);
+
+    selectedAnswersRef.current = { ...selectedAnswersRef.current, [currentQ.id]: columnAssignments };
+    setSelectedAnswers(prev => ({ ...prev, [currentQ.id]: columnAssignments }));
+    setAnsweredState({ isCorrect: isAllMatch });
+    if (isAllMatch) {
+      playSound(true);
+      recordOutcome(true);
+      setScore(prev => {
+        const next = prev + 600;
+        scoreRef.current = next;
+        return next;
+      });
+      try {
+        confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
+      } catch (e) { }
+    } else {
+      playSound(false);
+      recordOutcome(false);
+    }
+
+    setTimeout(() => {
+      handleNext();
+    }, 2000);
   };
 
   const handleReturnToOptions = (catId, item) => {
@@ -795,7 +886,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
     answeredState ||
     selectedAnswers[currentQ.id] ||
     ((currentQ.type === 'true_false_multi' || currentQ.type === 'true_false') && Object.keys(multiTfAnswers).length >= (currentQ.parts || []).length) ||
-    (currentQ.type === 'categorize' && unassignedItems.length === 0) ||
+    (currentQ.type === 'categorize' && (unassignedItems.length === 0 || Object.values(columnAssignments).some(arr => arr && arr.length > 0))) ||
     (currentQ.type === 'drag_drop' && Object.keys(sentenceSlots).length >= (currentQ.sentences || []).length) ||
     (currentQ.type === 'essay' && essayAnswer.trim().length > 0) ||
     ((currentQ.type === 'short_answer' || currentQ.type === 'fill_blank') && (
@@ -1084,10 +1175,10 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
             </div>
 
             {/* Các nhóm phân loại (Columns) */}
-            <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
+            <div className={`grid grid-cols-1 ${currentQ.categories?.length > 2 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-2.5 sm:gap-4`}>
               {(currentQ.categories || []).map((cat, cIdx) => {
                 const assigned = columnAssignments[cat.id] || [];
-                const isHeaderTeal = cIdx % 2 === 1;
+                const catStyle = CATEGORY_STYLES[cIdx % CATEGORY_STYLES.length];
                 const catName = cat.name || cat.title || `Nhóm ${cIdx + 1}`;
                 const isHighlight = selectedCategorizeItem !== null;
 
@@ -1107,9 +1198,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
                         : 'border-white/15'
                     }`}
                   >
-                    <div className={`px-3 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-base font-black text-white shadow-md truncate flex items-center justify-between ${
-                      isHeaderTeal ? 'bg-[#149184]' : 'bg-[#1e6f9f]'
-                    }`}>
+                    <div className={`px-3 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-base font-black text-white shadow-md truncate flex items-center justify-between ${catStyle.header}`}>
                       <span className="truncate">{catName}</span>
                       <span className="text-[10px] sm:text-xs bg-black/30 px-1.5 py-0.5 rounded-full font-bold shrink-0 ml-1">
                         {assigned.length}
@@ -1730,6 +1819,14 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
                 ) : (
                   <span>Gửi câu trả lời</span>
                 )}
+              </button>
+            ) : currentQ.type === 'categorize' ? (
+              <button
+                onClick={handleSubmitCategorize}
+                disabled={Boolean(answeredState) || Object.values(columnAssignments).every(arr => !arr || arr.length === 0)}
+                className="px-4 py-2 sm:px-6 sm:py-2.5 bg-[#d82a7a] hover:bg-[#c2226b] disabled:opacity-30 disabled:cursor-not-allowed text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-lg transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2"
+              >
+                Gửi câu trả lời
               </button>
             ) : (!currentQ.type || currentQ.type === 'single') ? (
               /* Trắc nghiệm 1 đáp án: KHÔNG hiển thị nút Gửi câu trả lời */

@@ -23,8 +23,19 @@ import {
   Link as LinkIcon,
   X,
   Palette,
-  Loader2
+  Loader2,
+  AlertCircle,
+  GripVertical
 } from 'lucide-react';
+
+// Màu sắc các cột phân loại (đồng bộ hoàn toàn với giao diện bài làm sinh viên: Xanh dương, Xanh màu lá...)
+export const CATEGORY_STYLES = [
+  { header: 'bg-[#1e6f9f]', border: 'border-[#1e6f9f]', text: 'text-sky-300', name: 'Xanh dương' },
+  { header: 'bg-[#149184]', border: 'border-[#149184]', text: 'text-emerald-300', name: 'Xanh màu lá' },
+  { header: 'bg-[#d97706]', border: 'border-[#d97706]', text: 'text-amber-300', name: 'Cam' },
+  { header: 'bg-[#7c3aed]', border: 'border-[#7c3aed]', text: 'text-purple-300', name: 'Tím' },
+  { header: 'bg-[#be185d]', border: 'border-[#be185d]', text: 'text-pink-300', name: 'Hồng' }
+];
 
 // Danh sách các dạng câu hỏi hiện có trong hệ thống
 const QUESTION_TYPES = [
@@ -217,17 +228,96 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
 
   // Trạng thái cho dạng Phân loại vào cột (categorize)
   const [categories, setCategories] = useState(
-    question.categories || [
-      { id: 'cat1', name: 'Nhóm 1' },
-      { id: 'cat2', name: 'Nhóm 2' }
-    ]
+    question.categories && question.categories.length > 0
+      ? question.categories
+      : [
+        { id: 'cat1', name: 'Nhóm 1' },
+        { id: 'cat2', name: 'Nhóm 2' }
+      ]
   );
-  const [categoryItems, setCategoryItems] = useState(
-    question.items || [
+  const [categoryItems, setCategoryItems] = useState(() => {
+    if (Array.isArray(question.items)) {
+      return question.items
+        .filter(it => it.categoryId && it.categoryId !== 'distractor' && !it.isDistractor)
+        .map((it, idx) => ({
+          id: it.id || `item-${idx}`,
+          text: it.text || it.name || `Mục ${idx + 1}`,
+          categoryId: it.categoryId
+        }));
+    }
+    return [
       { id: 'item1', text: 'Mục A', categoryId: 'cat1' },
       { id: 'item2', text: 'Mục B', categoryId: 'cat2' }
-    ]
-  );
+    ];
+  });
+  const [distractorItems, setDistractorItems] = useState(() => {
+    if (Array.isArray(question.distractors) && question.distractors.length > 0) {
+      return question.distractors.map((d, idx) => 
+        typeof d === 'string' ? { id: `dist-${idx}`, text: d } : { id: d.id || `dist-${idx}`, text: d.text || d.name || String(d) }
+      );
+    }
+    if (Array.isArray(question.items)) {
+      return question.items
+        .filter(it => it.isDistractor || !it.categoryId || it.categoryId === 'distractor')
+        .map((it, idx) => ({ id: it.id || `dist-${idx}`, text: it.text || it.name || `Nhiễu ${idx + 1}` }));
+    }
+    return [];
+  });
+
+  const handleAddCategory = () => {
+    if (categories.length >= 5) {
+      alert('Tối đa 5 nhóm phân loại!');
+      return;
+    }
+    const nextIdx = categories.length + 1;
+    const newCat = { id: `cat-${Date.now()}`, name: `Nhóm ${nextIdx}` };
+    setCategories([...categories, newCat]);
+  };
+
+  const handleRemoveCategory = (catId) => {
+    if (categories.length <= 2) {
+      alert('Cần có ít nhất 2 nhóm phân loại!');
+      return;
+    }
+    setCategories(categories.filter(c => c.id !== catId));
+    setCategoryItems(categoryItems.filter(it => it.categoryId !== catId));
+  };
+
+  const handleAddItemToCategory = (catId, catName) => {
+    const text = prompt(`Nhập nội dung mục thuộc cột "${catName}":`);
+    if (text && text.trim()) {
+      setCategoryItems(prev => [
+        ...prev,
+        { id: `item-${Date.now()}`, text: text.trim(), categoryId: catId }
+      ]);
+    }
+  };
+
+  const handleRemoveCategoryItem = (itemId) => {
+    setCategoryItems(prev => prev.filter(it => it.id !== itemId));
+  };
+
+  const handleUpdateCategoryItem = (itemId, newText) => {
+    setCategoryItems(prev => prev.map(it => it.id === itemId ? { ...it, text: newText } : it));
+  };
+
+  const handleAddDistractorCategorize = () => {
+    const text = prompt('Nhập nội dung đáp án gây nhiễu (mục này KHÔNG thuộc nhóm nào, xuất hiện để thử thách học sinh):');
+    if (text && text.trim()) {
+      setDistractorItems(prev => [
+        ...prev,
+        { id: `dist-${Date.now()}`, text: text.trim() }
+      ]);
+    }
+  };
+
+  const handleRemoveDistractorCategorize = (distId) => {
+    setDistractorItems(prev => prev.filter(d => d.id !== distId));
+  };
+
+  const handleUpdateDistractorCategorize = (distId, newText) => {
+    setDistractorItems(prev => prev.map(d => d.id === distId ? { ...d, text: newText } : d));
+  };
 
   // Trạng thái cho dạng Kéo thả khớp câu / Ghép nối (drag_drop)
   const [sentences, setSentences] = useState(
@@ -493,7 +583,12 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
         updatedQuestion.maxScore = points || 10;
       } else if (questionType === 'categorize') {
         updatedQuestion.categories = categories;
-        updatedQuestion.items = categoryItems;
+        const allItems = [
+          ...categoryItems.map(it => ({ id: it.id, text: it.text, categoryId: it.categoryId })),
+          ...distractorItems.map(it => ({ id: it.id, text: it.text, categoryId: null, isDistractor: true }))
+        ];
+        updatedQuestion.items = allItems;
+        updatedQuestion.distractors = distractorItems.map(d => d.text);
       } else if (questionType === 'drag_drop') {
         updatedQuestion.sentences = sentences;
         updatedQuestion.draggableItems = draggableItems;
@@ -1184,53 +1279,184 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
 
         {/* DẠNG 6: PHÂN LOẠI VÀO CỘT (categorize) */}
         {questionType === 'categorize' && (
-          <div className="bg-[#2d0e2b] border-2 border-[#64245f] rounded-2xl p-5 mb-6 text-white space-y-4">
-            <div className="text-xs font-bold text-amber-300 uppercase tracking-wider">
-              Thiết lập các nhóm và mục phân loại
+          <div className="bg-[#240520] border-2 border-white/15 rounded-2xl sm:rounded-3xl p-4 sm:p-6 mb-6 text-white space-y-5 shadow-2xl">
+            {/* Header thanh công cụ phân loại */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+              <div>
+                <span className="text-xs font-bold text-amber-300 uppercase tracking-wider block">
+                  Thiết lập các nhóm và mục phân loại
+                </span>
+                <span className="text-[11px] text-slate-300 font-normal">
+                  Giao diện mô phỏng trực quan theo bài làm học sinh (đồng bộ cột màu xanh dương, xanh màu lá...).
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleAddDistractorCategorize}
+                  className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer transition-colors shadow-md"
+                  title="Thêm đáp án gây nhiễu để thử thách học sinh"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>+ Thêm đáp gây nhiễu</span>
+                </button>
+                {categories.length < 5 && (
+                  <button
+                    type="button"
+                    onClick={handleAddCategory}
+                    className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer transition-colors border border-white/15"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>+ Thêm cột nhóm</span>
+                  </button>
+                )}
+              </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {categories.map((cat, cIdx) => (
-                <div key={cat.id || cIdx} className="bg-white/5 border border-white/15 rounded-xl p-3 space-y-2">
-                  <input
-                    type="text"
-                    value={cat.name}
-                    onChange={(e) => {
-                      const updated = [...categories];
-                      updated[cIdx].name = e.target.value;
-                      setCategories(updated);
-                    }}
-                    placeholder={`Tên cột nhóm ${cIdx + 1}...`}
-                    className="w-full bg-amber-500/20 text-amber-300 font-bold text-sm px-2.5 py-1 rounded border border-amber-500/40 outline-none"
-                  />
-                  <div className="text-[11px] text-white/50">Các mục thuộc nhóm này:</div>
-                  <div className="space-y-1.5">
-                    {categoryItems.filter(item => item.categoryId === cat.id).map((item) => (
-                      <div key={item.id} className="flex items-center gap-2 bg-black/20 px-2.5 py-1.5 rounded text-xs">
-                        <span className="flex-1 truncate">{item.text}</span>
+
+            {/* Các cột nhóm phân loại (đồng bộ hoàn toàn giao diện học sinh) */}
+            <div className={`grid grid-cols-1 ${categories.length === 2 ? 'sm:grid-cols-2' : categories.length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2 md:grid-cols-4'} gap-3 sm:gap-4`}>
+              {categories.map((cat, cIdx) => {
+                const assignedItems = categoryItems.filter(it => it.categoryId === cat.id);
+                const colStyle = CATEGORY_STYLES[cIdx % CATEGORY_STYLES.length];
+
+                return (
+                  <div
+                    key={cat.id || cIdx}
+                    className="bg-[#240520] border-2 border-white/15 rounded-2xl sm:rounded-3xl flex flex-col overflow-hidden shadow-xl min-h-[220px]"
+                  >
+                    {/* Header cột có màu giống học sinh: Col 1 Xanh dương, Col 2 Xanh màu lá */}
+                    <div className={`px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-black text-white shadow-md flex items-center justify-between gap-2 ${colStyle.header}`}>
+                      <input
+                        type="text"
+                        value={cat.name}
+                        onChange={(e) => {
+                          const updated = [...categories];
+                          updated[cIdx].name = e.target.value;
+                          setCategories(updated);
+                        }}
+                        placeholder={`Tên cột ${cIdx + 1}...`}
+                        className="bg-black/25 hover:bg-black/35 focus:bg-black/45 text-white font-black text-xs sm:text-sm px-2.5 py-1 rounded-lg border border-white/20 outline-none flex-1 truncate placeholder:text-white/60"
+                      />
+                      <span className="text-[10px] sm:text-xs bg-black/30 px-2 py-0.5 rounded-full font-bold shrink-0">
+                        {assignedItems.length}
+                      </span>
+                      {categories.length > 2 && (
                         <button
                           type="button"
-                          onClick={() => setCategoryItems(categoryItems.filter(i => i.id !== item.id))}
-                          className="text-white/40 hover:text-rose-400 cursor-pointer"
+                          onClick={() => handleRemoveCategory(cat.id)}
+                          className="text-white/60 hover:text-white p-0.5 rounded hover:bg-black/20"
+                          title="Xóa cột này"
                         >
-                          ✕
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Danh sách các mục thuộc nhóm này */}
+                    <div className="flex-1 p-2.5 sm:p-3 overflow-y-auto space-y-2 flex flex-col">
+                      <div className="text-[11px] font-semibold text-slate-300">
+                        Các mục thuộc nhóm này ({assignedItems.length}):
+                      </div>
+
+                      <div className="flex-1 space-y-2">
+                        {assignedItems.length === 0 ? (
+                          <div className="h-20 border border-dashed border-white/10 rounded-xl flex items-center justify-center p-2 text-center text-xs text-white/30">
+                            Chưa có mục nào trong cột này
+                          </div>
+                        ) : (
+                          assignedItems.map(item => (
+                            <div
+                              key={item.id}
+                              className="p-2 sm:p-2.5 bg-white text-slate-900 rounded-xl shadow-md flex items-center justify-between text-xs sm:text-sm font-bold border border-slate-200 group hover:border-[#149184] transition-all"
+                            >
+                              <input
+                                type="text"
+                                value={item.text}
+                                onChange={(e) => handleUpdateCategoryItem(item.id, e.target.value)}
+                                className="flex-1 outline-none font-bold text-slate-900 bg-transparent pr-2 text-xs sm:text-sm"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveCategoryItem(item.id)}
+                                className="text-slate-400 hover:text-rose-600 p-1 rounded-lg hover:bg-rose-50 cursor-pointer shrink-0 transition-colors"
+                                title="Xóa mục này"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleAddItemToCategory(cat.id, cat.name)}
+                        className="w-full py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-white/10 cursor-pointer shrink-0"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>+ Thêm mục vào nhóm này</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* KHUNG ĐÁP ÁN GÂY NHIỄU (DISTRACTORS) */}
+            <div className="bg-[#230620] border-2 border-amber-500/30 rounded-2xl sm:rounded-3xl flex flex-col overflow-hidden shadow-2xl">
+              <div className="px-4 py-2.5 sm:px-5 sm:py-3 bg-amber-500/10 border-b border-amber-500/20 text-xs sm:text-sm font-black text-amber-300 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>Đáp án gây nhiễu ({distractorItems.length})</span>
+                  <span className="text-[10px] text-amber-400/80 font-normal hidden sm:inline">
+                    (Không thuộc bất kỳ nhóm nào, xuất hiện trong danh sách lựa chọn của thí sinh để thử thách)
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddDistractorCategorize}
+                  className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-lg text-xs flex items-center gap-1 cursor-pointer transition-colors self-start sm:self-auto shrink-0 shadow-sm"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>+ Thêm đáp gây nhiễu</span>
+                </button>
+              </div>
+
+              <div className="p-3 sm:p-4">
+                {distractorItems.length === 0 ? (
+                  <div className="text-center py-4 text-slate-400 text-xs flex flex-col items-center justify-center gap-1">
+                    <span>Chưa có đáp án gây nhiễu nào.</span>
+                    <span className="text-[11px] text-white/40">Bấm nút "Thêm đáp gây nhiễu" ở trên để bổ sung các mục đánh lừa thí sinh.</span>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                    {distractorItems.map((dist, dIdx) => (
+                      <div
+                        key={dist.id || dIdx}
+                        className="p-2 sm:p-2.5 bg-amber-50 border-2 border-amber-300 rounded-xl shadow-md flex items-center justify-between gap-2 text-slate-900 group hover:border-amber-400 transition-all"
+                      >
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                          <input
+                            type="text"
+                            value={dist.text}
+                            onChange={(e) => handleUpdateDistractorCategorize(dist.id, e.target.value)}
+                            className="flex-1 outline-none font-bold text-slate-900 bg-transparent text-xs sm:text-sm truncate"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveDistractorCategorize(dist.id)}
+                          className="text-slate-400 hover:text-rose-600 p-1 rounded-lg hover:bg-rose-50 cursor-pointer shrink-0 transition-colors"
+                          title="Xóa mục gây nhiễu này"
+                        >
+                          <X className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     ))}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const t = prompt(`Nhập nội dung mục thuộc cột "${cat.name}":`);
-                        if (t && t.trim()) {
-                          setCategoryItems([...categoryItems, { id: `item-${Date.now()}`, text: t.trim(), categoryId: cat.id }]);
-                        }
-                      }}
-                      className="w-full py-1 bg-white/10 hover:bg-white/20 text-white rounded text-xs font-bold transition-colors cursor-pointer"
-                    >
-                      + Thêm mục vào nhóm này
-                    </button>
                   </div>
-                </div>
-              ))}
+                )}
+              </div>
             </div>
           </div>
         )}

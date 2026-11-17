@@ -231,6 +231,7 @@ Hệ thống hỗ trợ 7 dạng câu hỏi sau:
        { "id": "item2", "text": "Mục 2 thuộc nhóm 1", "categoryId": "cat1" },
        { "id": "item3", "text": "Mục 3 thuộc nhóm 2", "categoryId": "cat2" }
      ]
+   - "distractors": ["Mục gây nhiễu 1", ...] (nếu trong đề có các phương án gây nhiễu không thuộc nhóm nào)
 
 6. "short_answer": Điền từ khuyết hoặc trả lời ngắn.
    - "question": "Câu hỏi có chỗ trống hoặc câu hỏi điền từ..."

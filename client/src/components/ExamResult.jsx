@@ -367,7 +367,7 @@ export default function ExamResult({ exam, result, onRetry, onGoHome }) {
                                       <div className="space-y-1">
                                         {(((q.userAns || {})[cat.id]) || []).map((uItem, uIdx) => {
                                           const originalItem = (q.items || []).find(it => it.id === uItem.id || it.text === uItem.text);
-                                          const isItemCorrect = originalItem && (originalItem.categoryId === cat.id || originalItem.targetCategory === cat.id);
+                                          const isItemCorrect = originalItem && !originalItem.isDistractor && (originalItem.categoryId === cat.id || originalItem.targetCategory === cat.id);
                                           return (
                                             <div key={uIdx} className={`px-2 py-1 rounded text-[11px] font-semibold flex items-center justify-between border ${
                                               isItemCorrect ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-200'
@@ -381,6 +381,18 @@ export default function ExamResult({ exam, result, onRetry, onGoHome }) {
                                     </div>
                                   ))}
                                 </div>
+                                {(() => {
+                                  const distractors = (q.distractors && q.distractors.length > 0)
+                                    ? q.distractors
+                                    : (q.items || []).filter(it => it.isDistractor || !it.categoryId || it.categoryId === 'distractor').map(it => it.text);
+                                  if (!distractors || distractors.length === 0) return null;
+                                  return (
+                                    <div className="mt-1 text-[11px] text-slate-500">
+                                      <span className="font-semibold text-amber-700">Đáp án gây nhiễu (cần loại trừ):</span>{' '}
+                                      {distractors.map(d => typeof d === 'string' ? d : d.text).join(', ')}
+                                    </div>
+                                  );
+                                })()}
                               </div>
                             ) : (q.type === 'short_answer' || q.type === 'fill_blank') && q.blanks ? (
                               <div className="space-y-1.5 pl-1">

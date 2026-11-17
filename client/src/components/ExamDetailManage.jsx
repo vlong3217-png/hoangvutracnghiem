@@ -908,19 +908,62 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
 
                   {/* PHÂN LOẠI VÀO CỘT */}
                   {q.type === 'categorize' && q.categories && (
-                    <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                      {q.categories.map((cat, cIdx) => (
-                        <div key={cIdx} className="p-2.5 rounded-xl bg-amber-50/60 border border-amber-200">
-                          <span className="font-bold text-amber-800 block mb-1">Cột: {cat.name || cat.title}</span>
-                          <div className="space-y-1">
-                            {(q.items || []).filter(item => item.categoryId === cat.id).map((item, iIdx) => (
-                              <div key={iIdx} className="px-2 py-1 bg-white border border-amber-200/60 rounded text-slate-700">
-                                • {item.text}
+                    <div className="pt-2 space-y-2 text-xs">
+                      <div className={`grid grid-cols-1 ${q.categories.length > 2 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-2`}>
+                        {q.categories.map((cat, cIdx) => {
+                          const colColors = [
+                            { bg: 'bg-sky-50/70', border: 'border-sky-200', text: 'text-sky-800', badge: 'bg-sky-100 text-sky-700' },
+                            { bg: 'bg-emerald-50/70', border: 'border-emerald-200', text: 'text-emerald-800', badge: 'bg-emerald-100 text-emerald-700' },
+                            { bg: 'bg-amber-50/70', border: 'border-amber-200', text: 'text-amber-800', badge: 'bg-amber-100 text-amber-700' },
+                            { bg: 'bg-purple-50/70', border: 'border-purple-200', text: 'text-purple-800', badge: 'bg-purple-100 text-purple-700' }
+                          ];
+                          const colColor = colColors[cIdx % colColors.length];
+                          const catItems = (q.items || []).filter(item => item.categoryId === cat.id && !item.isDistractor);
+
+                          return (
+                            <div key={cIdx} className={`p-2.5 rounded-xl ${colColor.bg} border ${colColor.border}`}>
+                              <div className="flex items-center justify-between mb-1.5">
+                                <span className={`font-bold ${colColor.text}`}>Cột: {cat.name || cat.title}</span>
+                                <span className={`text-[10px] px-1.5 py-0.2 rounded font-bold ${colColor.badge}`}>
+                                  {catItems.length}
+                                </span>
                               </div>
-                            ))}
+                              <div className="space-y-1">
+                                {catItems.map((item, iIdx) => (
+                                  <div key={iIdx} className="px-2 py-1 bg-white border border-slate-200 rounded font-medium text-slate-800 shadow-2xs">
+                                    • {item.text}
+                                  </div>
+                                ))}
+                                {catItems.length === 0 && (
+                                  <div className="text-[11px] text-slate-400 italic">Chưa có mục nào</div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Hiển thị các đáp án gây nhiễu nếu có */}
+                      {(() => {
+                        const distractors = (q.distractors && q.distractors.length > 0)
+                          ? q.distractors
+                          : (q.items || []).filter(it => it.isDistractor || !it.categoryId || it.categoryId === 'distractor').map(it => it.text);
+                        if (!distractors || distractors.length === 0) return null;
+                        return (
+                          <div className="p-2.5 rounded-xl bg-amber-50/80 border border-amber-200">
+                            <span className="font-bold text-amber-800 block mb-1">
+                              Đáp án gây nhiễu ({distractors.length}):
+                            </span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {distractors.map((d, dIdx) => (
+                                <span key={dIdx} className="px-2 py-0.5 bg-white border border-amber-300 rounded font-semibold text-amber-800 text-[11px] shadow-2xs">
+                                  {typeof d === 'string' ? d : d.text}
+                                </span>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })()}
                     </div>
                   )}
 

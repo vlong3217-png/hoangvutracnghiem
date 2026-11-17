@@ -473,6 +473,7 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
         { id: 'item1', text: 'Mục A', categoryId: 'cat1' },
         { id: 'item2', text: 'Mục B', categoryId: 'cat2' }
       ];
+      newQ.distractors = ['Mục gây nhiễu C'];
     } else if (typeId === 'drag_drop') {
       newQ.sentences = [
         { id: 1, prefix: 'Khái niệm 1 là ', correctWord: 'A', suffix: '' },
