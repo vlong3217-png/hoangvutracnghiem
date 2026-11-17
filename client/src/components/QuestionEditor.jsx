@@ -1454,30 +1454,31 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
 
         {/* DẠNG 7: KÉO THẢ KHỚP CÂU / GHÉP NỐI (drag_drop) */}
         {questionType === 'drag_drop' && (
-          <div className="bg-[#2d0e2b] border-2 border-[#64245f] rounded-2xl p-5 mb-6 text-white space-y-4">
-            <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
+          <div className="bg-[#240520] border-2 border-white/15 rounded-2xl sm:rounded-3xl p-4 sm:p-6 mb-6 text-white space-y-5 shadow-2xl">
+            {/* Header thanh công cụ */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
               <div>
                 <span className="text-xs font-bold text-rose-300 uppercase tracking-wider block">
-                  Danh sách câu ghép nối & từ khóa kéo thả
+                  Thiết lập câu ghép nối & từ khóa kéo thả
                 </span>
-                <span className="text-[11px] text-white/50">
-                  Nhập vế trước và từ khóa đúng cần kéo vào ô trống của mỗi câu
+                <span className="text-[11px] text-slate-300 font-normal">
+                  Giao diện mô phỏng trực quan theo bài làm học sinh (câu văn chứa ô khuyết và thẻ kéo thả).
                 </span>
               </div>
               <button
                 type="button"
                 onClick={handleAddSentence}
-                className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shadow-sm"
+                className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer transition-colors shadow-md self-start sm:self-auto shrink-0"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Thêm câu mới</span>
               </button>
             </div>
 
-            {/* Danh sách các câu */}
-            <div className="space-y-3">
+            {/* Danh sách các câu mô phỏng bài làm học sinh */}
+            <div className="space-y-4">
               {sentences.map((sent, sIdx) => (
-                <div key={sent.id || sIdx} className="bg-white/5 border border-white/15 rounded-xl p-3 sm:p-4 space-y-2.5">
+                <div key={sent.id || sIdx} className="bg-black/30 border border-white/10 rounded-2xl p-3 sm:p-4 space-y-3">
                   <div className="flex items-center justify-between text-xs font-bold text-rose-300">
                     <span className="flex items-center gap-2">
                       <span className="w-5 h-5 rounded-full bg-rose-600 text-white text-[11px] flex items-center justify-center font-bold">
@@ -1489,7 +1490,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                       <button
                         type="button"
                         onClick={() => handleRemoveSentence(sIdx)}
-                        className="text-white/40 hover:text-rose-400 cursor-pointer text-xs flex items-center gap-1"
+                        className="text-white/40 hover:text-rose-400 cursor-pointer text-xs flex items-center gap-1 transition-colors"
                         title="Xóa câu này"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -1498,28 +1499,48 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                  {/* Dòng câu văn chứa ô trống kéo thả giống bài làm học sinh */}
+                  <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-black/40 border border-white/10 flex flex-col md:flex-row items-center gap-2.5 sm:gap-3 text-xs sm:text-base leading-relaxed">
                     {/* Vế trước */}
-                    <div className="sm:col-span-6">
-                      <label className="text-[11px] text-white/60 block mb-1">Vế trước ô trống:</label>
+                    <div className="flex-1 w-full flex flex-col">
+                      <span className="text-[10px] text-white/50 mb-1 font-semibold uppercase">Vế trước ô trống:</span>
                       <input
                         type="text"
                         value={sent.prefix}
                         onChange={(e) => handleSentenceChange(sIdx, 'prefix', e.target.value)}
-                        placeholder="Ví dụ: Khái niệm 1 là..."
-                        className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-xs sm:text-sm text-white outline-none focus:border-rose-400 font-normal"
+                        placeholder="Ví dụ: Lãnh đạo cách mạng là..."
+                        className="w-full bg-white/10 hover:bg-white/15 focus:bg-white/20 border border-white/20 focus:border-rose-400 rounded-xl px-3 py-2 text-white font-medium outline-none text-xs sm:text-sm transition-all"
                       />
                     </div>
 
-                    {/* Từ khóa đúng (ô kéo thả) */}
-                    <div className="sm:col-span-6">
-                      <label className="text-[11px] text-rose-300 font-bold block mb-1">★ Từ khóa đúng (ô trống):</label>
+                    {/* Ô khuyết kéo thả (mô phỏng ô trống của học sinh với đáp án đúng dạng thẻ trắng) */}
+                    <div className="w-full md:w-auto md:min-w-[260px] flex flex-col">
+                      <span className="text-[10px] text-rose-300 font-bold mb-1 uppercase flex items-center gap-1">
+                        ★ Ô trống (Từ khóa đúng):
+                      </span>
+                      <div className="min-w-[200px] h-auto p-1.5 rounded-xl border-2 border-dashed border-rose-400/80 bg-rose-950/30 flex items-center shadow-inner">
+                        <div className="w-full p-2 bg-white text-slate-900 rounded-lg shadow-md flex items-center gap-2 border border-slate-200">
+                          <GripVertical className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          <input
+                            type="text"
+                            value={sent.correctWord}
+                            onChange={(e) => handleSentenceChange(sIdx, 'correctWord', e.target.value)}
+                            placeholder="Nhập từ khóa đúng..."
+                            className="flex-1 outline-none font-bold text-slate-900 bg-transparent text-xs sm:text-sm pr-1"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Vế sau (nếu có) */}
+                    <div className="w-full md:w-48 flex flex-col">
+                      <span className="text-[10px] text-white/50 mb-1 font-semibold uppercase">Vế sau (nếu có):</span>
                       <input
                         type="text"
-                        value={sent.correctWord}
-                        onChange={(e) => handleSentenceChange(sIdx, 'correctWord', e.target.value)}
-                        placeholder="Ví dụ: Mạng LAN"
-                        className="w-full bg-rose-500/20 border-2 border-rose-400 rounded-lg px-3 py-2 text-xs sm:text-sm text-rose-200 font-bold outline-none focus:border-rose-300"
+                        value={sent.suffix || ''}
+                        onChange={(e) => handleSentenceChange(sIdx, 'suffix', e.target.value)}
+                        placeholder="Ví dụ: ...trong giai đoạn này."
+                        className="w-full bg-white/10 hover:bg-white/15 focus:bg-white/20 border border-white/20 focus:border-rose-400 rounded-xl px-3 py-2 text-white font-medium outline-none text-xs sm:text-sm transition-all"
                       />
                     </div>
                   </div>
@@ -1527,53 +1548,65 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
               ))}
             </div>
 
-            {/* Quản lý các thẻ từ khóa kéo thả */}
-            <div className="pt-3 border-t border-white/10">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
+            {/* Quản lý các thẻ từ khóa kéo thả (mô phỏng đúng thẻ bài làm học sinh) */}
+            <div className="bg-[#230620] border-2 border-white/15 rounded-2xl sm:rounded-3xl flex flex-col overflow-hidden shadow-2xl">
+              <div className="px-4 py-2.5 sm:px-5 sm:py-3 bg-white/5 border-b border-white/10 text-xs sm:text-sm font-black text-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
-                  <span className="text-xs font-bold text-amber-300 block">
-                    Danh sách thẻ từ khóa thí sinh thấy để kéo thả ({draggableItems.length}):
+                  <span className="text-amber-300 font-extrabold block">
+                    Danh sách thẻ từ khóa thí sinh thấy để kéo thả ({draggableItems.length})
                   </span>
-                  <span className="text-[10px] text-white/40">
-                    Bao gồm các từ khóa đúng ở trên, bạn có thể thêm các từ gây nhiễu để tăng độ khó.
+                  <span className="text-[10px] text-white/50 font-normal">
+                    Bao gồm các từ khóa đúng ở trên và các từ gây nhiễu để tăng độ khó thử thách thí sinh.
                   </span>
                 </div>
                 <button
                   type="button"
                   onClick={handleAddDistractor}
-                  className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors self-start sm:self-auto shrink-0"
+                  className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1.5 cursor-pointer transition-colors self-start sm:self-auto shrink-0 shadow-md"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Thêm từ gây nhiễu</span>
                 </button>
               </div>
 
-              <div className="flex flex-wrap gap-2">
-                {draggableItems.map((item, iIdx) => {
-                  const itemText = typeof item === 'object' ? item.text : item;
-                  const isFromSentence = sentences.some(s => (s.correctWord || '').trim() === itemText.trim());
-                  return (
-                    <div
-                      key={iIdx}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/10 border border-white/20 text-xs font-semibold text-white shadow-2xs"
-                    >
-                      <span>{itemText}</span>
-                      {isFromSentence ? (
-                        <span className="text-[9px] bg-rose-500/50 text-rose-200 px-1.5 py-0.5 rounded font-mono font-bold">Đáp án</span>
-                      ) : (
-                        <span className="text-[9px] bg-amber-500/50 text-amber-200 px-1.5 py-0.5 rounded font-mono font-bold">Gây nhiễu</span>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveDraggableItem(iIdx)}
-                        className="text-white/40 hover:text-rose-400 cursor-pointer ml-0.5"
-                        title="Xóa thẻ từ khóa này"
+              <div className="p-3 sm:p-4">
+                <div className="flex flex-wrap gap-2.5">
+                  {draggableItems.map((item, iIdx) => {
+                    const itemText = typeof item === 'object' ? item.text : item;
+                    const isFromSentence = sentences.some(s => (s.correctWord || '').trim() === itemText.trim());
+
+                    return (
+                      <div
+                        key={iIdx}
+                        className={`p-2 sm:p-2.5 rounded-xl shadow-md flex items-center gap-2 border transition-all ${
+                          isFromSentence
+                            ? 'bg-white text-slate-900 border-slate-200'
+                            : 'bg-amber-50 text-slate-900 border-2 border-amber-300'
+                        }`}
                       >
-                        ✕
-                      </button>
-                    </div>
-                  );
-                })}
+                        <GripVertical className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span className="font-bold text-xs sm:text-sm">{itemText}</span>
+                        {isFromSentence ? (
+                          <span className="text-[10px] bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded-full font-bold">
+                            Đáp án
+                          </span>
+                        ) : (
+                          <span className="text-[10px] bg-amber-200 text-amber-900 px-1.5 py-0.5 rounded-full font-bold">
+                            Gây nhiễu
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveDraggableItem(iIdx)}
+                          className="text-slate-400 hover:text-rose-600 p-0.5 rounded hover:bg-rose-50 cursor-pointer ml-1 transition-colors"
+                          title="Xóa thẻ từ khóa này"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
