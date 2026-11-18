@@ -2009,16 +2009,16 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
 
       {/* MODAL THOÁT KHỎI PHÒNG THI */}
       {showExitConfirm && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-[#240520] border border-white/20 rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl animate-in fade-in zoom-in-95">
-            <h3 className="text-lg font-bold text-white mb-2">Tạm dừng bài thi?</h3>
-            <p className="text-xs text-slate-300 mb-6 leading-relaxed">
-              Tiến độ của bạn <span className="text-[#f43f5e] font-bold">({questions.length > 0 ? Math.round((Object.keys(selectedAnswers).length / questions.length) * 100) : 0}%)</span> đã được lưu tự động. Bạn có thể quay lại làm tiếp bất kỳ lúc nào!
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-black/40 backdrop-blur-xl border border-white/20 rounded-2xl sm:rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl animate-in fade-in zoom-in-95">
+            <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Tạm dừng bài thi?</h3>
+            <p className="text-xs sm:text-sm text-slate-300 mb-6 leading-relaxed">
+              Tiến độ của bạn <span className="text-white font-bold">({questions.length > 0 ? Math.round((Object.keys(selectedAnswers).length / questions.length) * 100) : 0}%)</span> đã được lưu tự động. Bạn có thể quay lại làm tiếp bất kỳ lúc nào!
             </p>
             <div className="flex items-center justify-center gap-3">
               <button
                 onClick={() => setShowExitConfirm(false)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+                className="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/15 transition-all cursor-pointer backdrop-blur-xs"
               >
                 Tiếp tục thi
               </button>
@@ -2027,7 +2027,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
                   setShowExitConfirm(false);
                   onBack();
                 }}
-                className="px-5 py-2 rounded-xl text-xs font-bold bg-[#d82a7a] hover:bg-[#c2226b] text-white transition-colors shadow-md cursor-pointer"
+                className="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/15 transition-all cursor-pointer backdrop-blur-xs"
               >
                 Lưu & Thoát ra
               </button>
