@@ -589,7 +589,9 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
       shuffleQuestions: Boolean(shuffleQuestions),
       shuffleAnswers: Boolean(shuffleAnswers),
       totalQuestions: questions.length,
-      createdAtText: initialExam?.createdAtText || 'Vừa xong',
+      createdAt: initialExam?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      createdAtText: 'Vừa xong',
       author: initialExam?.author || 'Tôi',
       questions
     };

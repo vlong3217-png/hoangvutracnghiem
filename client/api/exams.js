@@ -230,6 +230,10 @@ export default async function handler(req, res) {
           shuffleQuestions: Boolean(exam.shuffle_questions),
           shuffleAnswers: Boolean(exam.shuffle_answers),
           assigned_classes: parseAssignedClasses(exam.assigned_classes),
+          createdAt: exam.created_at,
+          updatedAt: exam.updated_at,
+          created_at: exam.created_at,
+          updated_at: exam.updated_at,
           questions
         }
       });
@@ -242,7 +246,7 @@ export default async function handler(req, res) {
         FROM exams e 
         LEFT JOIN questions q ON e.id = q.exam_id 
         GROUP BY e.id 
-        ORDER BY e.created_at ASC
+        ORDER BY COALESCE(e.updated_at, e.created_at) DESC, e.created_at DESC
       `);
 
       const themes = ['blue', 'teal', 'coral', 'orange', 'purple'];
@@ -261,7 +265,11 @@ export default async function handler(req, res) {
         statusBadge: `${row.question_count} Qs`,
         theme: themes[idx % themes.length],
         author: row.subject ? `Bộ môn ${row.subject}` : 'Giáo viên',
-        className: row.description || 'Lớp học phần'
+        className: row.description || 'Lớp học phần',
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        created_at: row.created_at,
+        updated_at: row.updated_at
       }));
 
       return res.status(200).json({ success: true, data: formatted });

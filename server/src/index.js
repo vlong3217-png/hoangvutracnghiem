@@ -224,6 +224,10 @@ async function getExamDetailById(id, res) {
         shuffleQuestions: Boolean(exam.shuffle_questions),
         shuffleAnswers: Boolean(exam.shuffle_answers),
         assigned_classes: parseAssignedClasses(exam.assigned_classes),
+        createdAt: exam.created_at,
+        updatedAt: exam.updated_at,
+        created_at: exam.created_at,
+        updated_at: exam.updated_at,
         questions
       }
     });
@@ -244,7 +248,7 @@ app.get('/api/exams', async (req, res) => {
       FROM exams e 
       LEFT JOIN questions q ON e.id = q.exam_id 
       GROUP BY e.id 
-      ORDER BY e.created_at ASC
+      ORDER BY COALESCE(e.updated_at, e.created_at) DESC, e.created_at DESC
     `);
 
     // Danh sách theme màu sắc đẹp mắt
@@ -264,7 +268,11 @@ app.get('/api/exams', async (req, res) => {
       statusBadge: `${row.question_count} Qs`,
       theme: themes[idx % themes.length],
       author: row.subject ? `Bộ môn ${row.subject}` : 'Giáo viên',
-      className: row.description || 'Lớp học phần'
+      className: row.description || 'Lớp học phần',
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      created_at: row.created_at,
+      updated_at: row.updated_at
     }));
 
     res.json({ success: true, data: formatted });

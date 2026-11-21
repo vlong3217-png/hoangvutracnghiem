@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import QuizizzLogo from './QuizizzLogo';
 import { getExamProgress, getAllUserProgress } from '../services/examProgress';
+import { getExamTimestamp, formatExamTimeAgo } from '../services/timeUtils';
 
 export default function ExamList({ exams, currentUser, onSelectExam, onOpenTeacherManage, onLogout, isLoading }) {
   const [activeTab, setActiveTab] = useState('running'); // 'running' (Đang chạy), 'completed' (Hoàn thành)
@@ -68,11 +69,13 @@ export default function ExamList({ exams, currentUser, onSelectExam, onOpenTeach
            (studentClassName && assigned.includes(studentClassName));
   });
 
-  // Lọc theo search
-  const searchedExams = accessibleExams.filter(exam => 
-    exam.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (exam.author && exam.author.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  // Lọc theo search và sắp xếp theo thời gian thực (bài mới nhất lên trên cùng)
+  const searchedExams = [...accessibleExams]
+    .filter(exam => 
+      exam.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (exam.author && exam.author.toLowerCase().includes(searchQuery.toLowerCase()))
+    )
+    .sort((a, b) => getExamTimestamp(b) - getExamTimestamp(a));
 
   // Phân loại theo tab Đang chạy và Hoàn thành
   const runningExams = searchedExams.filter(exam => !getExamProgressInfo(exam).isCompleted);
@@ -268,7 +271,7 @@ export default function ExamList({ exams, currentUser, onSelectExam, onOpenTeach
                       {exam.title}
                     </h3>
 
-                    {/* Metadata giáo viên & lớp học */}
+                    {/* Metadata giáo viên & lớp học & thời gian tạo */}
                     <div className="mt-2 text-[10.5px] text-slate-500 leading-tight space-y-0.5">
                       {exam.author && (
                         <p className="truncate">Qua: {exam.author}</p>
@@ -276,9 +279,10 @@ export default function ExamList({ exams, currentUser, onSelectExam, onOpenTeach
                       {exam.className && (
                         <p className="truncate">Lớp học: {exam.className}</p>
                       )}
-                      {exam.dueText && (
-                        <p className="text-slate-400 truncate">{exam.dueText}</p>
-                      )}
+                      <p className="text-slate-400 truncate flex items-center gap-1">
+                        <span>{formatExamTimeAgo(exam)}</span>
+                        {exam.dueText && <span>• {exam.dueText}</span>}
+                      </p>
                     </div>
                   </div>
 

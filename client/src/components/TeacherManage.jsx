@@ -9,6 +9,7 @@ import {
   MoreVertical, 
   Search, 
   ChevronDown, 
+  ChevronUp,
   Clock, 
   Share, 
   LayoutGrid, 
@@ -21,6 +22,7 @@ import {
 import ExamDetailManage from './ExamDetailManage';
 import CreateResourceModal from './CreateResourceModal';
 import QuizizzLogo from './QuizizzLogo';
+import { getExamTimestamp, formatExamTimeAgo } from '../services/timeUtils';
 
 export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayExam, onUpdateExam, isLoading }) {
   const navigate = useNavigate();
@@ -135,11 +137,30 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
     );
   }
 
-  // Lọc theo search
-  const filteredExams = exams.filter(e => 
-    e.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (e.subject && e.subject.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // Sắp xếp bài thi theo thời gian thực (mặc định: mới nhất lên đầu)
+  const [sortField, setSortField] = useState('time'); // 'time' | 'title'
+  const [sortOrder, setSortOrder] = useState('desc'); // 'desc' | 'asc'
+
+  // Lọc theo search và sắp xếp theo thời gian thực (mới nhất lên trên cùng)
+  const filteredExams = (exams || [])
+    .filter(e => 
+      e.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (e.subject && e.subject.toLowerCase().includes(searchTerm.toLowerCase()))
+    )
+    .sort((a, b) => {
+      if (sortField === 'title') {
+        const titleA = (a.title || '').trim().toLowerCase();
+        const titleB = (b.title || '').trim().toLowerCase();
+        return sortOrder === 'asc'
+          ? titleA.localeCompare(titleB, 'vi')
+          : titleB.localeCompare(titleA, 'vi');
+      }
+
+      // Mặc định: Sắp xếp theo thời gian thực (sortField === 'time')
+      const timeA = getExamTimestamp(a);
+      const timeB = getExamTimestamp(b);
+      return sortOrder === 'desc' ? timeB - timeA : timeA - timeB;
+    });
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
@@ -292,15 +313,49 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
                   className="w-4 h-4 rounded border-slate-300 text-[#d82a7a] focus:ring-[#d82a7a] accent-[#d82a7a] cursor-pointer"
                 />
                 <div className="w-10 shrink-0 hidden sm:block" />
-                <span className="flex items-center gap-1 cursor-pointer hover:text-slate-700">
-                  Chi tiết hoạt động
-                  <ArrowUpDown className="w-3 h-3" />
-                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (sortField === 'title') {
+                      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+                    } else {
+                      setSortField('title');
+                      setSortOrder('asc');
+                    }
+                  }}
+                  className="flex items-center gap-1 cursor-pointer hover:text-slate-900 transition-colors bg-transparent border-none p-0 text-xs font-semibold text-slate-500"
+                  title="Sắp xếp theo tên hoạt động (A-Z / Z-A)"
+                >
+                  <span className={sortField === 'title' ? 'text-slate-900 font-bold' : ''}>Chi tiết hoạt động</span>
+                  {sortField === 'title' ? (
+                    sortOrder === 'asc' ? <ChevronUp className="w-3.5 h-3.5 text-[#d82a7a]" /> : <ChevronDown className="w-3.5 h-3.5 text-[#d82a7a]" />
+                  ) : (
+                    <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                  )}
+                </button>
               </div>
 
-              <div className="col-span-2 flex items-center justify-end gap-1 cursor-pointer hover:text-slate-700 text-right pr-4">
-                <span>Thời gian tạo</span>
-                <ChevronDown className="w-3.5 h-3.5" />
+              <div className="col-span-2 flex items-center justify-end gap-1 text-right pr-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (sortField === 'time') {
+                      setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
+                    } else {
+                      setSortField('time');
+                      setSortOrder('desc');
+                    }
+                  }}
+                  className="flex items-center gap-1 cursor-pointer hover:text-slate-900 transition-colors bg-transparent border-none p-0 text-xs font-semibold text-slate-500"
+                  title="Sắp xếp theo thời gian tạo (Mới nhất lên đầu / Cũ nhất lên đầu)"
+                >
+                  <span className={sortField === 'time' ? 'text-slate-900 font-bold' : ''}>Thời gian tạo</span>
+                  {sortField === 'time' ? (
+                    sortOrder === 'desc' ? <ChevronDown className="w-3.5 h-3.5 text-[#d82a7a]" /> : <ChevronUp className="w-3.5 h-3.5 text-[#d82a7a]" />
+                  ) : (
+                    <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                  )}
+                </button>
               </div>
 
               <div className="col-span-3 text-right text-slate-400">
@@ -384,13 +439,13 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
 
                     {/* Cột giữa: Thời gian tạo (Hiện trên máy tính) */}
                     <div className="hidden md:block md:col-span-2 text-right text-xs text-slate-500 pr-4">
-                      {exam.createdAtText || `${idx + 1} tháng trước`}
+                      {formatExamTimeAgo(exam)}
                     </div>
 
                     {/* Cột phải: Các nút Thao tác (Chơi, Share, More) */}
                     <div className="md:col-span-3 flex items-center justify-between md:justify-end gap-2 pt-2.5 md:pt-0 border-t md:border-t-0 border-slate-100 relative">
                       <span className="md:hidden text-[11px] text-slate-400">
-                        {exam.createdAtText || `${idx + 1} tháng trước`}
+                        {formatExamTimeAgo(exam)}
                       </span>
                       <div className="flex items-center gap-1.5 sm:gap-2">
                         <button

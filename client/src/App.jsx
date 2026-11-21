@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { fetchExams, fetchExamById, submitExamResult, updateExamApi, deleteExamApi, createExamApi } from './services/api';
 import { evaluateUserAnswers } from './services/examEvaluation';
+import { getExamTimestamp } from './services/timeUtils';
 import ExamList from './components/ExamList';
 import ExamRoom from './components/ExamRoom';
 import ExamResult from './components/ExamResult';
@@ -342,7 +343,9 @@ export default function App() {
       try {
         const dbExams = await fetchExams();
         if (dbExams && Array.isArray(dbExams)) {
-          setExams(dbExams);
+          // Luôn đảm bảo các bài thi mới nhất được sắp xếp lên trên cùng
+          const sorted = [...dbExams].sort((a, b) => getExamTimestamp(b) - getExamTimestamp(a));
+          setExams(sorted);
         }
       } catch (err) {
         console.error("Lỗi tải đề thi từ CSDL:", err);
@@ -401,7 +404,13 @@ export default function App() {
   };
 
   const handleAddExam = async (newExam) => {
-    setExams([newExam, ...exams]);
+    const examWithTime = {
+      ...newExam,
+      createdAt: newExam.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      createdAtText: 'Vừa xong'
+    };
+    setExams(prev => [examWithTime, ...prev.filter(e => e.id !== newExam.id)]);
     // Đồng bộ đề thi mới (hoặc bản sao chép) vào CSDL Neon Cloud
     await createExamApi({
       id: newExam.id,
@@ -421,9 +430,13 @@ export default function App() {
     const normalized = {
       ...updatedExam,
       totalQuestions: totalQ,
-      statusBadge: `${totalQ} Qs`
+      statusBadge: `${totalQ} Qs`,
+      updatedAt: new Date().toISOString()
     };
-    setExams(prev => prev.map(e => e.id === updatedExam.id ? normalized : e));
+    setExams(prev => {
+      const updated = prev.map(e => e.id === updatedExam.id ? normalized : e);
+      return [...updated].sort((a, b) => getExamTimestamp(b) - getExamTimestamp(a));
+    });
 
     // Đồng bộ trực tiếp thay đổi câu hỏi của đề thi vào CSDL Neon
     await updateExamApi(updatedExam.id, {
@@ -440,7 +453,8 @@ export default function App() {
     // Làm mới lại danh sách từ CSDL để đảm bảo tất cả số lượng câu hỏi đều chuẩn xác
     const freshExams = await fetchExams();
     if (freshExams && Array.isArray(freshExams)) {
-      setExams(freshExams);
+      const sorted = [...freshExams].sort((a, b) => getExamTimestamp(b) - getExamTimestamp(a));
+      setExams(sorted);
     }
   };
 
