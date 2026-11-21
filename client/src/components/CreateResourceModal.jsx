@@ -599,7 +599,6 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
       if (onSaveExam) {
         await onSaveExam(savedExam);
       }
-      alert('🎉 Đã lưu bài thi và cập nhật toàn bộ thứ tự câu hỏi thành công!');
       if (onBack) {
         onBack();
       }
