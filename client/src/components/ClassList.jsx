@@ -384,7 +384,7 @@ export default function ClassList({ onSelectClass }) {
   return (
     <div className="flex-1 flex flex-row min-h-screen bg-white text-slate-800 font-sans">
       {/* 1. THANH PHỤ (SUB-SIDEBAR) BÊN TRÁI: HỌC SINH -> CÁC LỚP HỌC */}
-      <aside className="hidden lg:flex w-52 border-r border-slate-200 bg-white flex-col py-5 px-3 shrink-0 select-none">
+      <aside className="hidden lg:flex w-52 h-screen sticky top-0 self-start border-r border-slate-200 bg-white flex-col py-5 px-3 shrink-0 select-none">
         <h2 className="text-sm font-bold text-slate-900 px-3 mb-3">Học sinh</h2>
         <nav className="space-y-1">
           <button 

@@ -551,7 +551,7 @@ export default function App() {
     <div className="min-h-screen bg-white text-slate-800 font-sans flex flex-row antialiased relative">
       {/* CỘT SIDEBAR TRÁI CHO VAI TRÒ ADMIN (Hiện trên máy tính md:flex) */}
       {!isExamRoomPath && !isResultPath && currentUser.role === 'admin' && (
-        <aside className="hidden md:flex w-16 bg-white border-r border-slate-200 flex-col items-center py-4 justify-between shrink-0 z-30 select-none">
+        <aside className="hidden md:flex w-16 h-screen sticky top-0 self-start bg-white border-r border-slate-200 flex-col items-center py-4 justify-between shrink-0 z-30 select-none">
           <div className="flex flex-col items-center gap-5 w-full">
             {/* Logo Quizizz biểu tượng chữ Q màu hồng */}
             <div 

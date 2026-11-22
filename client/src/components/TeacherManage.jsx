@@ -226,7 +226,7 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
   return (
     <div className="min-h-[calc(100vh-64px)] bg-slate-50 flex">
       {/* CỘT SUB-SIDEBAR BÊN TRÁI (Thư viện) */}
-      <aside className="hidden md:flex w-56 bg-white border-r border-slate-200 p-4 shrink-0 flex-col justify-between select-none">
+      <aside className="hidden md:flex w-56 h-screen sticky top-0 self-start bg-white border-r border-slate-200 p-4 shrink-0 flex-col justify-between select-none">
         <div>
           <h2 className="text-base font-bold text-slate-800 px-3 py-2 mb-2">Thư viện</h2>
           
@@ -272,10 +272,10 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
         </div>
 
         {/* BẢNG DANH SÁCH HOẠT ĐỘNG KIỂU WORDWALL */}
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-2xs">
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-2xs flex flex-col overflow-hidden">
           {/* Header Bảng */}
           {selectedExams.length > 0 ? (
-            <div className="px-5 py-2.5 border-b border-rose-200 bg-rose-50/70 flex items-center justify-between text-xs font-semibold animate-in fade-in duration-150">
+            <div className="px-5 py-2.5 border-b border-rose-200 bg-rose-50/70 flex items-center justify-between text-xs font-semibold shrink-0 z-10 animate-in fade-in duration-150">
               <div className="flex items-center gap-3">
                 <input
                   type="checkbox"
@@ -304,7 +304,7 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
               </button>
             </div>
           ) : (
-            <div className="hidden md:grid px-5 py-3.5 border-b border-slate-200 bg-white grid-cols-12 items-center text-xs font-semibold text-slate-500">
+            <div className="hidden md:grid px-5 py-3.5 border-b border-slate-200 bg-white grid-cols-12 items-center text-xs font-semibold text-slate-500 shrink-0 z-10">
               <div className="col-span-7 flex items-center gap-3 sm:gap-4 min-w-0">
                 <input
                   type="checkbox"
@@ -364,8 +364,8 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
             </div>
           )}
 
-          {/* Danh sách các hàng */}
-          <div className="divide-y divide-slate-100">
+          {/* Danh sách các hàng có thanh cuộn riêng (Scrollable list) */}
+          <div className="divide-y divide-slate-100 overflow-y-auto max-h-[calc(100vh-270px)] sm:max-h-[calc(100vh-250px)]">
             {isLoading ? (
               <div className="py-20 flex flex-col items-center justify-center text-center animate-in fade-in duration-300">
                 <div className="w-12 h-12 rounded-full border-4 border-pink-100 border-t-[#d82a7a] animate-spin mb-3"></div>
