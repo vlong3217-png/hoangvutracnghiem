@@ -980,19 +980,21 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
             {currentIdx + 1}/{questions.length}
           </div>
 
-          <span className="flex items-center gap-1 px-2 py-0.5 sm:px-3 sm:py-1 bg-white/5 border border-white/10 text-slate-200 font-bold text-[11px] sm:text-xs rounded-lg shadow-sm">
-            {(currentQ.type === 'true_false_multi' || currentQ.type === 'true_false')
-              ? 'Đoạn văn'
-              : currentQ.type === 'categorize'
-                ? 'Phân loại'
-                : currentQ.type === 'drag_drop'
-                  ? 'Kéo thả'
-                  : currentQ.type === 'essay'
-                    ? 'Tự luận (AI)'
-                    : (currentQ.type === 'short_answer' || currentQ.type === 'fill_blank')
-                      ? 'Điền từ'
-                      : 'Trắc nghiệm'}
-          </span>
+          {currentQ.type && currentQ.type !== 'single' && (
+            <span className="flex items-center gap-1 px-2 py-0.5 sm:px-3 sm:py-1 bg-white/5 border border-white/10 text-slate-200 font-bold text-[11px] sm:text-xs rounded-lg shadow-sm">
+              {(currentQ.type === 'true_false_multi' || currentQ.type === 'true_false')
+                ? 'Đoạn văn'
+                : currentQ.type === 'categorize'
+                  ? 'Phân loại'
+                  : currentQ.type === 'drag_drop'
+                    ? 'Kéo thả'
+                    : currentQ.type === 'essay'
+                      ? 'Tự luận (AI)'
+                      : (currentQ.type === 'short_answer' || currentQ.type === 'fill_blank')
+                        ? 'Điền từ'
+                        : ''}
+            </span>
+          )}
 
           {exam.shuffleQuestions && (
             <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 bg-white/5 text-slate-300 border border-white/10 font-bold text-[10px] rounded-lg">
@@ -1007,18 +1009,6 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* NÚT DANH SÁCH CÂU HỎI ĐÃ BỎ QUA NỔI BẬT */}
-          {skippedQuestionIds.length > 0 && (
-            <button
-              onClick={() => setShowSkippedModal(true)}
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-slate-200 hover:text-white text-[11px] sm:text-xs font-bold transition-all cursor-pointer"
-              title="Xem danh sách các câu đã bỏ qua để làm lại"
-            >
-              <RotateCcw className="w-3.5 h-3.5 text-slate-300" />
-              <span>Đã bỏ qua ({skippedQuestionIds.length})</span>
-            </button>
-          )}
-
           <button
             onClick={() => setShowExitConfirm(true)}
             className="w-8 h-8 rounded-lg bg-transparent hover:bg-white/10 border border-white/10 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer"
@@ -1943,20 +1933,20 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
         </footer>
       )}
 
-      {/* MODAL DANH SÁCH CÁC CÂU HỎI ĐÃ BỎ QUA ĐỂ LÀM LẠI */}
+      {/* MODAL DANH SÁCH CÁC CÂU HỎI ĐÃ BỎ QUA ĐỂ LÀM LẠI (TRONG SUỐT GLASSMORPHISM ĐỒNG BỘ) */}
       {showSkippedModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-[#240520] border border-white/20 rounded-3xl max-w-lg w-full p-6 text-left shadow-2xl animate-in fade-in zoom-in-95 max-h-[85vh] flex flex-col">
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-black/40 backdrop-blur-xl border border-white/20 rounded-2xl sm:rounded-3xl max-w-lg w-full p-6 text-left shadow-2xl animate-in fade-in zoom-in-95 max-h-[85vh] flex flex-col">
             <div className="flex items-center justify-between pb-3 border-b border-white/10 shrink-0 mb-4">
               <div className="flex items-center gap-2">
-                <RotateCcw className="w-5 h-5 text-amber-400" />
+                <RotateCcw className="w-5 h-5 text-white" />
                 <h3 className="text-base sm:text-lg font-bold text-white">
                   Danh sách câu hỏi đã bỏ qua ({skippedQuestionIds.length})
                 </h3>
               </div>
               <button
                 onClick={() => setShowSkippedModal(false)}
-                className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300 hover:text-white cursor-pointer"
+                className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 flex items-center justify-center text-slate-300 hover:text-white cursor-pointer transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1976,10 +1966,10 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
                   <div
                     key={qId}
                     onClick={() => handleJumpToQuestion(targetIdx)}
-                    className="p-3.5 rounded-2xl bg-white/5 hover:bg-white/15 border border-white/10 hover:border-amber-400/60 transition-all cursor-pointer flex items-center justify-between gap-3 group"
+                    className="p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/25 transition-all cursor-pointer flex items-center justify-between gap-3 group"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <span className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 font-bold text-xs flex items-center justify-center shrink-0 border border-amber-400/40">
+                      <span className="w-8 h-8 rounded-xl bg-white/10 text-white font-bold text-xs flex items-center justify-center shrink-0 border border-white/15">
                         {targetIdx + 1}
                       </span>
                       <p className="text-xs sm:text-sm text-slate-200 line-clamp-2 font-normal group-hover:text-white">
@@ -1987,7 +1977,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
                       </p>
                     </div>
 
-                    <button className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shrink-0 shadow-md transition-all">
+                    <button className="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/15 font-semibold text-xs shrink-0 backdrop-blur-xs transition-all cursor-pointer">
                       Làm lại
                     </button>
                   </div>
@@ -1998,7 +1988,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
             <div className="pt-4 border-t border-white/10 mt-3 flex justify-end shrink-0">
               <button
                 onClick={() => setShowSkippedModal(false)}
-                className="px-5 py-2 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/20 text-white"
+                className="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/15 transition-all cursor-pointer backdrop-blur-xs"
               >
                 Đóng
               </button>
