@@ -290,14 +290,11 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
     setCategoryItems(categoryItems.filter(it => it.categoryId !== catId));
   };
 
-  const handleAddItemToCategory = (catId, catName) => {
-    const text = prompt(`Nhập nội dung mục thuộc cột "${catName}":`);
-    if (text && text.trim()) {
-      setCategoryItems(prev => [
-        ...prev,
-        { id: `item-${Date.now()}`, text: text.trim(), categoryId: catId }
-      ]);
-    }
+  const handleAddItemToCategory = (catId) => {
+    setCategoryItems(prev => [
+      ...prev,
+      { id: `item-${Date.now()}`, text: '', categoryId: catId }
+    ]);
   };
 
   const handleRemoveCategoryItem = (itemId) => {
@@ -309,13 +306,10 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
   };
 
   const handleAddDistractorCategorize = () => {
-    const text = prompt('Nhập nội dung đáp án gây nhiễu (mục này KHÔNG thuộc nhóm nào, xuất hiện để thử thách học sinh):');
-    if (text && text.trim()) {
-      setDistractorItems(prev => [
-        ...prev,
-        { id: `dist-${Date.now()}`, text: text.trim() }
-      ]);
-    }
+    setDistractorItems(prev => [
+      ...prev,
+      { id: `dist-${Date.now()}`, text: '' }
+    ]);
   };
 
   const handleRemoveDistractorCategorize = (distId) => {
@@ -377,12 +371,23 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
   };
 
   const handleAddDistractor = () => {
-    const t = prompt('Nhập từ khóa gây nhiễu (thử thách thí sinh khi kéo thả):');
-    if (t && t.trim()) {
-      if (!draggableItems.some(item => (typeof item === 'object' ? item.text : item) === t.trim())) {
-        setDraggableItems([...draggableItems, t.trim()]);
+    // Thêm trực tiếp ô từ khóa gây nhiễu mới để giáo viên gõ trực tiếp trên thẻ
+    setDraggableItems(prev => [
+      ...prev,
+      { id: `dist-${Date.now()}`, text: '', isDistractor: true }
+    ]);
+  };
+
+  const handleUpdateDraggableItem = (idx, newText) => {
+    setDraggableItems(prev => {
+      const updated = [...prev];
+      if (typeof updated[idx] === 'object' && updated[idx] !== null) {
+        updated[idx] = { ...updated[idx], text: newText };
+      } else {
+        updated[idx] = { id: `item-${idx}-${Date.now()}`, text: newText, isDistractor: true };
       }
-    }
+      return updated;
+    });
   };
 
   const handleRemoveDraggableItem = (idx) => {
@@ -590,15 +595,19 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
         updatedQuestion.maxScore = points || 10;
       } else if (questionType === 'categorize') {
         updatedQuestion.categories = categories;
+        const validCategoryItems = categoryItems.filter(it => it.text && it.text.trim());
+        const validDistractors = distractorItems.filter(d => d.text && d.text.trim());
         const allItems = [
-          ...categoryItems.map(it => ({ id: it.id, text: it.text, categoryId: it.categoryId })),
-          ...distractorItems.map(it => ({ id: it.id, text: it.text, categoryId: null, isDistractor: true }))
+          ...validCategoryItems.map(it => ({ id: it.id, text: it.text.trim(), categoryId: it.categoryId })),
+          ...validDistractors.map(it => ({ id: it.id, text: it.text.trim(), categoryId: null, isDistractor: true }))
         ];
         updatedQuestion.items = allItems;
-        updatedQuestion.distractors = distractorItems.map(d => d.text);
+        updatedQuestion.distractors = validDistractors.map(d => d.text.trim());
       } else if (questionType === 'drag_drop') {
         updatedQuestion.sentences = sentences;
-        updatedQuestion.draggableItems = draggableItems;
+        updatedQuestion.draggableItems = draggableItems
+          .map(item => (typeof item === 'object' && item !== null ? item.text : item))
+          .filter(t => t && String(t).trim().length > 0);
       }
 
       await onSave(updatedQuestion);
@@ -1493,8 +1502,10 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                               <input
                                 type="text"
                                 value={item.text}
+                                placeholder="Nhập nội dung mục..."
                                 onChange={(e) => handleUpdateCategoryItem(item.id, e.target.value)}
                                 className="flex-1 outline-none font-bold text-slate-900 bg-transparent pr-2 text-xs sm:text-sm"
+                                autoFocus={item.text === ''}
                               />
                               <button
                                 type="button"
@@ -1511,7 +1522,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
 
                       <button
                         type="button"
-                        onClick={() => handleAddItemToCategory(cat.id, cat.name)}
+                        onClick={() => handleAddItemToCategory(cat.id)}
                         className="w-full py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-white/10 cursor-pointer shrink-0"
                       >
                         <Plus className="w-3.5 h-3.5" />
@@ -1561,8 +1572,10 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                           <input
                             type="text"
                             value={dist.text}
+                            placeholder="Nhập đáp án gây nhiễu..."
                             onChange={(e) => handleUpdateDistractorCategorize(dist.id, e.target.value)}
                             className="flex-1 outline-none font-bold text-slate-900 bg-transparent text-xs sm:text-sm truncate"
+                            autoFocus={dist.text === ''}
                           />
                         </div>
                         <button
@@ -1702,8 +1715,9 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
               <div className="p-3 sm:p-4">
                 <div className="flex flex-wrap gap-2.5">
                   {draggableItems.map((item, iIdx) => {
-                    const itemText = typeof item === 'object' ? item.text : item;
-                    const isFromSentence = sentences.some(s => (s.correctWord || '').trim() === itemText.trim());
+                    const itemText = typeof item === 'object' && item !== null ? item.text : item;
+                    const isExplicitDistractor = typeof item === 'object' && item !== null && item.isDistractor;
+                    const isFromSentence = !isExplicitDistractor && (itemText || '').trim().length > 0 && sentences.some(s => (s.correctWord || '').trim() === itemText.trim());
 
                     return (
                       <div
@@ -1711,24 +1725,35 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                         className={`p-2 sm:p-2.5 rounded-xl shadow-md flex items-center gap-2 border transition-all ${
                           isFromSentence
                             ? 'bg-white text-slate-900 border-slate-200'
-                            : 'bg-amber-50 text-slate-900 border-2 border-amber-300'
+                            : 'bg-amber-50 text-slate-900 border-2 border-amber-300 hover:border-amber-400'
                         }`}
                       >
                         <GripVertical className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <span className="font-bold text-xs sm:text-sm">{itemText}</span>
                         {isFromSentence ? (
-                          <span className="text-[10px] bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded-full font-bold">
+                          <span className="font-bold text-xs sm:text-sm select-none">{itemText}</span>
+                        ) : (
+                          <input
+                            type="text"
+                            value={itemText}
+                            placeholder="Nhập từ gây nhiễu..."
+                            onChange={(e) => handleUpdateDraggableItem(iIdx, e.target.value)}
+                            className="font-bold text-xs sm:text-sm text-slate-900 bg-transparent outline-none border-b border-dashed border-amber-400/80 focus:border-amber-600 min-w-[120px] max-w-[240px]"
+                            autoFocus={itemText === ''}
+                          />
+                        )}
+                        {isFromSentence ? (
+                          <span className="text-[10px] bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded-full font-bold shrink-0">
                             Đáp án
                           </span>
                         ) : (
-                          <span className="text-[10px] bg-amber-200 text-amber-900 px-1.5 py-0.5 rounded-full font-bold">
+                          <span className="text-[10px] bg-amber-200 text-amber-900 px-1.5 py-0.5 rounded-full font-bold shrink-0">
                             Gây nhiễu
                           </span>
                         )}
                         <button
                           type="button"
                           onClick={() => handleRemoveDraggableItem(iIdx)}
-                          className="text-slate-400 hover:text-rose-600 p-0.5 rounded hover:bg-rose-50 cursor-pointer ml-1 transition-colors"
+                          className="text-slate-400 hover:text-rose-600 p-0.5 rounded hover:bg-rose-50 cursor-pointer ml-1 transition-colors shrink-0"
                           title="Xóa thẻ từ khóa này"
                         >
                           <X className="w-3.5 h-3.5" />
