@@ -1124,7 +1124,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
               if (isFillBlankPart) {
                 const userSelectedText = multiTfAnswers[currentPartKey] || '';
                 return (
-                  <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-2xl mx-auto shrink-0">
+                  <div className="w-full max-w-2xl mx-auto shrink-0">
                     <input
                       type="text"
                       disabled={Boolean(answeredState)}
@@ -1143,15 +1143,8 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
                             : 'border-[#e53e3e] bg-[#e53e3e]/20'
                           : 'border-white/20 focus:border-pink-500'
                       }`}
+                      autoFocus
                     />
-                    <button
-                      disabled={Boolean(answeredState) || !partInputText.trim()}
-                      onClick={() => handleSelectFillBlankPart(currentPartKey, partInputText)}
-                      className="w-full sm:w-auto px-8 h-16 sm:h-20 rounded-2xl bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-black text-lg sm:text-xl shadow-xl transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0 active:scale-[0.98]"
-                    >
-                      <span>XÁC NHẬN</span>
-                      <Check className="w-6 h-6 stroke-[3]" />
-                    </button>
                   </div>
                 );
               }
@@ -1830,16 +1823,12 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
             {answeredState.isCorrect ? (
               <>
                 <Check className="w-5 h-5 sm:w-7 sm:h-7 stroke-[3.5]" />
-                <span>{answeredState.isPartStep ? 'Ý đúng' : 'Câu đúng'}</span>
+                <span>Câu đúng</span>
               </>
             ) : (
               <>
                 <X className="w-5 h-5 sm:w-7 sm:h-7 stroke-[3.5]" />
-                <span>
-                  {answeredState.correctWord
-                    ? `Chưa đúng! Đáp án: ${answeredState.correctWord}`
-                    : (answeredState.isPartStep ? 'Ý sai' : 'Câu sai')}
-                </span>
+                <span>Câu sai</span>
               </>
             )}
           </div>
@@ -1917,6 +1906,23 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
               >
                 Gửi câu trả lời
               </button>
+            ) : (currentQ.type === 'true_false_multi' || currentQ.type === 'true_false') ? (
+              (() => {
+                const currentPartKey = activePartObj?.id || activePartId;
+                const isFillBlankPart = activePartObj?.type === 'fill_blank' || (activePartObj?.correctAnswer !== undefined && activePartObj?.correctAnswer !== '' && activePartObj?.type !== 'true_false');
+                if (isFillBlankPart) {
+                  return (
+                    <button
+                      onClick={() => handleSelectFillBlankPart(currentPartKey, partInputText)}
+                      disabled={!partInputText.trim() || Boolean(answeredState)}
+                      className="px-4 py-2 sm:px-6 sm:py-2.5 bg-[#d82a7a] hover:bg-[#c2226b] disabled:opacity-30 disabled:cursor-not-allowed text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-lg transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2"
+                    >
+                      Gửi câu trả lời
+                    </button>
+                  );
+                }
+                return null;
+              })()
             ) : (!currentQ.type || currentQ.type === 'single') ? (
               /* Trắc nghiệm 1 đáp án: KHÔNG hiển thị nút Gửi câu trả lời */
               null
