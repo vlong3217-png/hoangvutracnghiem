@@ -1302,28 +1302,28 @@ export default function ExamDetailManage({ exam, onBack, onPlayExam, onUpdateExa
 
       {/* POPUP THÔNG BÁO HOÀN TẤT THAY ĐỔI THỨ TỰ CÂU HỎI */}
       {reorderToast && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 bg-slate-900/95 text-white text-xs font-semibold rounded-2xl shadow-2xl border border-slate-700 backdrop-blur-md animate-in slide-in-from-bottom-5 duration-200">
-          <div className="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
-            <CheckCircle2 className="w-4 h-4" />
+        <div className="fixed bottom-6 right-6 sm:right-16 z-50 flex items-center gap-3 px-4 py-3 bg-white text-slate-800 text-xs font-semibold rounded-2xl shadow-2xl border border-slate-200/90 animate-in slide-in-from-bottom-5 duration-200">
+          <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-200 shadow-xs">
+            <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
           </div>
           <div className="flex-1">
-            <p className="font-bold text-white text-xs">{reorderToast.message}</p>
-            <p className="text-[10.5px] text-slate-400 mt-0.5">Thứ tự các câu hỏi đã được lưu tự động vào CSDL.</p>
+            <p className="font-bold text-slate-900 text-xs">{reorderToast.message}</p>
+            <p className="text-[11px] text-slate-500 mt-0.5">Thứ tự các câu hỏi đã được lưu tự động vào CSDL.</p>
           </div>
           <button 
             onClick={() => setReorderToast(null)} 
-            className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+            className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
           >
-            ✕
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
 
       {/* THÔNG BÁO TRẠNG THÁI XỬ LÝ (ĐANG TẢI... / ĐANG LƯU... / ĐANG XÓA...) */}
       {isProcessingAction && (
-        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-2 bg-slate-900/95 text-white text-xs font-semibold rounded-full shadow-2xl border border-slate-700/80 backdrop-blur-md animate-in fade-in slide-in-from-top-3 duration-200">
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-2 bg-white text-slate-800 text-xs font-semibold rounded-full shadow-xl border border-slate-200/90 animate-in fade-in slide-in-from-top-3 duration-200">
           <Loader2 className="w-4 h-4 animate-spin text-[#d82a7a]" />
-          <span>{isProcessingAction}</span>
+          <span className="font-bold text-slate-800">{isProcessingAction}</span>
         </div>
       )}
 

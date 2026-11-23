@@ -705,9 +705,9 @@ export default function TeacherManage({ exams, onAddExam, onDeleteExam, onPlayEx
 
       {/* THÔNG BÁO XỬ LÝ (ĐANG XÓA ĐỀ THI...) */}
       {deletingExamId && (
-        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-2 bg-slate-900/95 text-white text-xs font-semibold rounded-full shadow-2xl border border-slate-700/80 backdrop-blur-md animate-in fade-in slide-in-from-top-3 duration-200">
-          <Loader2 className="w-4 h-4 animate-spin text-rose-400" />
-          <span>Đang xóa đề thi...</span>
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-2 bg-white text-slate-800 text-xs font-semibold rounded-full shadow-xl border border-slate-200/90 animate-in fade-in slide-in-from-top-3 duration-200">
+          <Loader2 className="w-4 h-4 animate-spin text-rose-500" />
+          <span className="font-bold text-slate-800">Đang xóa đề thi...</span>
         </div>
       )}
     </div>
