@@ -1,4 +1,10 @@
 import { getPool } from './db.js';
+import { 
+  signAdminToken, 
+  isAuthorizedAdmin, 
+  verifyGoogleTokenWithServers, 
+  ADMIN_EMAIL 
+} from './authUtils.js';
 
 function normalizeBirthDate(val) {
   if (!val) return '';
@@ -40,7 +46,7 @@ function matchBirthDate(inputPassword, studentBirthDate) {
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-admin-token');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -50,6 +56,37 @@ export default async function handler(req, res) {
   const { action } = req.query;
 
   try {
+    // 0. XÁC THỰC GOOGLE OAUTH DÀNH CHO ADMIN VÀ CẤP TOKEN KÝ MẬT MÃ
+    if (action === 'google-admin' && req.method === 'POST') {
+      const { credential, accessToken, email } = req.body || {};
+      const googleUser = await verifyGoogleTokenWithServers({ credential, accessToken });
+
+      const resolvedEmail = (googleUser?.email || email || '').toLowerCase().trim();
+      if (resolvedEmail !== ADMIN_EMAIL) {
+        return res.status(403).json({ 
+          success: false, 
+          message: '⛔ Từ chối truy cập: Tài khoản này không có quyền Quản trị viên!' 
+        });
+      }
+
+      const adminUser = {
+        id: 'user-admin-vlong',
+        name: googleUser?.name || 'Long Hoàng Vũ',
+        email: ADMIN_EMAIL,
+        role: 'admin',
+        roleName: 'Admin',
+        picture: googleUser?.picture,
+        authProvider: 'google'
+      };
+
+      const token = signAdminToken(adminUser);
+      return res.status(200).json({
+        success: true,
+        token: token,
+        user: adminUser
+      });
+    }
+
     // 1. ĐĂNG NHẬP
     if (action === 'login' && req.method === 'POST') {
       const { email, password } = req.body;
@@ -104,8 +141,11 @@ export default async function handler(req, res) {
           return res.status(401).json({ success: false, message: 'Mật khẩu không chính xác!' });
         }
 
+        const adminToken = user.role === 'admin' ? signAdminToken({ email: user.username, name: user.full_name, role: user.role }) : null;
+
         return res.status(200).json({
           success: true,
+          token: adminToken,
           user: {
             id: user.id,
             email: user.username,
@@ -119,19 +159,23 @@ export default async function handler(req, res) {
       return res.status(401).json({ success: false, message: 'Mã sinh viên hoặc tài khoản không tồn tại trên hệ thống!' });
     }
 
-    // 2. ĐĂNG KÝ
+    // 2. ĐĂNG KÝ (KHÓA CỨNG: CHỈ CHO PHÉP TẠO TÀI KHOẢN STUDENT)
     if (action === 'register' && req.method === 'POST') {
       const { name, email, password, role } = req.body;
-      const existing = await pool.query('SELECT id FROM users WHERE username = $1', [email]);
+      if (role && (role.toString().toLowerCase() === 'admin' || role.toString().toLowerCase() === 'teacher')) {
+        return res.status(403).json({ success: false, message: '⛔ Không được phép đăng ký tài khoản Quản trị viên!' });
+      }
+
+      const existing = await pool.query('SELECT id FROM users WHERE LOWER(TRIM(username)) = LOWER($1)', [email]);
       if (existing.rows.length > 0) {
         return res.status(400).json({ success: false, message: 'Email này đã tồn tại trong hệ thống!' });
       }
 
       const insertRes = await pool.query(`
         INSERT INTO users (username, password, full_name, role)
-        VALUES ($1, $2, $3, $4)
+        VALUES ($1, $2, $3, 'student')
         RETURNING id, username, full_name, role;
-      `, [email, password, name, role || 'student']);
+      `, [email, password, name]);
 
       const user = insertRes.rows[0];
       return res.status(200).json({
@@ -145,8 +189,11 @@ export default async function handler(req, res) {
       });
     }
 
-    // 3. LẤY DANH SÁCH USERS
+    // 3. LẤY DANH SÁCH USERS (YÊU CẦU QUYỀN ADMIN)
     if (req.method === 'GET') {
+      if (!isAuthorizedAdmin(req)) {
+        return res.status(403).json({ success: false, message: '⛔ Yêu cầu quyền Quản trị viên để xem danh sách tài khoản!' });
+      }
       const usersRes = await pool.query('SELECT id, username as email, full_name as name, role FROM users ORDER BY id ASC');
       return res.status(200).json({ success: true, data: usersRes.rows });
     }

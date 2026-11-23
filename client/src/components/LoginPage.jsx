@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Asterisk, Eye, EyeOff, AlertCircle, ShieldCheck, KeyRound, ExternalLink, HelpCircle } from 'lucide-react';
-import { loginUser } from '../services/api';
+import { loginUser, authenticateGoogleAdmin } from '../services/api';
 import QuizizzLogo from './QuizizzLogo';
 // Biểu tượng Google chuẩn vector 4 màu chính thức
 function GoogleIcon({ className = "w-5 h-5" }) {
@@ -73,8 +73,23 @@ export default function LoginPage({ onLogin, registeredUsers }) {
       setGoogleStatus('');
       return;
     }
+
+    // Gửi token lên backend để kiểm tra chữ ký số với máy chủ Google và cấp Admin Session Token
+    setGoogleStatus('Đang xác thực bảo mật với máy chủ...');
+    const authRes = await authenticateGoogleAdmin({ credential: response.credential, email });
+    if (!authRes.success || !authRes.token) {
+      setError(authRes.message || '⛔ Xác thực Quản trị viên thất bại!');
+      setIsGoogleLoading(false);
+      setGoogleStatus('');
+      return;
+    }
+
+    localStorage.setItem('QUIZIZZ_ADMIN_TOKEN', authRes.token);
+    setIsGoogleLoading(false);
+    setGoogleStatus('');
+
     // Đăng nhập thành công với quyền Admin
-    const adminUser = {
+    const adminUser = authRes.user || {
       id: "user-admin-vlong",
       name: fullName,
       email: email,
@@ -140,12 +155,27 @@ export default function LoginPage({ onLogin, registeredUsers }) {
                 if (userInfo && userInfo.email) {
                   const email = userInfo.email.toLowerCase().trim();
                   if (email !== 'vlong3217@gmail.com') {
-      setError('⛔ Tài khoản này không có quyền Quản trị viên. Đăng nhập Google chỉ dành riêng cho Admin.');
+                    setError('⛔ Tài khoản này không có quyền Quản trị viên. Đăng nhập Google chỉ dành riêng cho Admin.');
                     setIsGoogleLoading(false);
                     setGoogleStatus('');
                     return;
                   }
-                  onLogin({
+
+                  // Gửi token lên backend để kiểm tra chữ ký số với máy chủ Google và cấp Admin Session Token
+                  setGoogleStatus('Đang xác thực bảo mật với máy chủ...');
+                  const authRes = await authenticateGoogleAdmin({ accessToken: tokenResponse.access_token, email });
+                  if (!authRes.success || !authRes.token) {
+                    setError(authRes.message || '⛔ Xác thực Quản trị viên thất bại!');
+                    setIsGoogleLoading(false);
+                    setGoogleStatus('');
+                    return;
+                  }
+
+                  localStorage.setItem('QUIZIZZ_ADMIN_TOKEN', authRes.token);
+                  setIsGoogleLoading(false);
+                  setGoogleStatus('');
+
+                  onLogin(authRes.user || {
                     id: "user-admin-vlong",
                     name: userInfo.name || "Long Hoàng Vũ",
                     email: email,
@@ -212,6 +242,9 @@ export default function LoginPage({ onLogin, registeredUsers }) {
       }
       onLogin(found);
       return;
+    }
+    if (res.token) {
+      localStorage.setItem('QUIZIZZ_ADMIN_TOKEN', res.token);
     }
     onLogin({
       ...res.user,

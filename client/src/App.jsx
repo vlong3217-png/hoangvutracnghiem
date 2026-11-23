@@ -397,6 +397,7 @@ export default function App() {
     setActiveExam(null);
     setExamResult(null);
     try {
+      localStorage.removeItem('QUIZIZZ_ADMIN_TOKEN');
       sessionStorage.removeItem('QUIZIZZ_ACTIVE_EXAM');
       sessionStorage.removeItem('QUIZIZZ_EXAM_RESULT');
     } catch (e) {}

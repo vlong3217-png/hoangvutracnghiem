@@ -7,6 +7,39 @@ export const API_BASE_URL = import.meta.env.VITE_API_URL ||
     : '/api');
 
 /**
+ * Trả về headers kèm Admin Session Token (nếu có trong localStorage)
+ */
+export function getAuthHeaders(extra = {}) {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('QUIZIZZ_ADMIN_TOKEN') : null;
+  const headers = { ...extra };
+  if (token) {
+    headers['x-admin-token'] = token;
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
+/**
+ * Xác thực Google Admin Token với Backend và lấy Token đã ký mật mã
+ */
+export async function authenticateGoogleAdmin({ credential, accessToken, email }) {
+  try {
+    const endpoint = API_BASE_URL.startsWith('http://localhost:5000') 
+      ? `${API_BASE_URL}/auth/google-admin`
+      : `${API_BASE_URL}/auth?action=google-admin`;
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credential, accessToken, email })
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, message: 'Không thể kết nối đến máy chủ xác thực: ' + err.message };
+  }
+}
+
+/**
  * Lấy danh sách toàn bộ đề thi từ CSDL Neon PostgreSQL
  * Có cơ chế tự động thử lại (retry) khi Neon PostgreSQL đang khởi động (cold start)
  */
@@ -101,11 +134,13 @@ export async function registerUser({ name, email, password, role }) {
 }
 
 /**
- * Lấy danh sách toàn bộ người dùng từ CSDL
+ * Lấy danh sách toàn bộ người dùng từ CSDL (Chỉ Admin)
  */
 export async function fetchUsers() {
   try {
-    const res = await fetch(`${API_BASE_URL}/auth`);
+    const res = await fetch(`${API_BASE_URL}/auth`, {
+      headers: getAuthHeaders()
+    });
     const json = await res.json();
     if (json.success) return json.data;
     return [];
@@ -120,7 +155,8 @@ export async function fetchUsers() {
 export async function deleteExamApi(examId) {
   try {
     const res = await fetch(`${API_BASE_URL}/exams?examId=${examId}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: getAuthHeaders()
     });
     return await res.json();
   } catch (err) {
@@ -135,7 +171,7 @@ export async function createExamApi(examData) {
   try {
     const res = await fetch(`${API_BASE_URL}/exams`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(examData)
     });
     return await res.json();
@@ -151,7 +187,7 @@ export async function updateExamApi(examId, examData) {
   try {
     const res = await fetch(`${API_BASE_URL}/exams?id=${examId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(examData)
     });
     return await res.json();
@@ -188,7 +224,9 @@ export async function submitExamResult(resultData) {
  */
 export async function fetchClasses() {
   try {
-    const res = await fetch(`${API_BASE_URL}/classes`);
+    const res = await fetch(`${API_BASE_URL}/classes`, {
+      headers: getAuthHeaders()
+    });
     const json = await res.json();
     if (json.success) return json.data;
     throw new Error(json.message || 'Lỗi tải danh sách lớp học');
@@ -204,7 +242,9 @@ export async function fetchClasses() {
 export async function fetchClassById(id) {
   if (!id) return null;
   try {
-    const res = await fetch(`${API_BASE_URL}/classes?id=${id}`);
+    const res = await fetch(`${API_BASE_URL}/classes?id=${id}`, {
+      headers: getAuthHeaders()
+    });
     const json = await res.json();
     if (json.success) return json.data;
     throw new Error(json.message || 'Lỗi tải thông tin lớp học');
@@ -221,7 +261,7 @@ export async function createClassApi(classData) {
   try {
     const res = await fetch(`${API_BASE_URL}/classes`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(classData)
     });
     return await res.json();
@@ -237,7 +277,7 @@ export async function updateClassApi(id, classData) {
   try {
     const res = await fetch(`${API_BASE_URL}/classes?id=${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(classData)
     });
     return await res.json();
@@ -252,7 +292,8 @@ export async function updateClassApi(id, classData) {
 export async function deleteClassApi(id) {
   try {
     const res = await fetch(`${API_BASE_URL}/classes?id=${id}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: getAuthHeaders()
     });
     return await res.json();
   } catch (err) {
@@ -267,7 +308,7 @@ export async function addStudentsToClassApi(classId, studentPayload) {
   try {
     const res = await fetch(`${API_BASE_URL}/classes?id=${classId}&action=add_student`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(studentPayload)
     });
     return await res.json();
@@ -282,7 +323,8 @@ export async function addStudentsToClassApi(classId, studentPayload) {
 export async function deleteStudentFromClassApi(classId, studentId) {
   try {
     const res = await fetch(`${API_BASE_URL}/classes?id=${classId}&studentId=${studentId}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: getAuthHeaders()
     });
     return await res.json();
   } catch (err) {
@@ -297,7 +339,8 @@ export async function deleteMultipleStudentsFromClassApi(classId, studentIds) {
   try {
     const ids = Array.isArray(studentIds) ? studentIds.join(',') : studentIds;
     const res = await fetch(`${API_BASE_URL}/classes?id=${classId}&studentIds=${encodeURIComponent(ids)}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: getAuthHeaders()
     });
     return await res.json();
   } catch (err) {

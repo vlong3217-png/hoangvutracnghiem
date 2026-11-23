@@ -1,4 +1,5 @@
 import { getPool } from './db.js';
+import { isAuthorizedAdmin } from './authUtils.js';
 
 function parseAssignedClasses(val) {
   if (!val) return [];
@@ -15,10 +16,20 @@ export default async function handler(req, res) {
   // Bật CORS cho mọi thiết bị
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-admin-token');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
+  }
+
+  // BẢO VỆ CÁC THAO TÁC QUẢN TRỊ: TẠO / SỬA / XÓA ĐỀ THI BẮT BUỘC CÓ ADMIN TOKEN
+  if (req.method === 'POST' || req.method === 'PUT' || req.method === 'DELETE') {
+    if (!isAuthorizedAdmin(req)) {
+      return res.status(403).json({
+        success: false,
+        message: '⛔ Yêu cầu quyền Quản trị viên để thực hiện thao tác này!'
+      });
+    }
   }
 
   const pool = getPool();

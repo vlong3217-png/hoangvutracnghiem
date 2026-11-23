@@ -2,6 +2,12 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { pool, initDatabase } from './db.js';
+import { 
+  signAdminToken, 
+  isAuthorizedAdmin, 
+  verifyGoogleTokenWithServers, 
+  ADMIN_EMAIL 
+} from './authUtils.js';
 
 dotenv.config();
 
@@ -10,6 +16,17 @@ const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
+
+// Middleware bảo vệ các tài nguyên yêu cầu quyền Quản trị viên
+function requireAdmin(req, res, next) {
+  if (!isAuthorizedAdmin(req)) {
+    return res.status(403).json({
+      success: false,
+      message: '⛔ Yêu cầu quyền Quản trị viên để thực hiện thao tác này!'
+    });
+  }
+  next();
+}
 
 // -------------------------------------------------------------
 // 1. HEALTH CHECK API
@@ -65,6 +82,43 @@ function matchBirthDate(inputPassword, studentBirthDate) {
   return false;
 }
 
+// 0. XÁC THỰC GOOGLE OAUTH DÀNH CHO ADMIN VÀ CẤP TOKEN KÝ MẬT MÃ
+app.post(['/api/auth/google-admin', '/api/auth'], async (req, res, next) => {
+  if (req.path === '/api/auth' && req.query.action !== 'google-admin') {
+    return next();
+  }
+  const { credential, accessToken, email } = req.body || {};
+  try {
+    const googleUser = await verifyGoogleTokenWithServers({ credential, accessToken });
+    const resolvedEmail = (googleUser?.email || email || '').toLowerCase().trim();
+    if (resolvedEmail !== ADMIN_EMAIL) {
+      return res.status(403).json({ 
+        success: false, 
+        message: '⛔ Từ chối truy cập: Tài khoản này không có quyền Quản trị viên!' 
+      });
+    }
+
+    const adminUser = {
+      id: 'user-admin-vlong',
+      name: googleUser?.name || 'Long Hoàng Vũ',
+      email: ADMIN_EMAIL,
+      role: 'admin',
+      roleName: 'Admin',
+      picture: googleUser?.picture,
+      authProvider: 'google'
+    };
+
+    const token = signAdminToken(adminUser);
+    return res.json({
+      success: true,
+      token,
+      user: adminUser
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
   const cleanLogin = (email || '').toString().trim();
@@ -118,8 +172,13 @@ app.post('/api/auth/login', async (req, res) => {
         return res.status(401).json({ success: false, message: 'Mật khẩu không chính xác!' });
       }
 
+      const adminToken = user.role === 'admin' 
+        ? signAdminToken({ email: user.username, name: user.full_name, role: user.role }) 
+        : null;
+
       return res.json({
         success: true,
+        token: adminToken,
         user: {
           id: user.id,
           email: user.username,
@@ -138,17 +197,21 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.post('/api/auth/register', async (req, res) => {
   const { name, email, password, role } = req.body;
+  if (role && (role.toString().toLowerCase() === 'admin' || role.toString().toLowerCase() === 'teacher')) {
+    return res.status(403).json({ success: false, message: '⛔ Không được phép đăng ký tài khoản Quản trị viên!' });
+  }
+
   try {
-    const existing = await pool.query('SELECT id FROM users WHERE username = $1', [email]);
+    const existing = await pool.query('SELECT id FROM users WHERE LOWER(TRIM(username)) = LOWER($1)', [email]);
     if (existing.rows.length > 0) {
       return res.status(400).json({ success: false, message: 'Email này đã tồn tại trong hệ thống!' });
     }
 
     const insertRes = await pool.query(`
       INSERT INTO users (username, password, full_name, role)
-      VALUES ($1, $2, $3, $4)
+      VALUES ($1, $2, $3, 'student')
       RETURNING id, username, full_name, role;
-    `, [email, password, name, role || 'student']);
+    `, [email, password, name]);
 
     const user = insertRes.rows[0];
     res.json({
@@ -166,7 +229,7 @@ app.post('/api/auth/register', async (req, res) => {
 });
 
 // Lấy danh sách tài khoản (dành cho Admin)
-app.get('/api/users', async (req, res) => {
+app.get('/api/users', requireAdmin, async (req, res) => {
   try {
     const usersRes = await pool.query('SELECT id, username as email, full_name as name, role, created_at FROM users ORDER BY id ASC');
     res.json({ success: true, data: usersRes.rows });
@@ -286,9 +349,94 @@ app.get('/api/exams/:id', async (req, res) => {
   return getExamDetailById(id, res);
 });
 
+// Tạo hoặc sao chép đề thi mới
+app.post('/api/exams', requireAdmin, async (req, res) => {
+  const { id: newExamId, title, description, subject, difficulty, durationMinutes, shuffleQuestions, shuffleAnswers, questions } = req.body;
+  const examId = newExamId || `exam-${Date.now()}`;
+  
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(`
+      INSERT INTO exams (id, title, description, subject, difficulty, duration_minutes, shuffle_questions, shuffle_answers)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      ON CONFLICT (id) DO UPDATE SET
+        title = EXCLUDED.title,
+        description = EXCLUDED.description,
+        subject = EXCLUDED.subject,
+        difficulty = EXCLUDED.difficulty,
+        duration_minutes = EXCLUDED.duration_minutes,
+        shuffle_questions = EXCLUDED.shuffle_questions,
+        shuffle_answers = EXCLUDED.shuffle_answers,
+        updated_at = CURRENT_TIMESTAMP
+    `, [
+      examId, 
+      title || 'Đề thi mới', 
+      description || '', 
+      subject || 'Khoa học', 
+      difficulty || 'Đại học', 
+      Number(durationMinutes) || 45,
+      Boolean(shuffleQuestions),
+      Boolean(shuffleAnswers)
+    ]);
+
+    if (Array.isArray(questions) && questions.length > 0) {
+      for (let qIdx = 0; qIdx < questions.length; qIdx++) {
+        const q = questions[qIdx];
+        await client.query(`
+          INSERT INTO questions (id, exam_id, question_text, type, options, correct_answer, data, sort_order)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+          ON CONFLICT (exam_id, id) DO UPDATE SET
+            question_text = EXCLUDED.question_text,
+            type = EXCLUDED.type,
+            options = EXCLUDED.options,
+            correct_answer = EXCLUDED.correct_answer,
+            data = EXCLUDED.data,
+            sort_order = EXCLUDED.sort_order
+        `, [
+          String(q.id),
+          examId,
+          q.question || '',
+          q.type || 'single',
+          JSON.stringify(q.options || []),
+          JSON.stringify(q.correctAnswer ?? null),
+          JSON.stringify({
+            parts: q.parts || null,
+            categories: q.categories || null,
+            items: q.items || null,
+            sentences: q.sentences || null,
+            draggableItems: q.draggableItems || null,
+            blanks: q.blanks || null,
+            sampleAnswer: q.sampleAnswer || null,
+            criteria: q.criteria || q.rubric || null,
+            maxScore: q.maxScore || null,
+            explanation: q.explanation || null,
+            image: q.image || null,
+            video: q.video || null,
+            timeLimit: q.timeLimit || null,
+            points: q.points || null
+          }),
+          qIdx
+        ]);
+      }
+    }
+
+    await client.query('COMMIT');
+    res.json({ success: true, message: 'Đã tạo đề thi thành công', examId });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ success: false, error: err.message });
+  } finally {
+    client.release();
+  }
+});
+
 // Xóa đề thi khỏi CSDL
-app.delete('/api/exams/:id', async (req, res) => {
-  const { id } = req.params;
+app.delete(['/api/exams/:id', '/api/exams'], requireAdmin, async (req, res) => {
+  const id = req.params.id || req.query.id || req.query.examId;
+  if (!id) {
+    return res.status(400).json({ success: false, message: 'Thiếu ID đề thi cần xóa' });
+  }
   try {
     await pool.query('DELETE FROM exams WHERE id = $1', [id]);
     res.json({ success: true, message: 'Đã xóa đề thi thành công' });
@@ -298,7 +446,7 @@ app.delete('/api/exams/:id', async (req, res) => {
 });
 
 // Cập nhật câu hỏi của đề thi
-app.put(['/api/exams', '/api/exams/:id'], async (req, res) => {
+app.put(['/api/exams', '/api/exams/:id'], requireAdmin, async (req, res) => {
   const id = req.params.id || req.query.id || req.body.id || req.body.examId;
   const { title, description, subject, difficulty, durationMinutes, shuffleQuestions, shuffleAnswers, questions, assigned_classes, assignedClasses } = req.body;
   const rawAssigned = assigned_classes !== undefined ? assigned_classes : assignedClasses;
@@ -424,11 +572,11 @@ app.get('/api/submissions/:username', async (req, res) => {
 });
 
 // -------------------------------------------------------------
-// 5. CLASSES & STUDENTS API (Quản lý Lớp học & Sinh viên)
+// 5. CLASSES & STUDENTS API (Quản lý Lớp học & Sinh viên - Yêu cầu quyền Admin)
 // -------------------------------------------------------------
 
 // Lấy danh sách toàn bộ lớp học kèm số lượng học sinh
-app.get('/api/classes', async (req, res) => {
+app.get('/api/classes', requireAdmin, async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT 
@@ -451,7 +599,7 @@ app.get('/api/classes', async (req, res) => {
 });
 
 // Tạo lớp học mới
-app.post('/api/classes', async (req, res) => {
+app.post('/api/classes', requireAdmin, async (req, res) => {
   const { name, description, color } = req.body;
   if (!name || !name.trim()) {
     return res.status(400).json({ success: false, message: 'Tên lớp học không được để trống' });
@@ -472,7 +620,7 @@ app.post('/api/classes', async (req, res) => {
 });
 
 // Lấy thông tin chi tiết 1 lớp học kèm danh sách sinh viên
-app.get('/api/classes/:id', async (req, res) => {
+app.get('/api/classes/:id', requireAdmin, async (req, res) => {
   const { id } = req.params;
   try {
     const classRes = await pool.query('SELECT * FROM classes WHERE id = $1', [id]);
@@ -500,7 +648,7 @@ app.get('/api/classes/:id', async (req, res) => {
 });
 
 // Cập nhật thông tin lớp học (đổi tên, màu, mô tả)
-app.put('/api/classes/:id', async (req, res) => {
+app.put('/api/classes/:id', requireAdmin, async (req, res) => {
   const { id } = req.params;
   const { name, description, color } = req.body;
 
@@ -527,7 +675,7 @@ app.put('/api/classes/:id', async (req, res) => {
 });
 
 // Xóa lớp học
-app.delete('/api/classes/:id', async (req, res) => {
+app.delete('/api/classes/:id', requireAdmin, async (req, res) => {
   const { id } = req.params;
   try {
     await pool.query('DELETE FROM classes WHERE id = $1', [id]);
@@ -538,7 +686,7 @@ app.delete('/api/classes/:id', async (req, res) => {
 });
 
 // Thêm sinh viên vào lớp (hỗ trợ 1 hoặc nhiều sinh viên từ form hoặc Excel)
-app.post('/api/classes/:id/students', async (req, res) => {
+app.post('/api/classes/:id/students', requireAdmin, async (req, res) => {
   const { id: classId } = req.params;
   const { name, email, student_code, birth_date, students } = req.body;
 
@@ -610,7 +758,7 @@ app.post('/api/classes/:id/students', async (req, res) => {
 });
 
 // Xóa nhiều sinh viên khỏi lớp
-app.delete('/api/classes/:id/students', async (req, res) => {
+app.delete('/api/classes/:id/students', requireAdmin, async (req, res) => {
   const { id: classId } = req.params;
   const { studentIds } = req.query;
   const bodyIds = req.body?.studentIds;
@@ -628,7 +776,7 @@ app.delete('/api/classes/:id/students', async (req, res) => {
 });
 
 // Xóa sinh viên khỏi lớp
-app.delete('/api/classes/:id/students/:studentId', async (req, res) => {
+app.delete('/api/classes/:id/students/:studentId', requireAdmin, async (req, res) => {
   const { id: classId, studentId } = req.params;
   try {
     await pool.query('DELETE FROM class_students WHERE class_id = $1 AND id = $2', [classId, studentId]);

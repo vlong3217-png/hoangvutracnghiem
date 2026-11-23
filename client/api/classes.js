@@ -1,13 +1,22 @@
 import { getPool } from './db.js';
+import { isAuthorizedAdmin } from './authUtils.js';
 
 export default async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-admin-token');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
+  }
+
+  // BẢO VỆ TOÀN BỘ API LỚP HỌC & DANH SÁCH SINH VIÊN: CHỈ ADMIN MỚI ĐƯỢC PHÉP TRUY CẬP
+  if (!isAuthorizedAdmin(req)) {
+    return res.status(403).json({
+      success: false,
+      message: '⛔ Yêu cầu quyền Quản trị viên để quản lý danh sách lớp học và sinh viên!'
+    });
   }
 
   const pool = getPool();
