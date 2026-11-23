@@ -20,8 +20,7 @@ import {
   CheckCircle2,
   Bot,
   Loader2,
-  Key,
-  Shuffle
+  Key
 } from 'lucide-react';
 import { gradeEssayWithGemini, getGeminiApiKey, setGeminiApiKey } from '../services/geminiService';
 import { getExamProgress, saveExamProgress, clearExamProgress } from '../services/examProgress';
@@ -979,33 +978,6 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
           <div className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-lg bg-white/5 text-xs font-bold text-slate-200 border border-white/10 font-mono">
             {currentIdx + 1}/{questions.length}
           </div>
-
-          {currentQ.type && currentQ.type !== 'single' && (
-            <span className="flex items-center gap-1 px-2 py-0.5 sm:px-3 sm:py-1 bg-white/5 border border-white/10 text-slate-200 font-bold text-[11px] sm:text-xs rounded-lg shadow-sm">
-              {(currentQ.type === 'true_false_multi' || currentQ.type === 'true_false')
-                ? 'Đoạn văn'
-                : currentQ.type === 'categorize'
-                  ? 'Phân loại'
-                  : currentQ.type === 'drag_drop'
-                    ? 'Kéo thả'
-                    : currentQ.type === 'essay'
-                      ? 'Tự luận (AI)'
-                      : (currentQ.type === 'short_answer' || currentQ.type === 'fill_blank')
-                        ? 'Điền từ'
-                        : ''}
-            </span>
-          )}
-
-          {exam.shuffleQuestions && (
-            <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 bg-white/5 text-slate-300 border border-white/10 font-bold text-[10px] rounded-lg">
-              <Shuffle className="w-2.5 h-2.5" /> Đảo câu hỏi
-            </span>
-          )}
-          {exam.shuffleAnswers && (
-            <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 bg-white/5 text-slate-300 border border-white/10 font-bold text-[10px] rounded-lg">
-              <Shuffle className="w-2.5 h-2.5" /> Đảo đáp án
-            </span>
-          )}
         </div>
 
         <div className="flex items-center gap-2">
