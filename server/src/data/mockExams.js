@@ -1,17 +1,8 @@
 export const mockUsers = [
   {
-    id: "user-student",
-    name: "Nguyễn Văn An",
-    email: "student@test.com",
-    password: "123",
-    role: "student",
-    roleName: "Sinh viên"
-  },
-  {
-    id: "user-admin",
-    name: "Quản trị viên",
-    email: "admin@test.com",
-    password: "123",
+    id: "user-admin-vlong",
+    name: "Long Hoàng Vũ",
+    email: "vlong3217@gmail.com",
     role: "admin",
     roleName: "Admin"
   }
