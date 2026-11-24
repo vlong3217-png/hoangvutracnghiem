@@ -1928,7 +1928,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
               <button
                 onClick={handleSubmitCategorize}
                 disabled={Boolean(answeredState) || Object.values(columnAssignments).every(arr => !arr || arr.length === 0)}
-                className="px-4 py-2 sm:px-6 sm:py-2.5 bg-[#d82a7a] hover:bg-[#c2226b] disabled:opacity-30 disabled:cursor-not-allowed text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-lg transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2"
+                className="px-4 py-2 sm:px-6 sm:py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 disabled:opacity-30 disabled:cursor-not-allowed text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-lg transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2"
               >
                 Gửi câu trả lời
               </button>
@@ -1936,7 +1936,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
               <button
                 onClick={handleSubmitDragDrop}
                 disabled={Boolean(answeredState) || Object.keys(sentenceSlots).length === 0}
-                className="px-4 py-2 sm:px-6 sm:py-2.5 bg-[#d82a7a] hover:bg-[#c2226b] disabled:opacity-30 disabled:cursor-not-allowed text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-lg transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2"
+                className="px-4 py-2 sm:px-6 sm:py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 disabled:opacity-30 disabled:cursor-not-allowed text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-lg transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2"
               >
                 Gửi câu trả lời
               </button>
@@ -1949,7 +1949,7 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
                     <button
                       onClick={() => handleSelectFillBlankPart(currentPartKey, partInputText)}
                       disabled={!partInputText.trim() || Boolean(answeredState)}
-                      className="px-4 py-2 sm:px-6 sm:py-2.5 bg-[#d82a7a] hover:bg-[#c2226b] disabled:opacity-30 disabled:cursor-not-allowed text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-lg transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2"
+                      className="px-4 py-2 sm:px-6 sm:py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 disabled:opacity-30 disabled:cursor-not-allowed text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-lg transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2"
                     >
                       Gửi câu trả lời
                     </button>
