@@ -492,35 +492,6 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
     setColumnAssignments(nextColumnAssignments);
     setDraggedItem(null);
     setSelectedCategorizeItem(null);
-
-    // Nếu đã phân loại hết tất cả các mục (kể cả distractor bị xếp vào) => Tự động đánh giá Đúng/Sai toàn câu
-    if (remainingUnassigned.length === 0) {
-      const isAllMatch = evaluateCategorize(nextColumnAssignments);
-
-      selectedAnswersRef.current = { ...selectedAnswersRef.current, [currentQ.id]: nextColumnAssignments };
-      setSelectedAnswers(prev => ({ ...prev, [currentQ.id]: nextColumnAssignments }));
-      setAnsweredState({ isCorrect: isAllMatch });
-      if (isAllMatch) {
-        playSound(true);
-        recordOutcome(true);
-        setScore(prev => {
-          const next = prev + 600;
-          scoreRef.current = next;
-          return next;
-        });
-        try {
-          confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
-        } catch (e) { }
-      } else {
-        playSound(false);
-        recordOutcome(false);
-      }
-
-      // Tự động chuyển câu sau 2 giây
-      setTimeout(() => {
-        handleNext();
-      }, 2000);
-    }
   };
 
   const handleSubmitCategorize = () => {
@@ -584,41 +555,65 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
     setAvailableDropItems(nextAvailable);
     setDraggedItem(null);
     setSelectedDropItem(null);
-
-    // Nếu đã điền đủ tất cả các ô trống => Tự động đánh giá Đúng/Sai
-    const sentences = currentQ.sentences || [];
-    const isAllFilled = sentences.every(s => nextSlots[s.id] !== undefined);
-    if (isAllFilled) {
-      const isAllCorrect = sentences.every(s => {
-        const userChoice = String(nextSlots[s.id] || '').trim().toLowerCase();
-        const correctChoice = String(s.correctItemId || s.correctWord || s.correctAnswer || '').trim().toLowerCase();
-        return userChoice === correctChoice;
-      });
-      selectedAnswersRef.current = { ...selectedAnswersRef.current, [currentQ.id]: nextSlots };
-      setSelectedAnswers(prev => ({ ...prev, [currentQ.id]: nextSlots }));
-      setAnsweredState({ isCorrect: isAllCorrect });
-      if (isAllCorrect) {
-        playSound(true);
-        recordOutcome(true);
-        setScore(prev => {
-          const next = prev + 600;
-          scoreRef.current = next;
-          return next;
-        });
-        try {
-          confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
-        } catch (e) { }
-      } else {
-        playSound(false);
-        recordOutcome(false);
-      }
-
-      // Tự động chuyển câu sau 2 giây
-      setTimeout(() => {
-        handleNext();
-      }, 2000);
-    }
   };
+
+  const handleSubmitDragDrop = () => {
+    if (answeredState) return;
+    const sentences = currentQ.sentences || [];
+    const isAllCorrect = sentences.length > 0 && sentences.every(s => {
+      const userChoice = String(sentenceSlots[s.id] || '').trim().toLowerCase();
+      const correctChoice = String(s.correctItemId || s.correctWord || s.correctAnswer || '').trim().toLowerCase();
+      return userChoice.length > 0 && userChoice === correctChoice;
+    });
+
+    selectedAnswersRef.current = { ...selectedAnswersRef.current, [currentQ.id]: sentenceSlots };
+    setSelectedAnswers(prev => ({ ...prev, [currentQ.id]: sentenceSlots }));
+    setAnsweredState({ isCorrect: isAllCorrect });
+
+    if (isAllCorrect) {
+      playSound(true);
+      recordOutcome(true);
+      setScore(prev => {
+        const next = prev + 600;
+        scoreRef.current = next;
+        return next;
+      });
+      try {
+        confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
+      } catch (e) { }
+    } else {
+      playSound(false);
+      recordOutcome(false);
+    }
+
+    setTimeout(() => {
+      handleNext();
+    }, 2000);
+  };
+
+  // Lắng nghe phím Enter để nộp bài cho Phân loại cột và Kéo thả
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key !== 'Enter' || answeredState) return;
+
+      if (currentQ?.type === 'categorize') {
+        const hasAssigned = Object.values(columnAssignments).some(arr => arr && arr.length > 0);
+        if (hasAssigned) {
+          e.preventDefault();
+          handleSubmitCategorize();
+        }
+      } else if (currentQ?.type === 'drag_drop') {
+        const hasSlotFilled = Object.keys(sentenceSlots).length > 0;
+        if (hasSlotFilled) {
+          e.preventDefault();
+          handleSubmitDragDrop();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [answeredState, currentQ?.type, columnAssignments, sentenceSlots]);
 
   const handleRemoveFromSlot = (slotId) => {
     if (answeredState) return;
@@ -1230,15 +1225,15 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
                 const assigned = columnAssignments[cat.id] || [];
                 const catStyle = CATEGORY_STYLES[cIdx % CATEGORY_STYLES.length];
                 const catName = cat.name || cat.title || `Nhóm ${cIdx + 1}`;
-                const isHighlight = selectedCategorizeItem !== null;
+                const isHighlight = selectedCategorizeItem !== null && !answeredState;
 
                 return (
                   <div
                     key={cat.id}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={() => handleDropIntoCategory(cat.id, draggedItem)}
+                    onDragOver={(e) => !answeredState && e.preventDefault()}
+                    onDrop={() => !answeredState && handleDropIntoCategory(cat.id, draggedItem)}
                     onClick={() => {
-                      if (selectedCategorizeItem) {
+                      if (!answeredState && selectedCategorizeItem) {
                         handleDropIntoCategory(cat.id, selectedCategorizeItem);
                       }
                     }}
@@ -1263,20 +1258,47 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
                           {isHighlight ? '+ Chạm để xếp vào đây' : 'Chưa có mục nào'}
                         </div>
                       ) : (
-                        assigned.map(item => (
-                          <div
-                            key={item.id}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleReturnToOptions(cat.id, item);
-                            }}
-                            title="Bấm vào để bỏ ra ngoài"
-                            className="p-2 sm:p-2.5 bg-white text-slate-900 rounded-xl shadow-md cursor-pointer hover:bg-rose-50 transition-all flex items-center justify-between text-xs sm:text-sm font-bold leading-snug border border-slate-200"
-                          >
-                            <span className="truncate pr-1">{item.text}</span>
-                            <X className="w-3.5 h-3.5 text-slate-400 hover:text-rose-600 shrink-0" />
-                          </div>
-                        ))
+                        assigned.map(item => {
+                          const originalItem = (currentQ.items || []).find(it => it.id === item.id || it.text?.trim().toLowerCase() === item.text?.trim().toLowerCase());
+                          const distractorTexts = (currentQ.distractors || []).map(d => typeof d === 'string' ? d.trim().toLowerCase() : (d.text || '').trim().toLowerCase());
+                          const isItemCorrect = Boolean(
+                            originalItem &&
+                            !originalItem.isDistractor &&
+                            (originalItem.categoryId || originalItem.targetCategory) === cat.id &&
+                            !distractorTexts.includes(item.text?.trim().toLowerCase())
+                          );
+
+                          return (
+                            <div
+                              key={item.id}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (!answeredState) {
+                                  handleReturnToOptions(cat.id, item);
+                                }
+                              }}
+                              title={answeredState ? (isItemCorrect ? 'Đáp án đúng' : 'Đáp án sai') : 'Bấm vào để bỏ ra ngoài'}
+                              className={`p-2 sm:p-2.5 rounded-xl shadow-md transition-all flex items-center justify-between text-xs sm:text-sm font-bold leading-snug border ${
+                                answeredState
+                                  ? isItemCorrect
+                                    ? 'bg-[#1cb059] text-white border-emerald-400 shadow-emerald-900/40 ring-1 ring-emerald-300'
+                                    : 'bg-[#e53e3e] text-white border-rose-400 shadow-rose-900/40 ring-1 ring-rose-300'
+                                  : 'bg-white text-slate-900 border-slate-200 hover:bg-rose-50 cursor-pointer'
+                              }`}
+                            >
+                              <span className="truncate pr-1">{item.text}</span>
+                              {answeredState ? (
+                                isItemCorrect ? (
+                                  <Check className="w-4 h-4 text-white stroke-[3.5] shrink-0" />
+                                ) : (
+                                  <X className="w-4 h-4 text-white stroke-[3.5] shrink-0" />
+                                )
+                              ) : (
+                                <X className="w-3.5 h-3.5 text-slate-400 hover:text-rose-600 shrink-0" />
+                              )}
+                            </div>
+                          );
+                        })
                       )}
                     </div>
                   </div>
@@ -1304,15 +1326,19 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
                       return (
                         <div
                           key={item.id}
-                          draggable
-                          onDragStart={() => setDraggedItem(item)}
+                          draggable={!answeredState}
+                          onDragStart={() => !answeredState && setDraggedItem(item)}
                           onClick={() => {
-                            setSelectedCategorizeItem(isSelected ? null : item);
+                            if (!answeredState) {
+                              setSelectedCategorizeItem(isSelected ? null : item);
+                            }
                           }}
-                          className={`p-2.5 sm:p-3 rounded-xl shadow-lg cursor-pointer transition-all flex items-center gap-2.5 border ${
-                            isSelected
-                              ? 'bg-pink-50 border-2 border-[#d82a7a] ring-2 ring-[#d82a7a]/60 text-[#d82a7a] scale-[1.01]'
-                              : 'bg-white text-slate-900 border-slate-200 hover:bg-slate-50'
+                          className={`p-2.5 sm:p-3 rounded-xl shadow-lg transition-all flex items-center gap-2.5 border ${
+                            answeredState
+                              ? 'bg-white/80 text-slate-700 border-slate-300 opacity-60 cursor-not-allowed'
+                              : isSelected
+                                ? 'bg-pink-50 border-2 border-[#d82a7a] ring-2 ring-[#d82a7a]/60 text-[#d82a7a] scale-[1.01] cursor-pointer'
+                                : 'bg-white text-slate-900 border-slate-200 hover:bg-slate-50 cursor-pointer'
                           }`}
                         >
                           <GripVertical className="w-4 h-4 text-slate-400 shrink-0 group-hover:text-[#d82a7a]" />
@@ -1377,6 +1403,12 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
                     }).find(d => (d.id || d.text) === droppedItemId) || { id: droppedItemId, text: droppedItemId }
                   ) : null;
 
+                  const userWord = droppedItemObj?.text || droppedItemId || '';
+                  const correctWord = sent.correctWord || sent.correctItemId || sent.correctAnswer || '';
+                  const isSlotCorrect = Boolean(
+                    userWord && String(userWord).trim().toLowerCase() === String(correctWord).trim().toLowerCase()
+                  );
+
                   return (
                     <div
                       key={sent.id}
@@ -1384,31 +1416,50 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
                     >
                       <span>{sent.prefix}</span>
                       <div
-                        onDragOver={(e) => e.preventDefault()}
-                        onDrop={() => handleDropIntoSlot(sent.id, draggedItem)}
+                        onDragOver={(e) => !answeredState && e.preventDefault()}
+                        onDrop={() => !answeredState && handleDropIntoSlot(sent.id, draggedItem)}
                         onClick={() => {
+                          if (answeredState) return;
                           if (droppedItemId) {
                             handleRemoveFromSlot(sent.id);
                           } else if (selectedDropItem) {
                             handleDropIntoSlot(sent.id, selectedDropItem);
                           }
                         }}
-                        className={`min-w-[150px] sm:min-w-[200px] max-w-full h-11 sm:h-12 px-3 sm:px-4 rounded-xl border-2 border-dashed flex items-center justify-center transition-all cursor-pointer ${
-                          droppedItemObj
-                            ? 'bg-white text-slate-900 border-white font-bold shadow-xl'
-                            : selectedDropItem
-                              ? 'bg-[#d82a7a]/20 border-[#d82a7a] text-pink-200 ring-2 ring-[#d82a7a]/40 animate-pulse'
-                              : 'bg-black/40 border-white/40 text-white/40 hover:border-white/70'
+                        className={`min-w-[150px] sm:min-w-[200px] max-w-full h-11 sm:h-12 px-3 sm:px-4 rounded-xl border-2 flex items-center justify-center transition-all ${
+                          answeredState
+                            ? droppedItemObj
+                              ? isSlotCorrect
+                                ? 'bg-[#1cb059] text-white border-emerald-400 font-bold shadow-xl shadow-emerald-900/40 ring-1 ring-emerald-300'
+                                : 'bg-[#e53e3e] text-white border-rose-400 font-bold shadow-xl shadow-rose-900/40 ring-1 ring-rose-300'
+                              : 'bg-rose-950/40 text-rose-300 border-dashed border-rose-500 font-mono text-xs'
+                            : droppedItemObj
+                              ? 'bg-white text-slate-900 border-white font-bold shadow-xl cursor-pointer'
+                              : selectedDropItem
+                                ? 'bg-[#d82a7a]/20 border-dashed border-[#d82a7a] text-pink-200 ring-2 ring-[#d82a7a]/40 animate-pulse cursor-pointer'
+                                : 'bg-black/40 border-dashed border-white/40 text-white/40 hover:border-white/70 cursor-pointer'
                         }`}
                       >
                         {droppedItemObj ? (
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-xs sm:text-sm">{droppedItemObj.text}</span>
-                            <X className="w-3.5 h-3.5 text-slate-400 hover:text-rose-600 shrink-0" />
+                            {answeredState ? (
+                              isSlotCorrect ? (
+                                <Check className="w-4 h-4 text-white stroke-[3.5] shrink-0" />
+                              ) : (
+                                <X className="w-4 h-4 text-white stroke-[3.5] shrink-0" />
+                              )
+                            ) : (
+                              <X className="w-3.5 h-3.5 text-slate-400 hover:text-rose-600 shrink-0" />
+                            )}
                           </div>
                         ) : (
                           <span className="text-[11px] sm:text-xs font-mono text-white/50">
-                            {selectedDropItem ? '+ Chạm để đặt vào đây' : '...................'}
+                            {answeredState
+                              ? '(Chưa điền)'
+                              : selectedDropItem
+                                ? '+ Chạm để đặt vào đây'
+                                : '...................'}
                           </span>
                         )}
                       </div>
@@ -1436,9 +1487,10 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
                     return (
                       <div
                         key={item.id || idx}
-                        draggable
-                        onDragStart={() => setDraggedItem(item)}
+                        draggable={!answeredState}
+                        onDragStart={() => !answeredState && setDraggedItem(item)}
                         onClick={() => {
+                          if (answeredState) return;
                           // Tự động tìm ô trống đầu tiên để điền ngay
                           const sentences = currentQ.sentences || [];
                           const firstEmpty = sentences.find(s => !sentenceSlots[s.id]);
@@ -1448,10 +1500,12 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
                             setSelectedDropItem(isSelected ? null : item);
                           }
                         }}
-                        className={`px-4 py-2.5 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl shadow-xl border font-bold text-xs sm:text-sm cursor-pointer transition-all flex items-center gap-1.5 active:scale-95 ${
-                          isSelected
-                            ? 'bg-[#d82a7a] text-white border-white ring-2 ring-white shadow-2xl scale-105'
-                            : 'bg-white text-slate-900 border-slate-200 hover:bg-slate-100 hover:scale-[1.02]'
+                        className={`px-4 py-2.5 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl shadow-xl border font-bold text-xs sm:text-sm transition-all flex items-center gap-1.5 active:scale-95 ${
+                          answeredState
+                            ? 'bg-white/80 text-slate-700 border-slate-300 opacity-60 cursor-not-allowed'
+                            : isSelected
+                              ? 'bg-[#d82a7a] text-white border-white ring-2 ring-white shadow-2xl scale-105 cursor-pointer'
+                              : 'bg-white text-slate-900 border-slate-200 hover:bg-slate-100 hover:scale-[1.02] cursor-pointer'
                         }`}
                       >
                         <GripVertical className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -1874,6 +1928,14 @@ export default function ExamRoom({ exam, onSubmitExam, onBack, currentUser }) {
               <button
                 onClick={handleSubmitCategorize}
                 disabled={Boolean(answeredState) || Object.values(columnAssignments).every(arr => !arr || arr.length === 0)}
+                className="px-4 py-2 sm:px-6 sm:py-2.5 bg-[#d82a7a] hover:bg-[#c2226b] disabled:opacity-30 disabled:cursor-not-allowed text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-lg transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2"
+              >
+                Gửi câu trả lời
+              </button>
+            ) : currentQ.type === 'drag_drop' ? (
+              <button
+                onClick={handleSubmitDragDrop}
+                disabled={Boolean(answeredState) || Object.keys(sentenceSlots).length === 0}
                 className="px-4 py-2 sm:px-6 sm:py-2.5 bg-[#d82a7a] hover:bg-[#c2226b] disabled:opacity-30 disabled:cursor-not-allowed text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-lg transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2"
               >
                 Gửi câu trả lời
