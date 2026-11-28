@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   ArrowLeft,
   ChevronDown,
@@ -164,6 +164,28 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
 
   // Modal thêm ảnh cho từng đáp án
   const [optionImageTargetIdx, setOptionImageTargetIdx] = useState(null);
+
+  // Toast thông báo dán ảnh thành công
+  const [pasteToast, setPasteToast] = useState(null);
+  const toastTimeoutRef = useRef(null);
+
+  const showToast = (message) => {
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    setPasteToast(message);
+    toastTimeoutRef.current = setTimeout(() => {
+      setPasteToast(null);
+    }, 3200);
+  };
+
+  const optionImageTargetIdxRef = useRef(optionImageTargetIdx);
+  useEffect(() => {
+    optionImageTargetIdxRef.current = optionImageTargetIdx;
+  }, [optionImageTargetIdx]);
+
+  const optionsRef = useRef(options);
+  useEffect(() => {
+    optionsRef.current = options;
+  }, [options]);
 
   // Ref cho textarea câu hỏi để chèn định dạng & ký hiệu
   const questionInputRef = useRef(null);
@@ -531,13 +553,10 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
     setOptions([...options, { id: nextLetter, text: '', image: '' }]);
   };
 
-  // Xử lý tải ảnh từ máy tính (FileReader sang base64 data URL)
-  const handleUploadLocalImage = (e, targetIdx = null) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      alert("Vui lòng chọn một tệp hình ảnh!");
+  // Helper xử lý tệp ảnh (từ upload, dán Clipboard Ctrl+V hoặc kéo thả)
+  const processImageFile = (file, targetIdx = null) => {
+    if (!file || !file.type.startsWith('image/')) {
+      alert("Vui lòng chọn hoặc dán một tệp hình ảnh hợp lệ!");
       return;
     }
 
@@ -546,18 +565,113 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
       const dataUrl = event.target?.result;
       if (typeof dataUrl === 'string') {
         if (targetIdx !== null) {
-          const updated = [...options];
-          updated[targetIdx].image = dataUrl;
-          setOptions(updated);
-          setOptionImageTargetIdx(null);
+          const currentOpts = optionsRef.current;
+          const updated = [...currentOpts];
+          if (updated[targetIdx]) {
+            updated[targetIdx].image = dataUrl;
+            setOptions(updated);
+            setOptionImageTargetIdx(null);
+            showToast(`📸 Đã dán ảnh cho Lựa chọn ${updated[targetIdx]?.id || ''}!`);
+          }
         } else {
           setImageUrl(dataUrl);
           setIsImageModalOpen(false);
+          showToast("📸 Đã dán ảnh minh họa cho câu hỏi từ bộ nhớ tạm (Ctrl + V)!");
         }
       }
     };
     reader.readAsDataURL(file);
   };
+
+  // Trích xuất file ảnh từ Clipboard event (hỗ trợ Ctrl+V ảnh chụp màn hình, ảnh copy từ web, file ảnh)
+  const extractImageFromClipboard = (e) => {
+    if (!e.clipboardData) return null;
+
+    // 1. Kiểm tra clipboardData.items (hỗ trợ ảnh chụp màn hình, Snipping Tool, PrtScn, Copy image từ trình duyệt)
+    const items = e.clipboardData.items;
+    if (items) {
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.type && item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) return file;
+        }
+      }
+    }
+
+    // 2. Kiểm tra clipboardData.files (khi người dùng copy tệp ảnh từ File Explorer)
+    const files = e.clipboardData.files;
+    if (files && files.length > 0) {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file.type && file.type.startsWith('image/')) {
+          return file;
+        }
+      }
+    }
+
+    return null;
+  };
+
+  // Xử lý tải ảnh từ máy tính (FileReader sang base64 data URL)
+  const handleUploadLocalImage = (e, targetIdx = null) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    processImageFile(file, targetIdx);
+  };
+
+  // Kéo thả ảnh trực tiếp vào khung câu hỏi
+  const handleDropQuestionImage = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) {
+      const file = Array.from(files).find(f => f.type && f.type.startsWith('image/'));
+      if (file) {
+        processImageFile(file, null);
+      }
+    }
+  };
+
+  // Lắng nghe sự kiện paste ảnh từ Clipboard (Ctrl + V) trên toàn giao diện
+  useEffect(() => {
+    const handleGlobalPaste = (e) => {
+      const imageFile = extractImageFromClipboard(e);
+      if (!imageFile) {
+        // Không có ảnh trong clipboard -> để sự kiện paste văn bản bình thường
+        return;
+      }
+
+      // Có ảnh trong clipboard -> Chặn dán ký tự thừa vào ô nhập
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Xác định mục tiêu gán ảnh:
+      // A. Nếu đang mở modal chèn ảnh cho 1 đáp án cụ thể
+      if (optionImageTargetIdxRef.current !== null) {
+        processImageFile(imageFile, optionImageTargetIdxRef.current);
+        return;
+      }
+
+      // B. Nếu con trỏ chuột đang focus ở 1 ô nhập đáp án
+      const activeEl = document.activeElement;
+      if (activeEl && activeEl.hasAttribute('data-option-idx')) {
+        const optIdx = parseInt(activeEl.getAttribute('data-option-idx'), 10);
+        if (!isNaN(optIdx) && optIdx >= 0) {
+          processImageFile(imageFile, optIdx);
+          return;
+        }
+      }
+
+      // C. Mặc định: Gán ảnh cho câu hỏi hiện tại
+      processImageFile(imageFile, null);
+    };
+
+    window.addEventListener('paste', handleGlobalPaste);
+    return () => {
+      window.removeEventListener('paste', handleGlobalPaste);
+    };
+  }, []);
 
   // Lưu câu hỏi
   const handleSave = async () => {
@@ -968,7 +1082,11 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
       <div className="flex-1 bg-[#471842] p-3 sm:p-6 lg:p-8 flex flex-col justify-between overflow-y-auto">
 
         {/* VÙNG NHẬP CÂU HỎI */}
-        <div className="relative bg-[#2d0e2b] border-2 border-[#64245f] rounded-2xl p-4 pt-12 sm:p-8 mb-4 sm:mb-6 min-h-[160px] sm:min-h-[220px] flex flex-col justify-center items-center shadow-lg group">
+        <div 
+          onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          onDrop={handleDropQuestionImage}
+          className="relative bg-[#2d0e2b] border-2 border-[#64245f] rounded-2xl p-4 pt-12 sm:p-8 mb-4 sm:mb-6 min-h-[160px] sm:min-h-[220px] flex flex-col justify-center items-center shadow-lg group"
+        >
 
           {/* CÁC NÚT MEDIA GÓC TRÊN BÊN TRÁI: ẢNH VÀ VIDEO (ĐÃ BỎ NÚT GHI ÂM) */}
           <div className="absolute top-3 left-3 sm:top-4 sm:left-4 flex items-center gap-2">
@@ -976,7 +1094,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
             <button
               type="button"
               onClick={() => setIsImageModalOpen(true)}
-              title="Thêm hình ảnh cho câu hỏi"
+              title="Thêm hình ảnh cho câu hỏi (Bấm hoặc nhấn Ctrl + V để dán ảnh)"
               className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-colors relative cursor-pointer ${
                 imageUrl ? 'bg-amber-500 text-slate-900' : 'bg-white/10 hover:bg-white/20 text-white'
               }`}
@@ -1004,7 +1122,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
               <img 
                 src={imageUrl} 
                 alt="Question Media" 
-                className="max-h-28 sm:max-h-36 rounded-lg border border-white/20 object-contain shadow-md bg-black/20" 
+                className="max-h-36 sm:max-h-48 rounded-lg border border-white/20 object-contain shadow-md bg-black/20" 
               />
               <button
                 type="button"
@@ -1072,6 +1190,18 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
               return (
                 <div
                   key={opt.id}
+                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const files = e.dataTransfer?.files;
+                    if (files && files.length > 0) {
+                      const file = Array.from(files).find(f => f.type && f.type.startsWith('image/'));
+                      if (file) {
+                        processImageFile(file, idx);
+                      }
+                    }
+                  }}
                   className={`${color.bg} border-2 ${color.border} rounded-2xl p-3 sm:p-4 min-h-[130px] sm:min-h-[170px] flex flex-col justify-between text-white relative shadow-md transition-all`}
                 >
                   {/* Thanh action góc trên thẻ: Icon Xóa, Icon Ảnh + Icon Dấu Tích Chọn Đúng */}
@@ -1132,6 +1262,7 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                   <div className="my-auto py-2">
                     <textarea
                       rows={2}
+                      data-option-idx={idx}
                       value={opt.text}
                       onChange={(e) => handleOptionTextChange(idx, e.target.value)}
                       placeholder={`Đáp án ${idx + 1}`}
@@ -1823,8 +1954,8 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">Tải tệp ảnh từ máy tính:</label>
                 <label className="border-2 border-dashed border-purple-200 hover:border-purple-400 bg-purple-50/50 hover:bg-purple-50 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer transition-colors">
                   <Upload className="w-6 h-6 text-purple-600 mb-1" />
-                  <span className="text-xs font-bold text-purple-800">Bấm để chọn file ảnh</span>
-                  <span className="text-[10px] text-slate-400 mt-0.5">JPG, PNG, GIF, WebP</span>
+                  <span className="text-xs font-bold text-purple-800">Bấm để chọn file ảnh hoặc nhấn Ctrl + V để dán</span>
+                  <span className="text-[10px] text-slate-400 mt-0.5">JPG, PNG, GIF, WebP hoặc ảnh từ bộ nhớ tạm (Clipboard)</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -1888,7 +2019,8 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">Tải tệp ảnh từ máy tính:</label>
                 <label className="border-2 border-dashed border-purple-200 hover:border-purple-400 bg-purple-50/50 hover:bg-purple-50 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer transition-colors">
                   <Upload className="w-6 h-6 text-purple-600 mb-1" />
-                  <span className="text-xs font-bold text-purple-800">Bấm để chọn file ảnh</span>
+                  <span className="text-xs font-bold text-purple-800">Bấm để chọn file ảnh hoặc nhấn Ctrl + V để dán</span>
+                  <span className="text-[10px] text-slate-400 mt-0.5">JPG, PNG, GIF, WebP hoặc ảnh từ bộ nhớ tạm (Clipboard)</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -1982,6 +2114,16 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Toast thông báo dán ảnh thành công */}
+      {pasteToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 text-white border border-white/20 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-2.5 text-xs font-semibold animate-in fade-in slide-in-from-bottom-4 duration-200 pointer-events-none">
+          <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+            <Check className="w-3.5 h-3.5 stroke-[3]" />
+          </div>
+          <span>{pasteToast}</span>
         </div>
       )}
 
