@@ -22,6 +22,9 @@ import {
   X, 
   Loader2, 
   AlertCircle,
+  AlertTriangle,
+  Check,
+  Filter,
   Plus,
   ChevronDown,
   ChevronUp,
@@ -32,6 +35,22 @@ import {
 import { parseQuestionsWithGemini } from '../services/geminiService';
 
 import QuestionEditor from './QuestionEditor';
+
+// Hàm chuẩn hóa nội dung câu hỏi để phát hiện trùng lặp chính xác
+function normalizeQuestionText(str) {
+  if (!str) return '';
+  return str
+    .toString()
+    .normalize('NFC')
+    .toLowerCase()
+    .replace(/^(câu|bài|question|q)\s*\d+[\s.:\-\)]*/i, '')
+    .replace(/^\d+[\s.:\-\)]+/, '')
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/[\s\t\n\r]+/g, ' ')
+    .replace(/[.?:\s,;!]+$/, '')
+    .trim();
+}
 
 export default function CreateResourceModal({ onBack, onSaveExam, initialExam }) {
   const navigate = useNavigate();
@@ -181,10 +200,29 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
   const [showImportModal, setShowImportModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
 
-  // Trạng thái xử lý file
+  // Trạng thái xử lý file & kiểm tra trùng lặp câu hỏi
   const [isProcessingFile, setIsProcessingFile] = useState(false);
   const [importStatus, setImportStatus] = useState('');
   const [importError, setImportError] = useState('');
+  const [importedPreviewList, setImportedPreviewList] = useState(null); // Danh sách câu hỏi AI trích xuất kèm cờ trùng lặp
+  const [uploadedFileName, setUploadedFileName] = useState('');
+
+  // Đóng modal import và dọn dẹp state
+  const handleCloseImportModal = () => {
+    if (isProcessingFile) return;
+    setShowImportModal(false);
+    setImportedPreviewList(null);
+    setImportError('');
+    setUploadedFileName('');
+  };
+
+  // Mở modal import mới
+  const handleOpenImportModal = () => {
+    setImportedPreviewList(null);
+    setImportError('');
+    setUploadedFileName('');
+    setShowImportModal(true);
+  };
 
 
   // Hàm hiển thị chi tiết các đáp án của từng câu hỏi
@@ -506,6 +544,9 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Reset input để có thể chọn lại cùng file nếu muốn
+    e.target.value = '';
+
     setIsProcessingFile(true);
     setImportError('');
     setImportStatus(`Đang đọc tệp "${file.name}"...`);
@@ -545,16 +586,53 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
       const parsed = await parseQuestionsWithGemini(extractedText);
       
       if (Array.isArray(parsed) && parsed.length > 0) {
-        // Tự động gán ID duy nhất
-        const formatted = parsed.map((q, idx) => ({
-          ...q,
-          id: `q-imported-${Date.now()}-${idx + 1}`
-        }));
+        // Kiểm tra và phát hiện câu hỏi trùng lặp
+        const seenNormsInFile = new Map(); // normText -> 1-based index in file
 
-        setQuestions(prev => [...prev, ...formatted]);
-        setShowImportModal(false);
+        const processed = parsed.map((q, idx) => {
+          const qNorm = normalizeQuestionText(q.question);
+
+          // 1. Kiểm tra trùng với câu hỏi đã có trong đề thi hiện tại
+          let dupExamIndex = -1;
+          let dupExamText = '';
+          if (qNorm) {
+            const matchIdx = questions.findIndex(existingQ => normalizeQuestionText(existingQ.question) === qNorm);
+            if (matchIdx !== -1) {
+              dupExamIndex = matchIdx + 1;
+              dupExamText = questions[matchIdx].question;
+            }
+          }
+
+          // 2. Kiểm tra trùng lặp với câu phía trước trong chính file tải lên
+          let dupFileIndex = -1;
+          let dupFileText = '';
+          if (qNorm) {
+            if (seenNormsInFile.has(qNorm)) {
+              dupFileIndex = seenNormsInFile.get(qNorm);
+              dupFileText = parsed[dupFileIndex - 1]?.question || '';
+            } else {
+              seenNormsInFile.set(qNorm, idx + 1);
+            }
+          }
+
+          const isDupInExam = dupExamIndex !== -1;
+          const isDupInFile = dupFileIndex !== -1;
+          const isDuplicate = isDupInExam || isDupInFile;
+
+          return {
+            ...q,
+            tempId: `preview-${Date.now()}-${idx + 1}`,
+            isDuplicate,
+            dupType: isDupInExam ? 'exam' : (isDupInFile ? 'file' : null),
+            matchedIndex: isDupInExam ? dupExamIndex : dupFileIndex,
+            matchedQuestionText: isDupInExam ? dupExamText : dupFileText,
+            selected: !isDuplicate // Mặc định: Câu mới -> Chọn, Câu trùng -> Bỏ chọn
+          };
+        });
+
+        setUploadedFileName(file.name);
+        setImportedPreviewList(processed);
         setImportStatus('');
-        alert(`🎉 AI đã phân tích thành công ${formatted.length} câu hỏi từ tệp "${file.name}"!`);
       } else {
         throw new Error('AI không tìm thấy câu hỏi hợp lệ trong tệp.');
       }
@@ -563,6 +641,50 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
       setImportError(err.message || 'Lỗi khi xử lý tệp.');
     } finally {
       setIsProcessingFile(false);
+    }
+  };
+
+  // 3. Xác nhận thêm các câu hỏi đã chọn từ preview vào đề thi
+  const handleConfirmImport = () => {
+    if (!importedPreviewList) return;
+    const selected = importedPreviewList.filter(q => q.selected);
+    if (selected.length === 0) {
+      alert('Vui lòng chọn ít nhất 1 câu hỏi để thêm vào đề thi.');
+      return;
+    }
+
+    const formatted = selected.map((q, idx) => {
+      const { tempId, isDuplicate, dupType, matchedIndex, matchedQuestionText, selected: _, ...rest } = q;
+      return {
+        ...rest,
+        id: `q-imported-${Date.now()}-${idx + 1}`
+      };
+    });
+
+    const updatedQuestions = [...questions, ...formatted];
+    setQuestions(updatedQuestions);
+    setShowImportModal(false);
+    setImportedPreviewList(null);
+    setUploadedFileName('');
+    setImportStatus('');
+
+    // Tự động đồng bộ ngay vào CSDL nếu có onSaveExam
+    if (onSaveExam) {
+      const autoSavedExam = {
+        ...initialExam,
+        id: initialExam?.id || `exam-${Date.now()}`,
+        title: examTitle.trim() || 'Bài Quiz không có tiêu đề',
+        subject: subject || 'Khoa học Xã hội',
+        level: level || 'Đại học',
+        difficulty: level || 'Đại học',
+        duration: Number(duration) || 30,
+        durationMinutes: Number(duration) || 30,
+        shuffleQuestions: Boolean(shuffleQuestions),
+        shuffleAnswers: Boolean(shuffleAnswers),
+        totalQuestions: updatedQuestions.length,
+        questions: updatedQuestions
+      };
+      onSaveExam(autoSavedExam).catch(err => console.warn('Lỗi lưu ngầm:', err));
     }
   };
 
@@ -699,7 +821,7 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
           </div>
 
           <button
-            onClick={() => setShowImportModal(true)}
+            onClick={handleOpenImportModal}
             className="px-3 sm:px-4 py-2 bg-[#d82a7a] hover:bg-[#c2226b] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all shrink-0 hover:scale-[1.02] cursor-pointer"
           >
             <Upload className="w-3.5 h-3.5 text-white" />
@@ -919,70 +1041,305 @@ export default function CreateResourceModal({ onBack, onSaveExam, initialExam })
         </div>
       </main>
 
-      {/* MODAL NHẬP TỪ TÀI LIỆU (AI PHÂN TÍCH) */}
+      {/* MODAL NHẬP TỪ TÀI LIỆU (AI PHÂN TÍCH & CẢNH BÁO TRÙNG LẶP) */}
       {showImportModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-xl flex flex-col shadow-2xl animate-in fade-in zoom-in-95 overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className={`bg-white rounded-2xl border border-slate-200 w-full ${
+            importedPreviewList ? 'max-w-3xl max-h-[90vh]' : 'max-w-xl'
+          } flex flex-col shadow-2xl animate-in fade-in zoom-in-95 overflow-hidden transition-all duration-200`}>
+            {/* Header Modal */}
+            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50 shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-pink-100 text-[#d82a7a] flex items-center justify-center">
                   <Sparkles className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">Nhập câu hỏi từ tài liệu với AI</h3>
-                  <p className="text-[11px] text-slate-500">Hỗ trợ tệp Word (.docx), Excel (.xlsx, .csv), PDF & Text</p>
+                  <h3 className="text-sm font-bold text-slate-900">
+                    {importedPreviewList ? 'Kiểm tra & Cảnh báo câu hỏi trùng lặp' : 'Nhập câu hỏi từ tài liệu với AI'}
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    {importedPreviewList 
+                      ? `Tệp: "${uploadedFileName}" • Tổng số ${importedPreviewList.length} câu hỏi`
+                      : 'Hỗ trợ tệp Word (.docx), Excel (.xlsx, .csv), PDF & Text'
+                    }
+                  </p>
                 </div>
               </div>
               <button 
-                onClick={() => { if (!isProcessingFile) setShowImportModal(false); }}
-                className="text-slate-400 hover:text-slate-600 p-1"
+                onClick={handleCloseImportModal}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-6 space-y-5">
-              {/* Vùng chọn file kéo thả */}
-              <label className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-colors ${
-                isProcessingFile ? 'border-pink-300 bg-pink-50/30 cursor-wait' : 'border-slate-300 hover:border-[#d82a7a] hover:bg-slate-50'
-              }`}>
-                <input 
-                  type="file" 
-                  accept=".docx,.xlsx,.xls,.csv,.txt,.pdf"
-                  disabled={isProcessingFile}
-                  onChange={handleFileUpload}
-                  className="hidden" 
-                />
+            {/* Body: Nếu chưa upload xong file thì hiển thị Dropzone */}
+            {!importedPreviewList ? (
+              <div className="p-6 space-y-5">
+                <label className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-colors ${
+                  isProcessingFile ? 'border-pink-300 bg-pink-50/30 cursor-wait' : 'border-slate-300 hover:border-[#d82a7a] hover:bg-slate-50'
+                }`}>
+                  <input 
+                    type="file" 
+                    accept=".docx,.xlsx,.xls,.csv,.txt,.pdf"
+                    disabled={isProcessingFile}
+                    onChange={handleFileUpload}
+                    className="hidden" 
+                  />
 
-                {isProcessingFile ? (
-                  <div className="flex flex-col items-center">
-                    <Loader2 className="w-10 h-10 text-[#d82a7a] animate-spin mb-3" />
-                    <p className="text-xs font-bold text-slate-800">{importStatus}</p>
-                    <p className="text-[11px] text-slate-400 mt-1">Quá trình này có thể mất vài giây tùy vào độ dài của tệp.</p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="w-14 h-14 rounded-full bg-pink-50 text-[#d82a7a] flex items-center justify-center mb-3">
-                      <Upload className="w-6 h-6" />
+                  {isProcessingFile ? (
+                    <div className="flex flex-col items-center">
+                      <Loader2 className="w-10 h-10 text-[#d82a7a] animate-spin mb-3" />
+                      <p className="text-xs font-bold text-slate-800">{importStatus}</p>
+                      <p className="text-[11px] text-slate-400 mt-1">Quá trình này có thể mất vài giây tùy vào độ dài của tệp.</p>
                     </div>
-                    <p className="text-xs font-bold text-slate-800">
-                      Bấm để chọn tệp hoặc kéo thả tệp vào đây
-                    </p>
-                    <p className="text-[11px] text-slate-400 mt-1">
-                      Word (.docx), Excel (.xlsx), PDF hoặc tệp văn bản (.txt)
-                    </p>
-                  </>
-                )}
-              </label>
+                  ) : (
+                    <>
+                      <div className="w-14 h-14 rounded-full bg-pink-50 text-[#d82a7a] flex items-center justify-center mb-3">
+                        <Upload className="w-6 h-6" />
+                      </div>
+                      <p className="text-xs font-bold text-slate-800">
+                        Bấm để chọn tệp hoặc kéo thả tệp vào đây
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-1">
+                        Word (.docx), Excel (.xlsx), PDF hoặc tệp văn bản (.txt)
+                      </p>
+                    </>
+                  )}
+                </label>
 
-              {/* Thông báo lỗi nếu có */}
-              {importError && (
-                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2.5 text-xs text-rose-700">
-                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-                  <p>{importError}</p>
+                {importError && (
+                  <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2.5 text-xs text-rose-700">
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                    <p>{importError}</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Body: Màn hình kiểm tra & cảnh báo câu hỏi trùng lặp ngay trong popup */
+              <div className="p-5 overflow-hidden flex flex-col flex-1 min-h-0 space-y-4">
+                {(() => {
+                  const dupCount = importedPreviewList.filter(q => q.isDuplicate).length;
+                  const newCount = importedPreviewList.length - dupCount;
+                  const selectedCount = importedPreviewList.filter(q => q.selected).length;
+                  const examDupCount = importedPreviewList.filter(q => q.dupType === 'exam').length;
+                  const fileDupCount = importedPreviewList.filter(q => q.dupType === 'file').length;
+
+                  return (
+                    <>
+                      {/* Banner cảnh báo */}
+                      {dupCount > 0 ? (
+                        <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 text-xs text-amber-900 shadow-2xs">
+                          <div className="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
+                            <AlertTriangle className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-bold text-amber-950 text-xs sm:text-sm">
+                                Cảnh báo: Phát hiện {dupCount} câu hỏi bị trùng lặp!
+                              </span>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-200/80 text-amber-900 border border-amber-300">
+                                {examDupCount > 0 && `${examDupCount} trùng với đề`}
+                                {examDupCount > 0 && fileDupCount > 0 && ' • '}
+                                {fileDupCount > 0 && `${fileDupCount} lặp trong file`}
+                              </span>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                {newCount} câu mới
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-amber-800 mt-1 leading-relaxed">
+                              Hệ thống đã <strong>tự động bỏ chọn</strong> các câu hỏi trùng lặp để tránh trùng lặp nội dung. Bạn có thể kiểm tra danh sách bên dưới, bỏ bớt hoặc chọn lại trước khi bấm thêm vào đề.
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-3 text-xs text-emerald-900 shadow-2xs">
+                          <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                            <CheckCircle2 className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1">
+                            <span className="font-bold text-emerald-950 text-xs sm:text-sm">
+                              Tất cả {importedPreviewList.length} câu hỏi đều mới và hợp lệ!
+                            </span>
+                            <p className="text-[11px] text-emerald-700 mt-0.5">
+                              Không phát hiện câu hỏi nào trùng lặp với các câu đã có trong đề thi.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Thanh công cụ chọn lọc */}
+                      <div className="flex items-center justify-between text-xs flex-wrap gap-2 pb-1 border-b border-slate-100">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-slate-700">Đã chọn để thêm:</span>
+                          <span className="px-2.5 py-0.5 rounded-full bg-pink-50 text-[#d82a7a] font-extrabold border border-pink-200 text-xs">
+                            {selectedCount} / {importedPreviewList.length} câu
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {dupCount > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setImportedPreviewList(prev => prev.map(q => ({ ...q, selected: !q.isDuplicate })));
+                              }}
+                              className="px-2.5 py-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                              title="Chỉ chọn những câu hỏi mới hợp lệ"
+                            >
+                              <Filter className="w-3 h-3" />
+                              Chỉ chọn câu mới ({newCount})
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setImportedPreviewList(prev => prev.map(q => ({ ...q, selected: true })));
+                            }}
+                            className="px-2.5 py-1 text-[11px] font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+                          >
+                            Chọn tất cả ({importedPreviewList.length})
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setImportedPreviewList(prev => prev.map(q => ({ ...q, selected: false })));
+                            }}
+                            className="px-2.5 py-1 text-[11px] font-semibold text-slate-500 hover:text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors cursor-pointer"
+                          >
+                            Bỏ chọn
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Danh sách cuộn câu hỏi */}
+                      <div className="overflow-y-auto max-h-[50vh] pr-1 space-y-3">
+                        {importedPreviewList.map((q, idx) => {
+                          const toggleSelect = () => {
+                            setImportedPreviewList(prev => prev.map((item, i) => i === idx ? { ...item, selected: !item.selected } : item));
+                          };
+
+                          return (
+                            <div 
+                              key={q.tempId || idx}
+                              className={`p-3.5 rounded-xl border transition-all ${
+                                q.isDuplicate
+                                  ? q.selected
+                                    ? 'border-amber-300 bg-amber-50/30'
+                                    : 'border-amber-200/80 bg-slate-50/50 opacity-80'
+                                  : q.selected
+                                    ? 'border-slate-200 bg-white shadow-2xs'
+                                    : 'border-slate-200 bg-slate-50/40 opacity-70'
+                              }`}
+                            >
+                              <div className="flex items-start gap-3">
+                                {/* Checkbox chọn */}
+                                <div className="pt-0.5 shrink-0">
+                                  <input 
+                                    type="checkbox"
+                                    checked={Boolean(q.selected)}
+                                    onChange={toggleSelect}
+                                    className="w-4 h-4 text-[#d82a7a] rounded accent-[#d82a7a] cursor-pointer"
+                                  />
+                                </div>
+
+                                {/* STT trong file */}
+                                <span className="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 font-bold flex items-center justify-center text-xs shrink-0 mt-0.5 border border-slate-200">
+                                  {idx + 1}
+                                </span>
+
+                                <div className="flex-1 min-w-0">
+                                  {/* Badges */}
+                                  <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                                    {q.isDuplicate ? (
+                                      q.dupType === 'exam' ? (
+                                        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-300">
+                                          <AlertTriangle className="w-3 h-3" />
+                                          Trùng với Câu {q.matchedIndex} trong đề
+                                        </span>
+                                      ) : (
+                                        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+                                          <AlertTriangle className="w-3 h-3" />
+                                          Lặp với Câu {q.matchedIndex} trong file
+                                        </span>
+                                      )
+                                    ) : (
+                                      <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-300">
+                                        <Check className="w-3 h-3" />
+                                        Câu mới hợp lệ
+                                      </span>
+                                    )}
+
+                                    <span className="text-[10px] text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full font-medium">
+                                      {q.type === 'multiple' ? 'Nhiều đáp án' : q.type === 'true_false_multi' || q.type === 'true_false' ? 'Đoạn văn' : q.type === 'essay' ? 'Tự luận' : q.type === 'categorize' ? 'Phân loại cột' : q.type === 'drag_drop' ? 'Kéo thả' : q.type === 'short_answer' ? 'Điền từ' : '1 đáp án'}
+                                    </span>
+                                  </div>
+
+                                  {/* Tiêu đề / Nội dung câu hỏi */}
+                                  <p className="font-bold text-xs sm:text-sm text-slate-800 leading-snug">
+                                    {q.question}
+                                  </p>
+
+                                  {/* Đối chiếu câu trùng */}
+                                  {q.isDuplicate && q.matchedQuestionText && (
+                                    <div className="mt-2 p-2 bg-rose-50/70 border border-rose-200 rounded-lg text-[11px] text-rose-800 flex items-start gap-1.5">
+                                      <span className="font-semibold shrink-0">
+                                        {q.dupType === 'exam' ? `Câu ${q.matchedIndex} trong đề:` : `Câu ${q.matchedIndex} trong file:`}
+                                      </span>
+                                      <span className="italic line-clamp-2">"{q.matchedQuestionText}"</span>
+                                    </div>
+                                  )}
+
+                                  {/* Hiển thị chi tiết đáp án */}
+                                  {renderQuestionOptionsPreview(q)}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            )}
+
+            {/* Footer Modal khi có danh sách xem trước */}
+            {importedPreviewList && (
+              <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between bg-slate-50/70 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImportedPreviewList(null);
+                    setImportError('');
+                    setUploadedFileName('');
+                  }}
+                  className="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer flex items-center gap-1.5"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  Chọn tệp khác
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleCloseImportModal}
+                    className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="button"
+                    disabled={importedPreviewList.filter(q => q.selected).length === 0}
+                    onClick={handleConfirmImport}
+                    className="px-4 py-2 text-xs font-bold text-white bg-[#d82a7a] hover:bg-[#c0246b] disabled:opacity-40 disabled:cursor-not-allowed rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Check className="w-4 h-4" />
+                    Thêm {importedPreviewList.filter(q => q.selected).length} câu hỏi vào bài thi
+                  </button>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       )}
