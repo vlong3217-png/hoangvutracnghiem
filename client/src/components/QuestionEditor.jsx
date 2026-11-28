@@ -182,11 +182,6 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
     optionImageTargetIdxRef.current = optionImageTargetIdx;
   }, [optionImageTargetIdx]);
 
-  const optionsRef = useRef(options);
-  useEffect(() => {
-    optionsRef.current = options;
-  }, [options]);
-
   // Ref cho textarea câu hỏi để chèn định dạng & ký hiệu
   const questionInputRef = useRef(null);
 
@@ -211,6 +206,11 @@ export default function QuestionEditor({ question, onSave, onCancel }) {
     ];
 
   const [options, setOptions] = useState(initialOptions);
+
+  const optionsRef = useRef(options);
+  useEffect(() => {
+    optionsRef.current = options;
+  }, [options]);
 
   // Danh sách ID đáp án đúng
   const initialCorrect = Array.isArray(question.correctAnswer)
